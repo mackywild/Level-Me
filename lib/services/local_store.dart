@@ -1,24 +1,33 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import '../models/app_state.dart';
 
-/// Uses the legacy Android SharedPreferences API to avoid the
-/// SharedPreferencesAsync Pigeon/Android binary linkage crash.
-/// Keep the same key and do not clear user data.
+/// Durable JSON save file, independent of the Android shared_preferences plugin.
+/// Never delete or reset the old preferences storage.
 class LocalStore {
  LocalStore();
- static const _stateKey='level_me_state_v1';
+ static const _fileName = 'level_me_state_v1.json';
+
+ Future<File> _file() async {
+  final directory = await getApplicationSupportDirectory();
+  return File('${directory.path}/$_fileName');
+ }
 
  Future<AppStateData> load() async {
-  final prefs=await SharedPreferences.getInstance();
-  final raw=prefs.getString(_stateKey);
-  if(raw==null||raw.isEmpty)return AppStateData.initial();
-  try{return AppStateData.fromJson(jsonDecode(raw) as Map<String,dynamic>);}
-  catch(_){return AppStateData.initial();}
+  final file = await _file();
+  if (!await file.exists()) return AppStateData.initial();
+  final raw = await file.readAsString();
+  if (raw.isEmpty) return AppStateData.initial();
+  // Do not silently overwrite a corrupt save with fresh state.
+  return AppStateData.fromJson(jsonDecode(raw) as Map<String, dynamic>);
  }
+
  Future<void> save(AppStateData state) async {
-  final prefs=await SharedPreferences.getInstance();
-  final saved=await prefs.setString(_stateKey,jsonEncode(state.toJson()));
-  if(!saved)throw StateError('Failed to persist player data');
+  final file = await _file();
+  final temporary = File('${file.path}.tmp');
+  await temporary.writeAsString(jsonEncode(state.toJson()), flush: true);
+  // Same-directory rename replaces the file atomically on Android/Linux.
+  await temporary.rename(file.path);
  }
 }

@@ -22,6 +22,8 @@ jobs:
       - name: Generate Android project
         run: bash ./tool/bootstrap_android.sh
       - run: flutter pub get
+      - name: Clean Android build outputs
+        run: flutter clean && flutter pub get
       - run: flutter analyze
       - run: flutter test
       - run: flutter build apk --release

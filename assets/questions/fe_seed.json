@@ -1618,15 +1618,15 @@
     "id": "FE-A-0096",
     "section": "A",
     "domain": "technology",
-    "stem": "スタックのデータ取り出し順序はどれか。",
+    "stem": "スタックにA、B、Cの順にデータを積んだ後、最初に取り出されるデータはどれか。",
     "options": [
-      "FIFO",
-      "LIFO",
-      "ランダム",
-      "優先度順のみ"
+      "A",
+      "B",
+      "C",
+      "取り出せない"
     ],
-    "answerIndex": 1,
-    "explanation": "スタックは後入れ先出し（LIFO）のデータ構造。",
+    "answerIndex": 2,
+    "explanation": "スタックは後入れ先出し（LIFO）なので、最後に積んだCを最初に取り出す。",
     "difficulty": 2,
     "reviewStatus": "initial-draft",
     "syllabusVersion": "verification-pending"

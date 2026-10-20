@@ -1,0 +1,342 @@
+[
+  {
+    "id": "FE-A-0001",
+    "section": "A",
+    "domain": "technology",
+    "stem": "2進数 101101 を10進数で表した値はどれか。",
+    "options": [
+      "43",
+      "44",
+      "45",
+      "46"
+    ],
+    "answerIndex": 2,
+    "explanation": "32+8+4+1=45。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0002",
+    "section": "A",
+    "domain": "technology",
+    "stem": "8ビットの符号なし整数で表現できる最大値はどれか。",
+    "options": [
+      "127",
+      "255",
+      "256",
+      "512"
+    ],
+    "answerIndex": 1,
+    "explanation": "2の8乗-1=255。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0003",
+    "section": "A",
+    "domain": "technology",
+    "stem": "スタックのデータ取り出し順序はどれか。",
+    "options": [
+      "FIFO",
+      "LIFO",
+      "ランダム",
+      "優先度順"
+    ],
+    "answerIndex": 1,
+    "explanation": "最後に格納したデータを最初に取り出すLIFO方式。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0004",
+    "section": "A",
+    "domain": "technology",
+    "stem": "キューのデータ取り出し順序はどれか。",
+    "options": [
+      "LIFO",
+      "FIFO",
+      "降順",
+      "ランダム"
+    ],
+    "answerIndex": 1,
+    "explanation": "最初に格納したデータを最初に取り出すFIFO方式。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0005",
+    "section": "A",
+    "domain": "technology",
+    "stem": "二分探索を適用する配列に必要な前提はどれか。",
+    "options": [
+      "要素数が偶数",
+      "整列済み",
+      "重複なし",
+      "文字列のみ"
+    ],
+    "answerIndex": 1,
+    "explanation": "探索対象がキー順にソートされている必要がある。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0006",
+    "section": "A",
+    "domain": "technology",
+    "stem": "主キーに求められる性質はどれか。",
+    "options": [
+      "NULLを許す",
+      "重複を許す",
+      "行を一意に識別する",
+      "暗号化されている"
+    ],
+    "answerIndex": 2,
+    "explanation": "主キーは行を一意に特定しNULLを許さない。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0007",
+    "section": "A",
+    "domain": "technology",
+    "stem": "SQLで集約結果を絞り込む句はどれか。",
+    "options": [
+      "WHERE",
+      "ORDER BY",
+      "GROUP BY",
+      "HAVING"
+    ],
+    "answerIndex": 3,
+    "explanation": "HAVINGはGROUP BYによるグループの集約結果を条件で絞る。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0008",
+    "section": "A",
+    "domain": "technology",
+    "stem": "HTTPSで通信内容の保護に使われる代表的なプロトコルはどれか。",
+    "options": [
+      "SMTP",
+      "TLS",
+      "FTP",
+      "ARP"
+    ],
+    "answerIndex": 1,
+    "explanation": "HTTPSはHTTPをTLSで保護する。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0009",
+    "section": "A",
+    "domain": "technology",
+    "stem": "DNSの主な役割はどれか。",
+    "options": [
+      "時刻同期",
+      "名前とIPアドレスの対応付け",
+      "暗号鍵生成",
+      "ファイル圧縮"
+    ],
+    "answerIndex": 1,
+    "explanation": "ドメイン名をIPアドレスなどに対応付ける。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0010",
+    "section": "A",
+    "domain": "technology",
+    "stem": "可用性を高めるための冗長化の説明として適切なのはどれか。",
+    "options": [
+      "障害点を増やす",
+      "同じ役割の構成要素を複数用意する",
+      "ログを削除する",
+      "暗号鍵を共通化する"
+    ],
+    "answerIndex": 1,
+    "explanation": "一部が故障してもサービスを継続できる構成を用意する。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0011",
+    "section": "A",
+    "domain": "management",
+    "stem": "WBSの目的として適切なのはどれか。",
+    "options": [
+      "作業を階層的に分解する",
+      "ネットワークを暗号化する",
+      "売上を予測する",
+      "プログラムを実行する"
+    ],
+    "answerIndex": 0,
+    "explanation": "Work Breakdown Structureは成果物や作業を階層的に分解する。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0012",
+    "section": "A",
+    "domain": "management",
+    "stem": "クリティカルパスの説明として適切なのはどれか。",
+    "options": [
+      "最短の経路",
+      "総所要時間を決める最長経路",
+      "最も費用が安い経路",
+      "作業数が最少の経路"
+    ],
+    "answerIndex": 1,
+    "explanation": "クリティカルパス上の遅延は原則として全体の完了日に影響する。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0013",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "損益分岐点売上高を求める式はどれか。",
+    "options": [
+      "固定費÷限界利益率",
+      "変動費÷固定費",
+      "利益÷売上高",
+      "固定費×変動費率"
+    ],
+    "answerIndex": 0,
+    "explanation": "損益分岐点売上高=固定費/(1-変動費率)。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0014",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "SWOT分析で外部環境に該当する組合せはどれか。",
+    "options": [
+      "強みと弱み",
+      "強みと機会",
+      "機会と脅威",
+      "弱みと強み"
+    ],
+    "answerIndex": 2,
+    "explanation": "OpportunityとThreatは外部環境、StrengthとWeaknessは内部環境。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0015",
+    "section": "A",
+    "domain": "technology",
+    "stem": "公開鍵暗号方式で秘密に保持する必要がある鍵はどれか。",
+    "options": [
+      "公開鍵",
+      "秘密鍵",
+      "両方公開",
+      "どちらも不要"
+    ],
+    "answerIndex": 1,
+    "explanation": "秘密鍵は所有者のみが保持し、公開鍵は公開できる。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0016",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "変数 x=3 とし、x←x×2+1 を2回実行した後のxはどれか。",
+    "options": [
+      "7",
+      "13",
+      "15",
+      "21"
+    ],
+    "answerIndex": 2,
+    "explanation": "1回目7、2回目15。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0017",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "配列 [4,1,3,2] の要素を左から走査して最大値を更新すると、最終的な最大値はどれか。",
+    "options": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "answerIndex": 3,
+    "explanation": "最初の4より大きい要素がないため4。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0018",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "iを1から5まで1ずつ増やし、iが偶数のときだけ合計に加える。合計はいくつか。",
+    "options": [
+      "6",
+      "9",
+      "12",
+      "15"
+    ],
+    "answerIndex": 0,
+    "explanation": "偶数は2と4なので合計6。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0019",
+    "section": "B",
+    "domain": "security",
+    "stem": "ログイン失敗が一定回数続いた場合に一時的に認証を拒否する対策の主な目的はどれか。",
+    "options": [
+      "総当たり攻撃の抑止",
+      "通信速度の向上",
+      "バックアップ",
+      "データ圧縮"
+    ],
+    "answerIndex": 0,
+    "explanation": "試行回数を制限しパスワード推測攻撃の効率を下げる。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0020",
+    "section": "B",
+    "domain": "security",
+    "stem": "利用者の入力を文字列連結してSQLを作る処理への有効な対策はどれか。",
+    "options": [
+      "パラメータ化クエリ",
+      "入力値をログに出さない",
+      "SQL文を短くする",
+      "表名を変える"
+    ],
+    "answerIndex": 0,
+    "explanation": "プレースホルダを使い入力をSQL構文と分離する。",
+    "difficulty": 1,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  }
+]

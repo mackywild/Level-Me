@@ -27,7 +27,7 @@ class _QuestsScreenState extends State<QuestsScreen>{
      leading:Icon(done?Icons.check_circle:Icons.bolt,color:done?Colors.greenAccent:Colors.amberAccent),
      title:Text(q.title,style:TextStyle(decoration:done?TextDecoration.lineThrough:null)),
      subtitle:Text('${label(q.cadence)} | ${q.rewards.map((r)=>'${r.stat.shortLabel} +${r.exp}').join(' / ')}'),
-     trailing:done?const Text('CLEARED'):FilledButton(onPressed:()=>widget.controller.completeQuest(q),child:const Text('CLEAR'))
+     trailing:done?const Text('CLEARED'):FilledButton(onPressed:()=>q.id=='starter-study' ? Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>FeStudyScreen(controller:widget.controller,quest:q))) : widget.controller.completeQuest(q),child:Text(q.id=='starter-study'?'START':'CLEAR'))
     ));
    })),
   ]),

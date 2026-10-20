@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import '../models/fe_question.dart';
 import '../services/fe_progress_store.dart';
 
-enum FePracticeMode { all, incorrect, sectionA, sectionB }
+enum FePracticeMode { all, incorrect, unseen, weak, sectionA, sectionB }
 
 class FeQuestionScreen extends StatefulWidget {
  const FeQuestionScreen({super.key});
@@ -22,6 +22,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
  int? selected;
  bool saving=false;
  bool shuffle=true;
+ String? domainFilter;
  int limit=10;
  final Random _random=Random();
  @override void initState(){super.initState();_loading=_load();}
@@ -35,10 +36,21 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
   questions=switch(mode){
    FePracticeMode.all=>List.of(all),
    FePracticeMode.incorrect=>all.where((q)=>history[q.id]?.lastOrNull==false).toList(),
+   FePracticeMode.unseen=>all.where((q)=>history[q.id]?.isEmpty??true).toList(),
+   FePracticeMode.weak=>all.where((q){
+    final h=history[q.id];
+    return h!=null&&h.isNotEmpty&&h.where((v)=>!v).length*2>=h.length;
+   }).toList(),
    FePracticeMode.sectionA=>all.where((q)=>q.section=='A').toList(),
    FePracticeMode.sectionB=>all.where((q)=>q.section=='B').toList(),
   };
-  if(shuffle){questions.shuffle(_random);}
+  if(domainFilter!=null){questions=questions.where((q)=>q.domain==domainFilter).toList();}
+  if(mode==FePracticeMode.weak){
+   questions.sort((a,b){
+    double score(FeQuestion q){final h=history[q.id]!;return h.where((v)=>!v).length/h.length;}
+    return score(b).compareTo(score(a));
+   });
+  }else if(shuffle){questions.shuffle(_random);}
   if(limit>0 && questions.length>limit){questions=questions.take(limit).toList();}
   index=0;correct=0;selected=null;
  }
@@ -85,16 +97,27 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
     ]),
     const SizedBox(height:12),
     DropdownButtonFormField<FePracticeMode>(
+     key:ValueKey(mode),
      initialValue:mode,
      items:const [
       DropdownMenuItem(value:FePracticeMode.all,child:Text('全問題')),
       DropdownMenuItem(value:FePracticeMode.incorrect,child:Text('間違えた問題')),
+      DropdownMenuItem(value:FePracticeMode.unseen,child:Text('未学習の問題')),
+      DropdownMenuItem(value:FePracticeMode.weak,child:Text('苦手問題を優先（誤答率50%以上）')),
       DropdownMenuItem(value:FePracticeMode.sectionA,child:Text('科目A')),
       DropdownMenuItem(value:FePracticeMode.sectionB,child:Text('科目B')),
      ],
      onChanged:(v){if(v!=null){setState((){mode=v;_filter();});}},
     ),
     const SizedBox(height:12),
+    DropdownButtonFormField<String>(
+     key:ValueKey(domainFilter),
+     initialValue:domainFilter,
+     decoration:const InputDecoration(labelText:'分野で絞り込む'),
+     items:[const DropdownMenuItem<String>(value:null,child:Text('全分野')),
+      for(final domain in domains) DropdownMenuItem(value:domain,child:Text(domain))],
+     onChanged:(v)=>setState((){domainFilter=v;_filter();}),
+    ),
     SwitchListTile(title:const Text('問題をシャッフル'),value:shuffle,onChanged:(v)=>setState((){shuffle=v;_filter();})),
     DropdownButtonFormField<int>(
      initialValue:limit,
@@ -111,6 +134,12 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
      const Text('この条件に該当する問題はありません。')
     else if(index>=questions.length)...[
      Text('演習完了　$correct / ${questions.length}',style:Theme.of(context).textTheme.headlineSmall),
+     Text('今回の正答率 ${(correct/questions.length*100).toStringAsFixed(1)}%'),
+     const SizedBox(height:8),
+     Text('誤答した問題は「間違えた問題」から復習できます。'),
+     const SizedBox(height:12),
+     FilledButton.tonal(onPressed:()=>setState((){mode=FePracticeMode.incorrect;_filter();}),child:const Text('間違えた問題を復習する')),
+
      const SizedBox(height:12),
      FilledButton(onPressed:()=>setState(_filter),child:const Text('もう一度')),
     ]else ...[

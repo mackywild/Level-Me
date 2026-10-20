@@ -19,7 +19,7 @@ REQUIRED_REVIEW_FIELDS = ("subdomain", "distractorRationales", "referenceUrl")
 
 def normalize(text):
     text = unicodedata.normalize("NFKC", text).casefold()
-    return "".join(ch for ch in text if not ch.isspace() and not unicodedata.category(ch)[0] in "PZS")
+    return "".join(ch for ch in text if not ch.isspace() and not unicodedata.category(ch)[0] in "PZ")
 
 
 def trigrams(text):
@@ -67,11 +67,12 @@ def main():
                 missing[key] += 1
 
     candidates = []
-    stems = [(i, q.get("id", f"row-{i}"), q.get("stem", ""))
+    stems = [(q.get("id", f"row-{i}"), q.get("stem", ""))
              for i, q in enumerate(questions) if isinstance(q, dict)]
-    for pos, (row_a, id_a, stem_a) in enumerate(stems):
-        for row_b, id_b, stem_b in stems[pos + 1:]:
-            score = similarity(stem_a, stem_b)
+    shingles = [(qid, stem, trigrams(stem)) for qid, stem in stems]
+    for pos, (id_a, stem_a, left) in enumerate(shingles):
+        for id_b, stem_b, right in shingles[pos + 1:]:
+            score = len(left & right) / len(left | right) if left and right else 0.0
             if score >= args.similarity_threshold:
                 candidates.append((score, id_a, id_b, stem_a, stem_b))
 

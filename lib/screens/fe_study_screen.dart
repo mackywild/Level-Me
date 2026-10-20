@@ -52,7 +52,7 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
   body:ListView(padding:const EdgeInsets.all(20),children:[
    const Text('STUDY TIMER',style:TextStyle(letterSpacing:3)),
    const SizedBox(height:16),
-   Center(child:Text(_clock,style:const TextStyle(fontSize:44,fontWeight:FontWeight.bold,fontFeatures:[FontFeature.tabularFigures()]))),
+   Center(child:Text(_clock,style:const TextStyle(fontSize:44,fontWeight:FontWeight.bold))),
    const SizedBox(height:12),
    Text(_watch.isRunning?'学習中':_watch.elapsed==Duration.zero?'開始待ち':'一時停止中',textAlign:TextAlign.center),
    const SizedBox(height:20),

@@ -11,7 +11,7 @@
       "46"
     ],
     "answerIndex": 2,
-    "explanation": "32+8+4+1=45。",
+    "explanation": "101101は各桁を右から1,2,4,8,16,32の重みとして読む。1の桁を合計すると32+8+4+1=45となるため、10進数では45である。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -30,7 +30,7 @@
       "512"
     ],
     "answerIndex": 1,
-    "explanation": "2の8乗-1=255。",
+    "explanation": "符号なしnビットでは0から2^n−1までを表せる。8ビットでは2^8=256通りなので、最大値は255である。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -49,7 +49,7 @@
       "優先度順"
     ],
     "answerIndex": 1,
-    "explanation": "最後に格納したデータを最初に取り出すLIFO方式。",
+    "explanation": "スタックは後入れ先出し（LIFO）のデータ構造である。上に積んだ最後の要素から取り出すため、関数呼出しや式評価にも使われる。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -87,7 +87,7 @@
       "文字列のみ"
     ],
     "answerIndex": 1,
-    "explanation": "探索対象がキー順にソートされている必要がある。",
+    "explanation": "二分探索は中央の値と比較して探索範囲を半分に絞るため、配列がキー順に整列している必要がある。未整列のままでは、捨てた半分に目的の値がないと判断できない。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -106,7 +106,7 @@
       "暗号化されている"
     ],
     "answerIndex": 2,
-    "explanation": "主キーは行を一意に特定しNULLを許さない。",
+    "explanation": "主キーは表の各行を一意に識別し、NULLを許さない。重複する行や識別不能な値を防ぐため、候補キーの中から主キーを定める。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -125,7 +125,7 @@
       "HAVING"
     ],
     "answerIndex": 3,
-    "explanation": "HAVINGはGROUP BYによるグループの集約結果を条件で絞る。",
+    "explanation": "WHEREはグループ化より前に個々の行を絞り込み、HAVINGはGROUP BYで集約した後のグループを絞り込む。集約関数の条件には通常HAVINGを使う。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -144,7 +144,7 @@
       "ARP"
     ],
     "answerIndex": 1,
-    "explanation": "HTTPSはHTTPをTLSで保護する。",
+    "explanation": "HTTPSはHTTP通信をTLSで保護し、通信の暗号化と完全性保護、証明書によるサーバ認証を行う。TLS自体はメール送信やIPアドレス割当てのプロトコルではない。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -163,7 +163,7 @@
       "ファイル圧縮"
     ],
     "answerIndex": 1,
-    "explanation": "ドメイン名をIPアドレスなどに対応付ける。",
+    "explanation": "DNSはドメイン名などの名前をIPアドレスへ対応付ける分散型の名前解決システムである。Webページの暗号化や時刻同期はDNSの役割ではない。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -182,7 +182,7 @@
       "暗号鍵を共通化する"
     ],
     "answerIndex": 1,
-    "explanation": "一部が故障してもサービスを継続できる構成を用意する。",
+    "explanation": "冗長化では同じ役割を担う構成要素を複数用意し、一つが故障しても代替側でサービスを続けられるようにする。二重化だけでなく切替え手順や単一障害点の確認も必要である。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -220,7 +220,7 @@
       "作業数が最少の経路"
     ],
     "answerIndex": 1,
-    "explanation": "クリティカルパス上の遅延は原則として全体の完了日に影響する。",
+    "explanation": "クリティカルパスは作業ネットワーク上で所要時間の合計が最長となる経路であり、プロジェクト全体の最短完了期間を決める。経路上の作業が遅れると、通常は全体の完了も遅れる。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -277,7 +277,7 @@
       "どちらも不要"
     ],
     "answerIndex": 1,
-    "explanation": "秘密鍵は所有者のみが保持し、公開鍵は公開できる。",
+    "explanation": "公開鍵暗号では公開鍵を配布できる一方、秘密鍵は本人だけが保持する。受信者向け暗号化では受信者の公開鍵で暗号化し、対応する秘密鍵で復号する。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -296,7 +296,7 @@
       "21"
     ],
     "answerIndex": 2,
-    "explanation": "1回目7、2回目15。",
+    "explanation": "1回目は3×2+1=7、2回目は7×2+1=15である。2回目の計算には更新済みのx=7を使う。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -315,7 +315,7 @@
       "4"
     ],
     "answerIndex": 3,
-    "explanation": "最初の4より大きい要素がないため4。",
+    "explanation": "最大値を最初の要素4で初期化し、残りの1、3、2と順に比較する。どの値も4を超えないので最終的な最大値は4である。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -334,7 +334,7 @@
       "15"
     ],
     "answerIndex": 0,
-    "explanation": "偶数は2と4なので合計6。",
+    "explanation": "条件を満たす偶数は2と4である。合計は2+4=6となり、奇数の1、3、5は加算しない。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -353,7 +353,7 @@
       "データ圧縮"
     ],
     "answerIndex": 0,
-    "explanation": "試行回数を制限しパスワード推測攻撃の効率を下げる。",
+    "explanation": "ログイン失敗回数の制限は、パスワードを大量に試す総当たり攻撃の速度を抑える。アカウントロックの運用では、正規利用者への妨害を避ける解除手順も考慮する。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -372,7 +372,7 @@
       "表名を変える"
     ],
     "answerIndex": 0,
-    "explanation": "プレースホルダを使い入力をSQL構文と分離する。",
+    "explanation": "プレースホルダを使うパラメータ化クエリでは、SQL命令と入力値を別に扱うため、入力がSQL構文として解釈されにくい。単なる文字列連結やSQL文の短縮は有効な対策にならない。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -391,7 +391,7 @@
       "4D"
     ],
     "answerIndex": 1,
-    "explanation": "45=2×16+13なので16進数では2D。",
+    "explanation": "45を16で割ると商2、余り13となる。16進数では13をDと表すため、結果は2Dである。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -410,7 +410,7 @@
       "0010"
     ],
     "answerIndex": 0,
-    "explanation": "両方が1の桁のみ1になるため1000。",
+    "explanation": "ANDは両方の入力ビットが1の場合にだけ1を返す。1010 AND 1100を桁ごとに計算すると1000となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -429,7 +429,7 @@
       "99%"
     ],
     "answerIndex": 3,
-    "explanation": "両方停止する確率は0.1×0.1=0.01。1−0.01=0.99。",
+    "explanation": "独立した2台が並列稼働する構成では、両方が停止したときだけ全体が停止する。停止確率は0.1×0.1=0.01なので、稼働率は1−0.01=0.99、すなわち99%である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -448,7 +448,7 @@
       "16"
     ],
     "answerIndex": 2,
-    "explanation": "4KiB=4096=2の12乗バイトなので12ビット。",
+    "explanation": "4KiBは4×1024=4096バイトで、4096=2^12である。1バイト単位で4096個の位置を指定するには12ビットが必要となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -467,7 +467,7 @@
       "80億命令/秒"
     ],
     "answerIndex": 0,
-    "explanation": "20億クロック/秒÷4クロック/命令=5億命令/秒。",
+    "explanation": "2GHzは毎秒20億クロックである。1命令に平均4クロックかかるため、20億÷4=5億命令/秒となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -486,7 +486,7 @@
       "0.110"
     ],
     "answerIndex": 2,
-    "explanation": "0.625=0.5+0.125なので2進数では0.101。",
+    "explanation": "0.625は0.5+0.125、すなわち2^-1+2^-3である。2進小数の第1桁と第3桁が1なので0.101となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -505,7 +505,7 @@
       "O(n²)"
     ],
     "answerIndex": 1,
-    "explanation": "探索範囲を毎回半分にするので比較回数は対数的に増える。",
+    "explanation": "二分探索では各比較で探索範囲をほぼ半分にする。n個を調べる比較回数はおよそlog2(n)に比例するため、計算量はO(log n)である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -524,7 +524,7 @@
       "20"
     ],
     "answerIndex": 2,
-    "explanation": "4KiB=2の12乗バイトなのでオフセットは12ビット。",
+    "explanation": "ページ内オフセットはページ内のバイト位置を指定する。4KiB=4096バイト=2^12なので、オフセットには12ビットが必要である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -543,7 +543,7 @@
       "両方同じ値"
     ],
     "answerIndex": 2,
-    "explanation": "XORは二つの入力が異なる場合だけ1を返す。",
+    "explanation": "XORは入力が異なるときに1、同じときに0を返す。したがって0と1の組合せで結果が1となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -562,7 +562,7 @@
       "192.168.10.192"
     ],
     "answerIndex": 2,
-    "explanation": "/26のブロック幅は64。130は128〜191の範囲に属する。",
+    "explanation": "/26ではホスト部が最終オクテットの下位6ビットなので、サブネットは64個ずつ区切られる。130は128〜191の範囲に属するため、ネットワークアドレスは192.168.10.128である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -581,7 +581,7 @@
       "永続性"
     ],
     "answerIndex": 3,
-    "explanation": "永続性はコミット済みの変更が障害後も保持される性質。",
+    "explanation": "ACIDの永続性（Durability）は、コミットが完了した変更を障害後も失わない性質である。原子性は全て実行するか全て取り消す性質、一貫性は制約を保つ性質を指す。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -600,7 +600,7 @@
       "必ずエラーになる"
     ],
     "answerIndex": 1,
-    "explanation": "左外部結合は左表の全行を残し、一致しない右表の列をNULLとする。",
+    "explanation": "LEFT OUTER JOINは左表の行をすべて残す。右表に一致する行がない場合、右表由来の列はNULLとして返される。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -619,7 +619,7 @@
       "10日"
     ],
     "answerIndex": 1,
-    "explanation": "並行作業の長い方5日と後続作業2日を合計して7日。",
+    "explanation": "AとBは並行するので、完了までに長い方の5日を要する。その後Cに2日かかるため、最短期間は5+2=7日である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -638,7 +638,7 @@
       "120万円"
     ],
     "answerIndex": 1,
-    "explanation": "100万円×20%=20万円が期待損失額。",
+    "explanation": "期待損失は損失額に発生確率を掛けて求める。100万円×0.20=20万円であり、実際の損失が必ず20万円になるという意味ではない。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -657,7 +657,7 @@
       "2500個"
     ],
     "answerIndex": 2,
-    "explanation": "限界利益は1個2000円。300万円÷2000円=1500個。",
+    "explanation": "1個当たりの限界利益は販売単価5000円−変動費3000円=2000円である。固定費300万円を回収する数量は300万円÷2000円=1500個となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -676,7 +676,7 @@
       "12"
     ],
     "answerIndex": 0,
-    "explanation": "偶数は2と4なので合計6。",
+    "explanation": "配列のうち偶数は2と4で、5と1は加算しない。したがって合計は2+4=6である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -695,7 +695,7 @@
       "(3,7)"
     ],
     "answerIndex": 1,
-    "explanation": "順に(7,5),(7,2),(5,2)となり値が交換される。",
+    "explanation": "順に計算すると(a,b)は(2,5)→(7,5)→(7,2)→(5,2)となる。最後に元のbがaへ、元のaがbへ移るため値が交換される。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -714,7 +714,7 @@
       "13回"
     ],
     "answerIndex": 1,
-    "explanation": "13→6→3→1→0で4回更新する。",
+    "explanation": "整数商で順に更新すると13→6→3→1→0となる。更新は13から0へ至るまで4回行われる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -733,7 +733,7 @@
       "[1,4,2,3]"
     ],
     "answerIndex": 0,
-    "explanation": "3と1、4と2を交換するので[1,3,2,4]になる。",
+    "explanation": "左から隣同士を比較し、左が大きければ交換する。3と1、次に4と2を交換し、1巡後は[1,3,2,4]となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -752,7 +752,7 @@
       "32"
     ],
     "answerIndex": 2,
-    "explanation": "f(4)=4×3×2×1=24。",
+    "explanation": "再帰を展開するとf(4)=4×f(3)、f(3)=3×f(2)、f(2)=2×f(1)、f(1)=1である。したがって4×3×2×1=24となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -790,7 +790,7 @@
       "15"
     ],
     "answerIndex": 1,
-    "explanation": "初期値1に1+2+3+4=10を加えて11。",
+    "explanation": "初期値1にループ中の1、2、3、4を順に加える。1+(1+2+3+4)=11である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -820,15 +820,15 @@
     "id": "FE-B-0044",
     "section": "B",
     "domain": "algorithm",
-    "stem": "次の処理後のcountはいくつか。\ncount←0\nfor i=1..5:\n  for j=1..i:\n    count←count+1",
+    "stem": "関数h(n)をn=0なら1、n>0ならh(n−1)+h(n−1)と定義する。h(3)はいくつか。",
     "options": [
-      "5",
-      "10",
-      "15",
-      "25"
+      "4",
+      "6",
+      "8",
+      "16"
     ],
     "answerIndex": 2,
-    "explanation": "内側の反復回数は1,2,3,4,5回。合計は15回。",
+    "explanation": "h(0)=1であり、h(1)=2、h(2)=4、h(3)=8と各段階で2倍になる。再帰呼出しは分岐するため、nが増えると呼出し回数は急増する。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -847,7 +847,7 @@
       "7"
     ],
     "answerIndex": 1,
-    "explanation": "17→12→7→2で条件x>3が偽となる。",
+    "explanation": "xは17→12→7→2と更新される。2になった時点で条件x>3が偽になり、出力は2となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -858,15 +858,15 @@
     "id": "FE-B-0046",
     "section": "B",
     "domain": "algorithm",
-    "stem": "次の処理後の配列はどれか。\na=[5,2,8,1]\nfor i=0..2:\n  if a[i]>a[i+1]:\n    swap(a[i],a[i+1])",
+    "stem": "深さ優先探索（DFS）の特徴として適切なものはどれか。",
     "options": [
-      "[2,5,1,8]",
-      "[1,2,5,8]",
-      "[2,5,8,1]",
-      "[5,2,1,8]"
+      "隣接頂点をキューに入れ、始点から近い順に探索する",
+      "一つの経路を深く進み、行き止まりで戻って探索を続ける",
+      "重み付きグラフの最小コスト経路を必ず求める",
+      "各頂点をキーの昇順に整列する"
     ],
-    "answerIndex": 0,
-    "explanation": "5と2を交換し、5と8は交換せず、8と1を交換する。",
+    "answerIndex": 1,
+    "explanation": "深さ優先探索は一つの経路を可能な限り深く進み、行き止まりで戻って未訪問の頂点を調べる。スタックまたは再帰を使って実装でき、キューを使う幅優先探索とは探索順が異なる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -885,7 +885,7 @@
       "15"
     ],
     "answerIndex": 2,
-    "explanation": "g(6)=6+4+2+0=12。",
+    "explanation": "再帰を展開するとg(6)=6+g(4)=6+4+g(2)=6+4+2+g(0)である。g(0)=0なので合計は12となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -904,7 +904,7 @@
       "21"
     ],
     "answerIndex": 0,
-    "explanation": "奇数の1,3,5だけを加算するので9。",
+    "explanation": "iが奇数のときだけ加算するため、対象は1、3、5である。合計1+3+5=9となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -923,7 +923,7 @@
       "21"
     ],
     "answerIndex": 2,
-    "explanation": "i=1で3、i=2で8、i=3で19。",
+    "explanation": "更新式を順に適用すると、i=1で3、i=2で8、i=3で19となる。各回でxを更新してから次のiへ進む。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -942,7 +942,7 @@
       "9"
     ],
     "answerIndex": 0,
-    "explanation": "mは最小値を保持する。4→2と更新され最終値は2。",
+    "explanation": "mは配列を走査しながら最小値を保持する。4から始め、7では変わらず、2で更新され、その後9と5では変わらないので最終値は2である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -961,7 +961,7 @@
       "[4,3,2,1,5]"
     ],
     "answerIndex": 0,
-    "explanation": "両端を交換しながら中央へ進むので配列が逆順になる。",
+    "explanation": "iとjが両端から中央へ進み、各組を交換する。交換されるのは(0,4)と(1,3)で、中央の3はそのままなので逆順になる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -980,7 +980,7 @@
       "10"
     ],
     "answerIndex": 1,
-    "explanation": "3だけ加算しないので1+2+4=7。",
+    "explanation": "i=3ではcontinueにより後続の加算を飛ばす。加算されるのは1、2、4なので合計は7である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -999,7 +999,7 @@
       "4"
     ],
     "answerIndex": 1,
-    "explanation": "6と8の2要素が条件を満たす。",
+    "explanation": "条件a[i]>=6を満たすのは6と8である。該当する要素ごとにpを1増やすため、最終値は2となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1018,7 +1018,7 @@
       "11"
     ],
     "answerIndex": 1,
-    "explanation": "3回の反復でxは8から5に減る。",
+    "explanation": "whileループはyが正の間、xとyを同時に1ずつ減らす。y=3から0までに3回実行されるため、xは8−3=5となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1056,7 +1056,7 @@
       "[3,2,1]"
     ],
     "answerIndex": 0,
-    "explanation": "i=0で最小の1を先頭へ、i=1で2を中央へ移し昇順になる。",
+    "explanation": "各iについて後続の要素と比べ、小さい値が見つかるたびに交換する。まず1が先頭へ移り、次に2が中央へ移るため昇順の[1,2,3]となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1075,7 +1075,7 @@
       "36"
     ],
     "answerIndex": 2,
-    "explanation": "初期値1に2,3,4を順に掛けて24。",
+    "explanation": "ansを1で初期化し、配列の2、3、4を順に掛ける。1×2×3×4=24である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1094,7 +1094,7 @@
       "18"
     ],
     "answerIndex": 2,
-    "explanation": "各iを2回加算するため2×(1+2+3)=12。",
+    "explanation": "各iについて内側ループが2回実行されるので、各iの値を2回加える。x=2×(1+2+3)=12となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1105,15 +1105,15 @@
     "id": "FE-B-0059",
     "section": "B",
     "domain": "algorithm",
-    "stem": "次の処理後のa[2]はいくつか。\na=[1,1,1,1]\nfor i=1..3:\n  a[i]←a[i]+a[i−1]",
+    "stem": "3×3行列[[1,2,3],[4,5,6],[7,8,9]]の外周要素の合計はいくつか。",
     "options": [
-      "2",
-      "3",
-      "4",
-      "5"
+      "36",
+      "40",
+      "45",
+      "50"
     ],
     "answerIndex": 1,
-    "explanation": "a[1]=2、a[2]=1+2=3。",
+    "explanation": "全要素の合計は45であり、外周以外の中央要素5を除くと45−5=40となる。各外周要素を重複して数えないことに注意する。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1132,7 +1132,7 @@
       "16"
     ],
     "answerIndex": 2,
-    "explanation": "偶数i=0,2,4について0+4+8=12。",
+    "explanation": "0から4までの偶数iは0、2、4である。2iを加えるので0+4+8=12となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1151,7 +1151,7 @@
       "3"
     ],
     "answerIndex": 3,
-    "explanation": "最小値1がある添字3を保持する。添字は0始まり。",
+    "explanation": "最小値の位置をindexに保持して走査する。9、3、7、1の最小値1は添字3にあるため、表示される値は3である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1170,7 +1170,7 @@
       "256"
     ],
     "answerIndex": 3,
-    "explanation": "2→4→16→256と3回二乗する。",
+    "explanation": "ループごとにx自身を二乗する。値は2→4→16→256と変化し、3回実行後は256となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1189,7 +1189,7 @@
       "10"
     ],
     "answerIndex": 2,
-    "explanation": "添字0の4と添字2の3だけが条件を満たすため4+3=7。",
+    "explanation": "条件a[i]>iを確認する。添字0では4>0、添字2では3>2が成立し、合計4+3=7となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1208,7 +1208,7 @@
       "4"
     ],
     "answerIndex": 1,
-    "explanation": "xは1→3→6となり条件を満たしてループを抜ける。",
+    "explanation": "xは1回目に1、2回目に3、3回目に6となる。6>=6が成立した直後にbreakするため、4は加算されず結果は6である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1219,15 +1219,15 @@
     "id": "FE-B-0065",
     "section": "B",
     "domain": "algorithm",
-    "stem": "次の処理後の配列はどれか。\na=[1,2,3,4]\nfor i=0..1:\n  swap(a[i],a[3−i])",
+    "stem": "配列[1,2,3,4]を左へ1要素分だけ循環シフトした結果はどれか。",
     "options": [
-      "[4,3,2,1]",
-      "[4,2,3,1]",
-      "[3,4,1,2]",
-      "[1,3,2,4]"
+      "[2,3,4,1]",
+      "[4,1,2,3]",
+      "[2,1,3,4]",
+      "[1,2,3,4]"
     ],
     "answerIndex": 0,
-    "explanation": "最初に0番と3番、次に1番と2番を交換する。",
+    "explanation": "左へ1要素分循環シフトすると、先頭の1を末尾へ移し、残りを一つずつ左へ詰める。結果は[2,3,4,1]となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1257,15 +1257,15 @@
     "id": "FE-B-0067",
     "section": "B",
     "domain": "algorithm",
-    "stem": "次の処理後のcountはいくつか。\ncount←0\nfor i=1..4:\n  for j=1..4:\n    if i<j: count←count+1",
+    "stem": "幅優先探索（BFS）で頂点Aから探索する。無向辺はA-B、A-C、B-D、C-Eで、隣接頂点はアルファベット順に調べる。訪問順はどれか。",
     "options": [
-      "4",
-      "6",
-      "8",
-      "10"
+      "A,B,C,D,E",
+      "A,B,D,C,E",
+      "A,C,E,B,D",
+      "A,D,B,E,C"
     ],
-    "answerIndex": 1,
-    "explanation": "i<jとなる組は(1,2),(1,3),(1,4),(2,3),(2,4),(3,4)の6組。",
+    "answerIndex": 0,
+    "explanation": "BFSはキューを使い、近い頂点から順に訪問する。Aの隣接頂点B、Cを先に登録し、その後BからD、CからEへ進むため順序はA,B,C,D,Eとなる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1303,7 +1303,7 @@
       "6"
     ],
     "answerIndex": 1,
-    "explanation": "3だけ除き1+2+4+5=12。",
+    "explanation": "i=3のときcontinueで加算を飛ばす。残る1、2、4、5を合計して12となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1314,15 +1314,15 @@
     "id": "FE-B-0070",
     "section": "B",
     "domain": "algorithm",
-    "stem": "次の処理後のa[3]はいくつか。\na=[1,2,3,4]\nfor i=1..3:\n  a[i]←a[i]+a[i−1]",
+    "stem": "行列[[1,2,3],[4,5,6]]を転置した結果はどれか。",
     "options": [
-      "4",
-      "7",
-      "9",
-      "10"
+      "[[1,4],[2,5],[3,6]]",
+      "[[3,2,1],[6,5,4]]",
+      "[[1,2],[3,4],[5,6]]",
+      "[[1,4,2],[5,3,6]]"
     ],
-    "answerIndex": 3,
-    "explanation": "a[1]=3、a[2]=6、a[3]=10と左から更新する。",
+    "answerIndex": 0,
+    "explanation": "転置では元の行が列、元の列が行になる。元の1行目[1,2,3]が転置後の各行の先頭列を構成し、結果は3行2列となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1341,7 +1341,7 @@
       "10"
     ],
     "answerIndex": 0,
-    "explanation": "20→10→5→2でx>=5が偽となる。",
+    "explanation": "整数商で更新すると20→10→5→2となる。2ではx>=5が偽なのでループが終わり、結果は2である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1352,15 +1352,15 @@
     "id": "FE-B-0072",
     "section": "B",
     "domain": "algorithm",
-    "stem": "次の処理後のresultはいくつか。\na=[2,4,6,8,10]\nresult←0\nfor i=0..4:\n  if i mod 2=0: result←result+a[i]",
+    "stem": "リスト[2,3,3,3,5,5]を連長圧縮し、値と連続回数の組で表す。圧縮結果の組数はいくつか。",
     "options": [
-      "12",
-      "18",
-      "20",
-      "30"
+      "2",
+      "3",
+      "4",
+      "6"
     ],
     "answerIndex": 1,
-    "explanation": "添字0,2,4の2+6+10=18。",
+    "explanation": "連続する同じ値を一つにまとめると、(2,1)、(3,3)、(5,2)の3組になる。要素数6ではなく、値の連続ブロック数を数える。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1436,7 +1436,7 @@
       "ページの文字数"
     ],
     "answerIndex": 1,
-    "explanation": "証明書の有効期限、信頼の連鎖、接続先ホスト名との一致などを検証する。",
+    "explanation": "証明書検証では有効期限、認証局からの信頼の連鎖、接続先ホスト名との一致などを確認する。表示内容だけでなく検証結果が正常であることが重要である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1455,7 +1455,7 @@
       "平文保存"
     ],
     "answerIndex": 0,
-    "explanation": "最小権限の原則は業務に必要な権限だけを付与して被害範囲を抑える。",
+    "explanation": "最小権限の原則では、利用者や管理者に業務で必要な権限だけを与える。不要な権限を減らすことで、誤操作やアカウント侵害時の影響範囲を抑えられる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1466,7 +1466,7 @@
     "id": "FE-A-0078",
     "section": "A",
     "domain": "technology",
-    "stem": "通信速度100Mbpsで50MBのデータを理論上転送する時間は何秒か。ただし通信効率は100%とする。",
+    "stem": "通信速度100Mbpsで50MB（1MB=10^6バイト）のデータを理論上転送する時間は何秒か。ただし通信効率は100%とする。",
     "options": [
       "0.5秒",
       "4秒",
@@ -1474,7 +1474,7 @@
       "40秒"
     ],
     "answerIndex": 1,
-    "explanation": "50MB=400Mbit。400Mbit÷100Mbit/秒=4秒。",
+    "explanation": "通信速度はビット毎秒なので、50MBを400Mbitとして換算する（1MB=10^6バイトとする）。400Mbit÷100Mbit/秒=4秒であり、実際の通信ではプロトコルのオーバヘッドで長くなる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1493,7 +1493,7 @@
       "ボイス・コッド正規形"
     ],
     "answerIndex": 0,
-    "explanation": "第1正規形では各属性が原子的な値を持つようにする。",
+    "explanation": "第1正規形では、各列の値を分割不能な原子的値として扱い、繰返し項目を持たせない。これにより検索・更新時の扱いを明確にできる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1531,7 +1531,7 @@
       "190万円"
     ],
     "answerIndex": 3,
-    "explanation": "初期費用100+30万円と運用20×3万円を合計して190万円。",
+    "explanation": "初期費用は開発100万円+テスト30万円=130万円である。3年間の運用費60万円を加えると、単純な総保有費用は190万円となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1550,7 +1550,7 @@
       "600万円"
     ],
     "answerIndex": 1,
-    "explanation": "利益=売上高−変動費−固定費=800−480−200=120万円。",
+    "explanation": "利益は売上高から変動費と固定費を差し引く。800−480−200=120万円であり、売上高と変動費の差だけでは利益にならない。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1797,7 +1797,7 @@
       "O(n²)"
     ],
     "answerIndex": 0,
-    "explanation": "先頭ポインタと新要素の参照を更新するだけなので一定時間で挿入できる。",
+    "explanation": "先頭への挿入では、新ノードの次ポインタと先頭ポインタを更新するだけでよい。リスト全体を走査しないため、要素数nに依存しないO(1)である。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1835,7 +1835,7 @@
       "O(n² log n)"
     ],
     "answerIndex": 2,
-    "explanation": "ヒープ構築と各要素の取り出しにより全体でO(n log n)となる。",
+    "explanation": "ヒープソートはヒープを構築した後、最大値または最小値をn回取り出す。各取り出しにO(log n)かかるため、全体はO(n log n)となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1854,7 +1854,7 @@
       "A AND NOT B"
     ],
     "answerIndex": 1,
-    "explanation": "ド・モルガンの法則よりANDの否定は各項の否定のORに等しい。",
+    "explanation": "ド・モルガンの法則では、AND全体の否定は各項を否定したORに等しい。したがってNOT(A AND B)=NOT A OR NOT Bである。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1873,7 +1873,7 @@
       "ビットごとのAND"
     ],
     "answerIndex": 0,
-    "explanation": "近い値を引くと有効数字が失われ、相対誤差が大きくなる場合がある。",
+    "explanation": "ほぼ等しい二つの浮動小数点数を引くと、上位桁が相殺されて有効桁数が減ることがある。これを桁落ちといい、残った値に対する相対誤差が大きくなり得る。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1930,7 +1930,7 @@
       "DELETE"
     ],
     "answerIndex": 0,
-    "explanation": "GETはリソースの表現を取得するためのHTTPメソッド。",
+    "explanation": "REST APIではGETをリソース表現の取得に使う。一般にGETは状態を変更しない操作として設計され、リソース更新や削除には別のメソッドを使う。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -1987,7 +1987,7 @@
       "右・左・根"
     ],
     "answerIndex": 1,
-    "explanation": "中間順走査は左部分木、根、右部分木の順で訪問する。",
+    "explanation": "中間順走査は左部分木、根、右部分木の順に訪問する。二分探索木ではこの順に訪問すると、キーが昇順に並ぶ。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2006,7 +2006,7 @@
       "必ず学習時間が短縮する"
     ],
     "answerIndex": 0,
-    "explanation": "過学習では訓練データの特徴やノイズを覚え込み、汎化性能が悪化する。",
+    "explanation": "過学習は訓練データに強く適合しすぎ、訓練データにない例への汎化性能が低くなる状態である。検証データで性能を確認し、正則化などで抑える。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2082,7 +2082,7 @@
       "社内イベントの服装"
     ],
     "answerIndex": 0,
-    "explanation": "SLAは可用性や応答時間などサービス提供条件を合意する文書。",
+    "explanation": "SLAにはサービスの可用性、応答時間、サポート時間などの品質目標や、提供者と利用者の責任範囲を定める。変数名や端末設定を決める文書ではない。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2120,7 +2120,7 @@
       "必ず全サーバを停止する"
     ],
     "answerIndex": 0,
-    "explanation": "問題管理はインシデントの原因分析や恒久対策に重点を置く。",
+    "explanation": "問題管理はインシデントの根本原因を調査し、再発を防ぐ恒久対策を進める。インシデント管理がサービスの迅速な復旧を重視するのと役割が異なる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2139,7 +2139,7 @@
       "変更後の広告文だけ"
     ],
     "answerIndex": 0,
-    "explanation": "変更の影響、リスク、承認、ロールバック計画などを事前に確認する。",
+    "explanation": "変更前に影響範囲、リスク、関係者への影響、承認要否を評価する。問題発生時に元へ戻す手順も準備しておくと、変更による停止時間を抑えやすい。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2158,7 +2158,7 @@
       "最大桁数と無関係な値だけ"
     ],
     "answerIndex": 0,
-    "explanation": "不具合が発生しやすい境界付近の値を選んで検証する。",
+    "explanation": "境界値分析では、入力範囲の最小値・最大値と、その直前・直後の値を重点的に試す。境界条件の比較演算や配列添字の誤りを発見しやすい。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2196,7 +2196,7 @@
       "ソースコードを自動削除する"
     ],
     "answerIndex": 0,
-    "explanation": "修正や追加による既存機能への副作用を検出するために行う。",
+    "explanation": "回帰テストは変更や修正によって、以前動いていた機能が壊れていないかを確かめる。変更箇所だけでなく、影響を受ける関連機能も再確認する。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2234,7 +2234,7 @@
       "負け犬"
     ],
     "answerIndex": 0,
-    "explanation": "PPMでは高成長・高シェアの事業を花形（スター）に分類する。",
+    "explanation": "PPMでは市場成長率と相対的市場占有率で事業を分類する。高成長・高シェアの事業は花形で、成長市場で競争力を保つための投資が必要となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2253,7 +2253,7 @@
       "当期純利益"
     ],
     "answerIndex": 2,
-    "explanation": "売上総利益（粗利益）は売上高−売上原価で求める。",
+    "explanation": "売上高から売上原価を引いたものが売上総利益である。販売費及び一般管理費を差し引いた後の利益は営業利益となる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2272,7 +2272,7 @@
       "固定費に対する在庫数量"
     ],
     "answerIndex": 0,
-    "explanation": "ROIは投資利益率であり投資額に対する利益の割合を示す。",
+    "explanation": "ROIは投資に対してどれだけ利益を得たかを割合で示す指標である。定義によって利益や投資額の扱いが異なる場合があるため、比較時は算出条件をそろえる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2291,7 +2291,7 @@
       "すべての障害を完全に防ぐ"
     ],
     "answerIndex": 0,
-    "explanation": "事業継続計画は危機発生時に重要業務を維持・復旧するための計画。",
+    "explanation": "BCPは災害や重大障害が起きた際に、重要業務を継続または許容時間内に復旧するための計画である。全ての障害を防止する計画ではなく、影響を想定して準備する。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2310,7 +2310,7 @@
       "暗号アルゴリズムの鍵長だけ"
     ],
     "answerIndex": 0,
-    "explanation": "SCMは企業間も含めて調達から顧客までの物と情報の流れを最適化する。",
+    "explanation": "SCMは調達、生産、在庫、物流、販売などの流れを企業間も含めて最適化する考え方である。需要や供給の情報を共有し、全体の効率と顧客への供給を改善する。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2341,15 +2341,15 @@
     "section": "A",
     "domain": "technology",
     "subdomain": "基礎理論（数値表現）",
-    "stem": "2進数110101を10進数に変換した値はどれか。",
+    "stem": "二進化10進数（BCD）で10進数59を表すものはどれか。",
     "options": [
-      "51",
-      "52",
-      "53",
-      "54"
+      "0101 1001",
+      "0011 1011",
+      "1110 0110",
+      "0101 1010"
     ],
-    "answerIndex": 2,
-    "explanation": "各桁の重みを足すと32+16+4+1=53である。2進数の桁位置を右端から0として計算する。",
+    "answerIndex": 0,
+    "explanation": "BCDでは各10進数字を4ビットで個別に表す。5は0101、9は1001なので、59は0101 1001となる。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2459,11 +2459,11 @@
     "options": [
       "fより小さい",
       "fと等しい",
-      "2fより大きい",
+      "2f以上",
       "無関係"
     ],
     "answerIndex": 2,
-    "explanation": "理想的な帯域制限信号では、標本化周波数を最高周波数の2倍より大きくする必要がある。これを下回ると折返し雑音が生じ、元の周波数成分を区別できない。",
+    "explanation": "帯域制限された信号を復元するには、標本化周波数を最高周波数の少なくとも2倍にする。これを下回ると折返し雑音が生じるため、実用上は余裕を持たせることが多い。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2854,15 +2854,15 @@
     "section": "A",
     "domain": "technology",
     "subdomain": "ネットワーク（アドレス）",
-    "stem": "IPv4アドレス10.2.3.4/24が属するネットワークアドレスはどれか。",
+    "stem": "IPv4アドレス10.2.3.4/24で、同じサブネットのブロードキャストアドレスはどれか。",
     "options": [
-      "10.2.0.0",
       "10.2.3.0",
       "10.2.3.4",
+      "10.2.3.254",
       "10.2.3.255"
     ],
-    "answerIndex": 1,
-    "explanation": "/24は先頭24ビットがネットワーク部を表す。ホスト部の8ビットを0にするとネットワークアドレス10.2.3.0となる。",
+    "answerIndex": 3,
+    "explanation": "/24では先頭24ビットがネットワーク部で、残る8ビットがホスト部である。ブロードキャストアドレスではホスト部をすべて1にするため10.2.3.255となる。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -2892,15 +2892,15 @@
     "section": "A",
     "domain": "technology",
     "subdomain": "ネットワーク（プロトコル）",
-    "stem": "WebブラウザがWebサーバとの接続を暗号化するために用いる仕組みはどれか。",
+    "stem": "ネットワークの疎通確認で使われるpingコマンドが主に利用するプロトコルはどれか。",
     "options": [
-      "TLS",
-      "ARP",
-      "DHCP",
-      "ICMP"
+      "ICMP",
+      "SMTP",
+      "FTP",
+      "SNMP"
     ],
     "answerIndex": 0,
-    "explanation": "HTTPSではHTTP通信をTLSで保護する。TLSは通信の暗号化、完全性保護、サーバ認証に用いられ、ARPやDHCPは暗号化の仕組みではない。",
+    "explanation": "pingはICMPのエコー要求とエコー応答を使い、宛先との到達性や応答時間を確認する。ICMPはメール送信やファイル転送のプロトコルではない。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -3006,15 +3006,15 @@
     "section": "A",
     "domain": "security",
     "subdomain": "情報セキュリティ（ハッシュ）",
-    "stem": "パスワード保管に一般的な高速ハッシュ関数だけを使うことが危険な理由はどれか。",
+    "stem": "メッセージ認証コード（MAC）を用いる主な目的はどれか。",
     "options": [
-      "大量の候補を高速に試されやすい",
-      "ハッシュ値から必ず元のパスワードを直接復号できる",
-      "ハッシュ値が毎回変化する",
-      "ネットワーク通信が暗号化される"
+      "共有鍵を知る相手からのメッセージか、改ざんがないかを確認する",
+      "通信内容を必ず圧縮する",
+      "公開情報だけで送信者の署名を検証する",
+      "通信経路のIPアドレスを隠す"
     ],
     "answerIndex": 0,
-    "explanation": "高速ハッシュだけでは攻撃者が多数の候補を短時間に試せる。パスワード保管ではソルトと計算コストを調整できる専用方式を使い、推測攻撃を遅くする。",
+    "explanation": "MACは共有鍵に基づいて生成し、受信側が再計算してメッセージの完全性と共有鍵保有者による認証を確認する。公開鍵による第三者検証可能なデジタル署名とは異なる。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -3082,15 +3082,15 @@
     "section": "A",
     "domain": "security",
     "subdomain": "情報セキュリティ（暗号）",
-    "stem": "暗号化されていないWi-Fiを利用する場合に、Web通信を保護する対策として適切なのはどれか。",
+    "stem": "受信者を偽サイトへ誘導するフィッシングメールを見分ける行動として適切なのはどれか。",
     "options": [
-      "HTTPSであることを確認する",
-      "URLのドメイン名を短くする",
-      "画面解像度を下げる",
-      "Cookieをすべて平文で共有する"
+      "送信元表示だけで判断せず、リンク先のドメインを確認し、公式の入口からアクセスする",
+      "表示された会社名を信頼して添付をすぐ開く",
+      "メールのURLを短縮して確認を省略する",
+      "同じメールを全取引先へ転送する"
     ],
     "answerIndex": 0,
-    "explanation": "HTTPSはTLSにより通信内容を暗号化し、接続先サーバの証明書を検証する。ただし偽サイトへの入力を自動で防ぐものではないため、接続先名も確認する。",
+    "explanation": "表示名やロゴは偽装できるため、リンク先の実際のドメインを確認し、可能なら公式アプリやブックマークからアクセスする。認証情報をメールのリンク先で安易に入力しない。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -3120,15 +3120,15 @@
     "section": "A",
     "domain": "technology",
     "subdomain": "データベース（SQL）",
-    "stem": "SQLで集約関数の結果に別名を付け、結果列を条件にグループを絞り込む句はどれか。",
+    "stem": "SQLでCOUNT(*)とCOUNT(列名)の違いとして正しいものはどれか。",
     "options": [
-      "HAVING",
-      "WHERE",
-      "FROM",
-      "VALUES"
+      "COUNT(*)は行数を数え、COUNT(列名)はその列がNULLでない行を数える",
+      "COUNT(*)はNULLだけを数える",
+      "COUNT(列名)は重複行を必ず除外する",
+      "両者は常に同じ結果になる"
     ],
     "answerIndex": 0,
-    "explanation": "HAVINGはGROUP BYで作ったグループを集約後に絞り込む。WHEREは集約前の行を選択するため、集約関数の条件には通常HAVINGを用いる。",
+    "explanation": "COUNT(*)は条件に合う行を数える。COUNT(列名)は指定列がNULLでない値を持つ行だけを数えるため、その列にNULLがあれば結果が異なることがある。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -3329,15 +3329,15 @@
     "section": "A",
     "domain": "technology",
     "subdomain": "ソフトウェア（API）",
-    "stem": "HTTPのPOSTメソッドを使う一般的な場面はどれか。",
+    "stem": "HTTPのPUTメソッドの一般的な性質として適切なものはどれか。",
     "options": [
-      "サーバへデータを送信し、処理やリソース作成を依頼する",
-      "既存リソースの表現を取得するだけ",
-      "通信経路を暗号化する",
-      "IPアドレスを自動配布する"
+      "同じ要求を複数回行っても最終状態が同じになることを意図する",
+      "サーバからリソースを取得するだけに使う",
+      "通信を暗号化する",
+      "DNSレコードを更新する専用方式である"
     ],
     "answerIndex": 0,
-    "explanation": "POSTはサーバへデータを送って処理を依頼する際に使われ、新しいリソース作成などに利用される。GETは一般に取得、DELETEは削除を意図するメソッドである。",
+    "explanation": "PUTは指定したリソースの作成または置換に使われ、同じ要求を繰り返しても意図する最終状態が変わらない冪等性を持つ設計が一般的である。通信の暗号化はTLSが担う。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -3899,15 +3899,15 @@
     "section": "B",
     "domain": "algorithm",
     "subdomain": "アルゴリズムとプログラミング（配列）",
-    "stem": "配列[2,4,6,8,10]について、添字を0から数え、奇数番目の添字の値を合計する。合計はどれか。",
+    "stem": "昇順配列[1,3,4,6,8,10]から、和が10になる異なる2要素の組を全て求める。組の数はいくつか。",
     "options": [
-      "6",
-      "10",
-      "12",
-      "14"
+      "1組",
+      "2組",
+      "3組",
+      "4組"
     ],
-    "answerIndex": 2,
-    "explanation": "奇数添字は1と3で、それぞれの値は4と8である。したがって合計は4+8=12となる。",
+    "answerIndex": 0,
+    "explanation": "配列中で和が10になる異なる2要素は4と6の組だけである。したがって条件を満たす組は1組となる。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -3956,15 +3956,15 @@
     "section": "B",
     "domain": "algorithm",
     "subdomain": "アルゴリズムとプログラミング（反復）",
-    "stem": "次の処理後のxはいくつか。x←2; for i=1..4: x←x+i",
+    "stem": "変数x=1とし、iを1から3まで増やすごとにx←2×xを実行する。終了時のxはいくつか。",
     "options": [
-      "10",
-      "12",
-      "14",
+      "4",
+      "6",
+      "8",
       "16"
     ],
-    "answerIndex": 1,
-    "explanation": "xは初期値2に1+2+3+4を加えた値になる。2+10=12なので答えは12となる。",
+    "answerIndex": 2,
+    "explanation": "各反復でxを2倍するため、1→2→4→8となる。3回実行後の値は8である。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -3975,15 +3975,15 @@
     "section": "B",
     "domain": "algorithm",
     "subdomain": "アルゴリズムとプログラミング（反復）",
-    "stem": "次の処理が終了したときのxはいくつか。x←3; while x<20: x←x×2",
+    "stem": "配列[4,7,2,9]を走査し、直前の要素より小さい要素の個数を数える。先頭要素は比較対象にしない。個数はいくつか。",
     "options": [
-      "12",
-      "18",
-      "24",
-      "30"
+      "1",
+      "2",
+      "3",
+      "4"
     ],
-    "answerIndex": 2,
-    "explanation": "反復ごとにxは3→6→12→24となる。24になった時点でx<20が偽となり、処理が終了する。",
+    "answerIndex": 0,
+    "explanation": "7は4より小さくなく、2は7より小さいため1個目、9は2より小さくない。比較対象となる2番目以降で条件を満たすのは2だけなので個数は1である。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -3994,15 +3994,15 @@
     "section": "B",
     "domain": "algorithm",
     "subdomain": "アルゴリズムとプログラミング（条件分岐）",
-    "stem": "次の処理後のcountはいくつか。count←0; for i=1..10: if i mod 3=0 then count←count+1",
+    "stem": "安定な整列アルゴリズムの性質として適切なものはどれか。",
     "options": [
-      "2",
-      "3",
-      "4",
-      "10"
+      "キーが等しい要素の元の相対順序を保つ",
+      "必ずO(1)の追加領域だけを使う",
+      "最悪時間計算量が必ずO(n log n)である",
+      "入力配列を変更しない"
     ],
-    "answerIndex": 1,
-    "explanation": "1から10までの3の倍数は3、6、9の3個である。条件が真になるたびcountを1増やすため、最終値は3となる。",
+    "answerIndex": 0,
+    "explanation": "安定性とは、整列キーが等しい要素どうしの元の順序が整列後も保たれる性質である。追加領域や時間計算量、入力を変更するかどうかとは別の特徴である。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -4013,15 +4013,15 @@
     "section": "B",
     "domain": "algorithm",
     "subdomain": "アルゴリズムとプログラミング（配列）",
-    "stem": "配列[5,1,4]に対して、隣接する要素を左から比較して大きい方を右へ交換する。1巡後の配列はどれか。",
+    "stem": "挿入ソートで配列[4,2,5,1]の先頭3要素を整列し終えた時点の配列はどれか。",
     "options": [
-      "[1,4,5]",
-      "[1,5,4]",
-      "[5,1,4]",
-      "[4,1,5]"
+      "[2,4,5,1]",
+      "[2,5,4,1]",
+      "[4,2,5,1]",
+      "[1,2,4,5]"
     ],
     "answerIndex": 0,
-    "explanation": "最初に5と1を交換して[1,5,4]、次に5と4を交換して[1,4,5]となる。1巡で最大値が末尾へ移動する。",
+    "explanation": "最初の2要素を整列すると[2,4,5,1]となる。次の5は既に4より大きいため、先頭3要素の整列後も[2,4,5]のままである。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -4032,15 +4032,15 @@
     "section": "B",
     "domain": "algorithm",
     "subdomain": "アルゴリズムとプログラミング（配列）",
-    "stem": "選択ソートで配列[7,3,5,1]の先頭位置に置く値はどれか。",
+    "stem": "最大ヒープの配列表現で、親ノードが満たす性質はどれか。",
     "options": [
-      "1",
-      "3",
-      "5",
-      "7"
+      "親の値が子の値以上である",
+      "親の値が子の値以下である",
+      "配列全体が昇順である",
+      "葉がすべて同じ値である"
     ],
     "answerIndex": 0,
-    "explanation": "選択ソートは未整列部分から最小値を探して先頭と交換する。配列全体の最小値1が先頭位置に置かれる。",
+    "explanation": "最大ヒープでは各親の値がその子の値以上であり、根に最大値が置かれる。配列全体が完全に整列されている必要はない。",
     "difficulty": 2,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -4146,15 +4146,15 @@
     "section": "B",
     "domain": "algorithm",
     "subdomain": "アルゴリズムとプログラミング（キュー）",
-    "stem": "空のキューにA、Bをenqueueし、1回dequeueした後にCをenqueueする。次のdequeueで取り出されるものはどれか。",
+    "stem": "優先度付きキューに(値,優先度)=(X,3),(Y,1),(Z,2)の順に追加する。優先度の数値が小さいものを先に取り出すとき、次に取り出される値はどれか。",
     "options": [
-      "A",
-      "B",
-      "C",
-      "空"
+      "X",
+      "Y",
+      "Z",
+      "登録順により決まらない"
     ],
     "answerIndex": 1,
-    "explanation": "最初のdequeueで先に登録したAが取り出され、キューにはBが残る。Cを後から追加してもBが先頭なので、次はBが取り出される。",
+    "explanation": "優先度が最も高い（数値が最小の）要素はYの優先度1である。登録順ではXが先だが、優先度付きキューでは優先度が取り出し順を決める。",
     "difficulty": 1,
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
@@ -4184,7 +4184,7 @@
     "section": "B",
     "domain": "algorithm",
     "subdomain": "アルゴリズムとプログラミング（グラフ）",
-    "stem": "重み付きグラフで、始点から各頂点への最短距離を求める代表的なアルゴリズムはどれか。",
+    "stem": "辺の重みが全て非負の重み付きグラフで、始点から各頂点への最短距離を求める代表的なアルゴリズムはどれか。",
     "options": [
       "ダイクストラ法",
       "クイックソート",

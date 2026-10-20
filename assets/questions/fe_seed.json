@@ -712,5 +712,345 @@
     "difficulty": 2,
     "reviewStatus": "initial-draft",
     "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0043",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後の配列aはどれか。\na=[1,2,3,4]\nfor i=0..2:\n  a[i+1]←a[i]+a[i+1]",
+    "options": [
+      "[1,3,6,10]",
+      "[1,3,5,7]",
+      "[1,2,5,9]",
+      "[1,2,3,10]"
+    ],
+    "answerIndex": 0,
+    "explanation": "i=0でa[1]=3、i=1でa[2]=6、i=2でa[3]=10。更新後の値を次の計算で利用する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0044",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のcountはいくつか。\ncount←0\nfor i=1..5:\n  for j=1..i:\n    count←count+1",
+    "options": [
+      "5",
+      "10",
+      "15",
+      "25"
+    ],
+    "answerIndex": 2,
+    "explanation": "内側の反復回数は1,2,3,4,5回。合計は15回。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0045",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理の出力はどれか。\nx←17\nwhile x>3:\n  x←x−5\n出力 x",
+    "options": [
+      "−3",
+      "2",
+      "3",
+      "7"
+    ],
+    "answerIndex": 1,
+    "explanation": "17→12→7→2で条件x>3が偽となる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0046",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後の配列はどれか。\na=[5,2,8,1]\nfor i=0..2:\n  if a[i]>a[i+1]:\n    swap(a[i],a[i+1])",
+    "options": [
+      "[2,5,1,8]",
+      "[1,2,5,8]",
+      "[2,5,8,1]",
+      "[5,2,1,8]"
+    ],
+    "answerIndex": 0,
+    "explanation": "5と2を交換し、5と8は交換せず、8と1を交換する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0047",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の関数g(6)の戻り値はどれか。\ng(n):\n  if n<=0: return 0\n  return n+g(n−2)",
+    "options": [
+      "6",
+      "9",
+      "12",
+      "15"
+    ],
+    "answerIndex": 2,
+    "explanation": "g(6)=6+4+2+0=12。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0048",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のsumはいくつか。\nsum←0\nfor i=1..6:\n  if i mod 2=1:\n    sum←sum+i",
+    "options": [
+      "9",
+      "12",
+      "15",
+      "21"
+    ],
+    "answerIndex": 0,
+    "explanation": "奇数の1,3,5だけを加算するので9。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0049",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のxはいくつか。\nx←1\nfor i=1..3:\n  x←x×2+i",
+    "options": [
+      "11",
+      "15",
+      "19",
+      "21"
+    ],
+    "answerIndex": 2,
+    "explanation": "i=1で3、i=2で8、i=3で19。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0050",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理で表示される値はどれか。\na=[4,7,2,9,5]\nm←a[0]\nfor i=1..4:\n  if a[i]<m: m←a[i]\n出力 m",
+    "options": [
+      "2",
+      "4",
+      "5",
+      "9"
+    ],
+    "answerIndex": 0,
+    "explanation": "mは最小値を保持する。4→2と更新され最終値は2。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0051",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後の配列aはどれか。\na=[1,2,3,4,5]\ni←0\nj←4\nwhile i<j:\n  swap(a[i],a[j])\n  i←i+1\n  j←j−1",
+    "options": [
+      "[5,4,3,2,1]",
+      "[5,2,3,4,1]",
+      "[1,4,3,2,5]",
+      "[4,3,2,1,5]"
+    ],
+    "answerIndex": 0,
+    "explanation": "両端を交換しながら中央へ進むので配列が逆順になる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0052",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のresultはいくつか。\nresult←0\nfor i=1..4:\n  if i=3: continue\n  result←result+i",
+    "options": [
+      "6",
+      "7",
+      "8",
+      "10"
+    ],
+    "answerIndex": 1,
+    "explanation": "3だけ加算しないので1+2+4=7。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0053",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のpはいくつか。\na=[2,4,6,8]\np←0\nfor i=0..3:\n  if a[i]>=6:\n    p←p+1",
+    "options": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "answerIndex": 1,
+    "explanation": "6と8の2要素が条件を満たす。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0054",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のxはいくつか。\nx←8\ny←3\nwhile y>0:\n  x←x−1\n  y←y−1",
+    "options": [
+      "3",
+      "5",
+      "8",
+      "11"
+    ],
+    "answerIndex": 1,
+    "explanation": "3回の反復でxは8から5に減る。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0055",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の関数f(5)の値はどれか。\nf(n):\n  if n<=1: return n\n  return f(n−1)+f(n−2)",
+    "options": [
+      "3",
+      "5",
+      "8",
+      "13"
+    ],
+    "answerIndex": 1,
+    "explanation": "f(0)=0,f(1)=1から順に1,2,3,5と進む。f(5)=5。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0056",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後の配列aはどれか。\na=[3,1,2]\nfor i=0..1:\n  for j=i+1..2:\n    if a[i]>a[j]: swap(a[i],a[j])",
+    "options": [
+      "[1,2,3]",
+      "[1,3,2]",
+      "[2,1,3]",
+      "[3,2,1]"
+    ],
+    "answerIndex": 0,
+    "explanation": "i=0で最小の1を先頭へ、i=1で2を中央へ移し昇順になる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0057",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のansはいくつか。\na=[2,3,4]\nans←1\nfor i=0..2:\n  ans←ans×a[i]",
+    "options": [
+      "9",
+      "12",
+      "24",
+      "36"
+    ],
+    "answerIndex": 2,
+    "explanation": "初期値1に2,3,4を順に掛けて24。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0058",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理でxの最終値はいくつか。\nx←0\nfor i=1..3:\n  for j=1..2:\n    x←x+i",
+    "options": [
+      "6",
+      "9",
+      "12",
+      "18"
+    ],
+    "answerIndex": 2,
+    "explanation": "各iを2回加算するため2×(1+2+3)=12。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0059",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のa[2]はいくつか。\na=[1,1,1,1]\nfor i=1..3:\n  a[i]←a[i]+a[i−1]",
+    "options": [
+      "2",
+      "3",
+      "4",
+      "5"
+    ],
+    "answerIndex": 1,
+    "explanation": "a[1]=2、a[2]=1+2=3。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0060",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のsはいくつか。\ns←0\nfor i=0..4:\n  if i mod 2=0: s←s+2*i",
+    "options": [
+      "8",
+      "10",
+      "12",
+      "16"
+    ],
+    "answerIndex": 2,
+    "explanation": "偶数i=0,2,4について0+4+8=12。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0061",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理で最終的に表示される値はどれか。\na=[9,3,7,1]\nindex←0\nfor i=1..3:\n  if a[i]<a[index]: index←i\n出力 index",
+    "options": [
+      "0",
+      "1",
+      "2",
+      "3"
+    ],
+    "answerIndex": 3,
+    "explanation": "最小値1がある添字3を保持する。添字は0始まり。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0062",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のxはいくつか。\nx←2\nfor i=1..3:\n  x←x×x",
+    "options": [
+      "16",
+      "64",
+      "128",
+      "256"
+    ],
+    "answerIndex": 3,
+    "explanation": "2→4→16→256と3回二乗する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
   }
 ]

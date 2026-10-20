@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import '../models/quest.dart';
 import '../models/stat_type.dart';
+import 'fe_study_screen.dart';
 class QuestsScreen extends StatefulWidget{
  const QuestsScreen({super.key,required this.controller});
  final AppController controller;
@@ -25,7 +26,7 @@ class _QuestsScreenState extends State<QuestsScreen>{
      leading:Icon(done?Icons.check_circle:Icons.bolt,color:done?Colors.greenAccent:Colors.amberAccent),
      title:Text(q.title,style:TextStyle(decoration:done?TextDecoration.lineThrough:null)),
      subtitle:Text('${label(q.cadence)} | ${q.rewards.map((r)=>'${r.stat.shortLabel} +${r.exp}').join(' / ')}'),
-     trailing:done?const Text('CLEARED'):FilledButton(onPressed:()=>widget.controller.completeQuest(q),child:const Text('CLEAR'))
+     trailing:done?const Text('CLEARED'):FilledButton(onPressed:()=>q.id=='starter-study' ? Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>FeStudyScreen(controller:widget.controller,quest:q))) : widget.controller.completeQuest(q),child:Text(q.id=='starter-study'?'START':'CLEAR'))
     ));
    })),
   ]),

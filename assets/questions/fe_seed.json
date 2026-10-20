@@ -6914,5 +6914,936 @@
     "reviewStatus": "reviewed",
     "syllabusVersion": "IPA-FE-Ver.9.2",
     "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0284",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "基礎理論（確率）",
+    "stem": "検査対象の不良率が2%であるとき、100個中の不良品数の期待値はいくつか。",
+    "options": [
+      "0.2個",
+      "2個",
+      "20個",
+      "98個"
+    ],
+    "answerIndex": 1,
+    "explanation": "期待値は個数に不良率を掛ける。100×0.02=2個であり、実際に毎回必ず2個になるという意味ではない。",
+    "difficulty": 1,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0285",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "基礎理論（確率）",
+    "stem": "A社の製品が全体の60%を占め、不良率1%。B社の製品が40%で不良率2%。全体の不良率はどれか。",
+    "options": [
+      "1.0%",
+      "1.4%",
+      "1.6%",
+      "3.0%"
+    ],
+    "answerIndex": 1,
+    "explanation": "全体の不良率は加重平均で求め、0.6×1%+0.4×2%=1.4%である。各社の割合を考慮せず単純平均してはいけない。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0286",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "基礎理論（数値表現）",
+    "stem": "8ビット符号なし整数で250に10を加算した結果はどれか。",
+    "options": [
+      "4",
+      "250",
+      "260",
+      "オーバーフローは起きない"
+    ],
+    "answerIndex": 0,
+    "explanation": "8ビット符号なし整数の範囲は0〜255である。250+10=260は範囲を超え、8ビットで保持すると下位8ビットの4となりオーバーフローする。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0287",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "基礎理論（符号化）",
+    "stem": "音声の量子化ビット数を8ビットから16ビットに増やすと、一般にどうなるか。",
+    "options": [
+      "振幅をより細かく表現できる",
+      "標本化周波数が自動で2倍になる",
+      "記録データ量が半分になる",
+      "アナログ信号に戻せなくなる"
+    ],
+    "answerIndex": 0,
+    "explanation": "量子化ビット数が増えると振幅の段階数が増え、量子化誤差を小さくできる。標本化周波数とは別の設定であり、1標本当たりのデータ量は増える。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0288",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "コンピュータシステム（データ表現）",
+    "stem": "ビッグエンディアンの説明として適切なものはどれか。",
+    "options": [
+      "複数バイト値の最上位バイトを最も小さいアドレスに置く",
+      "複数バイト値の最下位バイトを最も小さいアドレスに置く",
+      "整数を必ず文字列で保存する",
+      "データを暗号化してから保存する"
+    ],
+    "answerIndex": 0,
+    "explanation": "ビッグエンディアンは多バイト値の上位バイトから低いアドレスに並べる方式である。下位バイトから並べる方式はリトルエンディアンという。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0289",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "コンピュータシステム（記憶装置）",
+    "stem": "ページ置換アルゴリズムFIFOの説明として適切なものはどれか。",
+    "options": [
+      "最も早く主記憶へ読み込まれたページを置換する",
+      "最も最近使ったページを置換する",
+      "使用頻度が最も高いページを置換する",
+      "ページ番号が最大のものを置換する"
+    ],
+    "answerIndex": 0,
+    "explanation": "FIFOはページが主記憶に入った順に管理し、最も古く読み込まれたページを置換する。最終参照時刻に基づくLRUとは基準が異なる。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0290",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "コンピュータシステム（OS）",
+    "stem": "セマフォを用いる目的として適切なものはどれか。",
+    "options": [
+      "共有資源への同時アクセス数を制御する",
+      "仮想アドレスを物理アドレスへ変換する",
+      "ファイルを圧縮する",
+      "ネットワーク名を解決する"
+    ],
+    "answerIndex": 0,
+    "explanation": "セマフォはカウンタと操作により、共有資源を同時に利用できるプロセス数やイベント同期を制御する。ページテーブルやDNSとは別の仕組みである。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0291",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "コンピュータシステム（OS）",
+    "stem": "CPUスケジューリングで、あるプロセスが長時間実行機会を得られない状態はどれか。",
+    "options": [
+      "飢餓状態",
+      "ページフォールト",
+      "デッドロックと必ず同じ状態",
+      "キャッシュヒット"
+    ],
+    "answerIndex": 0,
+    "explanation": "飢餓状態では優先度の低い処理などが資源やCPU時間を長時間得られない。優先度の調整やエージングで発生を抑えることがある。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0292",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "コンピュータシステム（信頼性）",
+    "stem": "システムのMTBFが長くなることが示すものはどれか。",
+    "options": [
+      "故障と故障の間の平均稼働時間が長い",
+      "修理時間が必ず長い",
+      "稼働率が必ず0になる",
+      "故障頻度が高くなる"
+    ],
+    "answerIndex": 0,
+    "explanation": "MTBFは平均故障間隔であり、値が大きいほど故障と故障の間の平均稼働時間が長い。平均修理時間はMTTRで表す。",
+    "difficulty": 1,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0293",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "コンピュータシステム（性能）",
+    "stem": "CPU使用率が高い状態が続くサーバの原因分析で、次に確認する情報として適切なものはどれか。",
+    "options": [
+      "プロセス別CPU使用量と実行待ち状況",
+      "モニタの画面サイズだけ",
+      "利用者の住所録",
+      "ファイル名の文字数"
+    ],
+    "answerIndex": 0,
+    "explanation": "プロセス別CPU使用量や実行待ちキューを確認すると、CPUを消費している処理や過負荷の要因を特定しやすい。単一指標だけで原因を断定せず、負荷状況を併せて調べる。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0294",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "ネットワーク（プロトコル）",
+    "stem": "DNSのMXレコードが示す情報はどれか。",
+    "options": [
+      "ドメイン宛てメールを受信するメールサーバ",
+      "ドメインのIPv6アドレス",
+      "ドメインの権威DNSサーバ",
+      "Webサーバの公開鍵"
+    ],
+    "answerIndex": 0,
+    "explanation": "MXレコードは対象ドメイン宛ての電子メールを受け取るメールサーバを示す。IPv6アドレスはAAAAレコード、権威DNS情報はNSレコードで表す。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0295",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "ネットワーク（プロトコル）",
+    "stem": "HTTPステータスコード301の意味はどれか。",
+    "options": [
+      "恒久的なリダイレクト",
+      "認証が必要",
+      "サーバ内部エラー",
+      "要求された資源が見つからない"
+    ],
+    "answerIndex": 0,
+    "explanation": "301はMoved Permanentlyを表し、リソースが恒久的に別のURLへ移動したことを示す。認証要求は401、内部エラーは5xx、未発見は404である。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0296",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "ネットワーク（通信）",
+    "stem": "パケット交換方式の特徴として適切なものはどれか。",
+    "options": [
+      "データを小さな単位に分け、共有回線上で転送する",
+      "通信中は専用回線を常に占有する",
+      "全ての通信が一つの物理経路だけを通る",
+      "データの誤りを必ず訂正する"
+    ],
+    "answerIndex": 0,
+    "explanation": "パケット交換ではデータをパケットに分割し、複数の通信で回線を共有する。回線交換のように通信中ずっと専用回線を占有する方式ではない。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0297",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "ネットワーク（アドレス）",
+    "stem": "CIDR表記の/30で利用できるIPv4アドレス数は何個か。ネットワークアドレスとブロードキャストアドレスも含める。",
+    "options": [
+      "2",
+      "4",
+      "8",
+      "30"
+    ],
+    "answerIndex": 1,
+    "explanation": "/30ではホスト部が2ビットなので、総アドレス数は2^2=4個である。そのうち通常のサブネットではネットワークとブロードキャストに各1個を使う。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0298",
+    "section": "A",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（暗号）",
+    "stem": "ハッシュ値を使ったファイル完全性確認で、比較対象となる値の入手経路も重要な理由はどれか。",
+    "options": [
+      "攻撃者がファイルとハッシュ値を両方差し替える可能性がある",
+      "ハッシュ関数は必ず可逆だから",
+      "比較するとファイルが削除されるから",
+      "ハッシュ値から通信速度が分かるから"
+    ],
+    "answerIndex": 0,
+    "explanation": "ハッシュ値との一致は、比較に使うハッシュ値自体が信頼できる場合に完全性確認へ役立つ。攻撃者がファイルとハッシュ値の両方を変更できると改ざんを検出できない。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0299",
+    "section": "A",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（認証）",
+    "stem": "FIDOなど公開鍵方式の認証で、認証サーバへ秘密鍵を送らない利点はどれか。",
+    "options": [
+      "サーバ側の認証情報漏えいによる秘密鍵流出を防ぎやすい",
+      "パスワードを共有できる",
+      "全てのフィッシングを自動でなくす",
+      "利用者端末が不要になる"
+    ],
+    "answerIndex": 0,
+    "explanation": "公開鍵認証では秘密鍵を利用者端末に保持し、サーバへ公開鍵を登録する。サーバ側データベースが侵害されても利用者の秘密鍵そのものを盗まれにくい。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0300",
+    "section": "A",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（攻撃対策）",
+    "stem": "サービス妨害攻撃（DoS）への対策として適切なものはどれか。",
+    "options": [
+      "トラフィックの監視・分散やレート制限を行う",
+      "全ての利用者に管理者権限を与える",
+      "監視ログを無効化する",
+      "バックアップを削除する"
+    ],
+    "answerIndex": 0,
+    "explanation": "DoS対策ではトラフィックを監視し、CDNや分散構成、レート制限などで過剰な要求の影響を抑える。単一の対策で全ての攻撃を必ず防げるとは限らない。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0301",
+    "section": "A",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（プライバシー）",
+    "stem": "個人情報を統計分析用に匿名加工する際に注意すべきことはどれか。",
+    "options": [
+      "他の情報との照合で個人を再識別できる危険を評価する",
+      "氏名を消せば常に再識別不能とみなす",
+      "匿名加工後は安全管理が不要になる",
+      "公開したデータは回収できる"
+    ],
+    "answerIndex": 0,
+    "explanation": "氏名を削除しただけでは、属性の組合せや外部情報との照合から個人を再識別できる場合がある。データの性質や提供範囲を踏まえて識別リスクを評価する。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0302",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "データベース（正規化）",
+    "stem": "第3正規形を満たすために主に除去するものはどれか。",
+    "options": [
+      "非キー属性から他の非キー属性への推移的関数従属",
+      "複合主キーの一部への部分関数従属",
+      "繰返し項目",
+      "全ての外部キー"
+    ],
+    "answerIndex": 0,
+    "explanation": "第3正規形では第2正規形を満たした上で、非キー属性が主キー以外の非キー属性に推移的に従属する状態を除く。部分関数従属の除去は第2正規形の要点である。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0303",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "データベース（SQL）",
+    "stem": "SQLのDELETE文でWHERE句を省略した場合に通常起きることはどれか。",
+    "options": [
+      "表の全行が削除対象となる",
+      "表定義だけが削除される",
+      "最初の1行だけ削除される",
+      "削除は必ずエラーになる"
+    ],
+    "answerIndex": 0,
+    "explanation": "DELETE FROM 表名にWHERE句がない場合、通常は表の全行が削除対象となる。実行前に対象行を確認し、必要に応じてトランザクションで安全性を確保する。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0304",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "データベース（インデックス）",
+    "stem": "複合索引が列(A,B)の順で作られている場合に利用されやすい条件はどれか。",
+    "options": [
+      "Aだけで検索する条件",
+      "Bだけで検索する条件が常に同等に使える",
+      "Aと無関係な列だけの条件",
+      "結果を暗号化する条件"
+    ],
+    "answerIndex": 0,
+    "explanation": "多くのDBMSでは複合索引(A,B)は先頭列Aを含む検索条件で利用されやすい。Bだけの条件で有効かはDBMSや索引方式、統計情報などによって異なる。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0305",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "データベース（トランザクション）",
+    "stem": "トランザクションの一貫性（Consistency）の説明はどれか。",
+    "options": [
+      "実行前後で定義済みの整合性制約を満たす",
+      "確定した変更を障害後も保存する",
+      "全処理を一度に実行する",
+      "同時処理の影響を完全に消す"
+    ],
+    "answerIndex": 0,
+    "explanation": "一貫性はトランザクションがデータベースの制約を守り、有効な状態から有効な状態へ移る性質である。永続性、原子性、独立性とは異なるACID特性である。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0306",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "ソフトウェア（設計）",
+    "stem": "カプセル化の説明として適切なものはどれか。",
+    "options": [
+      "内部データと操作をまとめ、外部からの直接操作を制限する",
+      "全ての処理をグローバル変数で共有する",
+      "データを必ず圧縮する",
+      "ネットワーク接続を暗号化する"
+    ],
+    "answerIndex": 0,
+    "explanation": "カプセル化はデータと関連操作をまとめ、公開するインタフェースを通じて利用させる考え方である。内部実装を隠すことで変更の影響を抑えやすい。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0307",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "ソフトウェア（設計）",
+    "stem": "オブジェクト指向で、既存クラスの性質を引き継いで新しいクラスを定義する仕組みはどれか。",
+    "options": [
+      "継承",
+      "カプセル化",
+      "多重化",
+      "正規化"
+    ],
+    "answerIndex": 0,
+    "explanation": "継承は既存クラスの属性や操作を引き継ぎ、追加・変更して新しいクラスを定義する。カプセル化は内部情報の隠蔽、多重化は資源共有など別の概念である。",
+    "difficulty": 1,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0308",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "ソフトウェア（開発モデル）",
+    "stem": "スパイラルモデルの特徴として適切なものはどれか。",
+    "options": [
+      "リスク分析を繰り返しながら段階的に開発する",
+      "要件変更を一切認めない",
+      "テストを実施しない",
+      "成果物を一度に全て作る"
+    ],
+    "answerIndex": 0,
+    "explanation": "スパイラルモデルは計画、リスク分析、開発、評価を繰り返しながら段階的に進める。リスクの高い要素を早い段階で検討しやすい。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0309",
+    "section": "A",
+    "domain": "technology",
+    "subdomain": "ソフトウェア（テスト）",
+    "stem": "受入れテストの主な目的はどれか。",
+    "options": [
+      "システムが利用者や発注者の要求を満たすか確認する",
+      "個々の関数の内部計算だけを確認する",
+      "ソースコードの書式だけ確認する",
+      "サーバの電源容量を測る"
+    ],
+    "answerIndex": 0,
+    "explanation": "受入れテストは利用者や発注者の要求・業務条件に照らして、システムを受け入れられるか判断する。単体テストやコードレビューとは目的が異なる。",
+    "difficulty": 1,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0310",
+    "section": "A",
+    "domain": "management",
+    "subdomain": "プロジェクトマネジメント（コスト）",
+    "stem": "実績コスト（AC）が出来高（EV）を上回っている場合、コスト差異CVはどうなるか。",
+    "options": [
+      "負になる",
+      "正になる",
+      "必ず0になる",
+      "算出できない"
+    ],
+    "answerIndex": 0,
+    "explanation": "コスト差異CV=EV−ACである。ACがEVより大きければ差は負となり、実際に使ったコストが出来高に対して超過している。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0311",
+    "section": "A",
+    "domain": "management",
+    "subdomain": "プロジェクトマネジメント（スケジュール）",
+    "stem": "作業の最早開始が3日目、最早終了が8日目のとき、その作業期間はどれか。",
+    "options": [
+      "3日",
+      "5日",
+      "8日",
+      "11日"
+    ],
+    "answerIndex": 1,
+    "explanation": "作業期間は終了時刻と開始時刻の差で求めるため、8−3=5日である。時刻を開始時点を0とするか1とするかは、設問の定義に従う。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0312",
+    "section": "A",
+    "domain": "management",
+    "subdomain": "サービスマネジメント（可用性）",
+    "stem": "単一障害点（SPOF）の説明として適切なものはどれか。",
+    "options": [
+      "故障するとシステム全体の利用に影響する単一の構成要素",
+      "二重化された全ての装置",
+      "必ず暗号化された通信経路",
+      "テスト環境だけに存在する要素"
+    ],
+    "answerIndex": 0,
+    "explanation": "SPOFは一つの故障がサービス全体の停止につながる構成要素である。冗長化や代替経路により単一障害点を減らすことが可用性向上につながる。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0313",
+    "section": "A",
+    "domain": "strategy",
+    "subdomain": "企業活動（経営分析）",
+    "stem": "企業の売上高が増加しているのに営業利益が減少している場合、考えられる要因はどれか。",
+    "options": [
+      "売上原価や販売管理費の増加",
+      "売上高が減っている",
+      "固定費が必ずゼロになった",
+      "純資産だけが増加した"
+    ],
+    "answerIndex": 0,
+    "explanation": "営業利益は売上高から売上原価や販売費及び一般管理費を差し引いて求める。売上が増えてもこれらの費用がそれ以上に増えれば営業利益は減る。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0314",
+    "section": "A",
+    "domain": "strategy",
+    "subdomain": "法務（著作権）",
+    "stem": "ソフトウェアの著作権を譲渡する契約を結ぶ際に確認すべきことはどれか。",
+    "options": [
+      "譲渡する権利の範囲や著作者人格権の扱い",
+      "CPUのクロック数",
+      "ネットワークの遅延",
+      "ソースコードの行数だけ"
+    ],
+    "answerIndex": 0,
+    "explanation": "著作権譲渡では、対象となる権利や利用範囲、二次利用などの条件を契約で明確にする。著作者人格権は譲渡できないため、その扱いも確認する。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-A-0315",
+    "section": "A",
+    "domain": "strategy",
+    "subdomain": "企業活動（調達）",
+    "stem": "RFI（情報提供依頼書）を出す主な目的はどれか。",
+    "options": [
+      "候補ベンダから製品・サービスや対応能力の情報を集める",
+      "契約条件を最終確定する",
+      "納品物の検収を完了する",
+      "請求書の支払を行う"
+    ],
+    "answerIndex": 0,
+    "explanation": "RFIは候補ベンダや市場から情報を集め、製品・サービスや実現方式の理解を深めるために使う。提案依頼や見積依頼、契約・検収とは目的が異なる。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0204",
+    "section": "B",
+    "domain": "algorithm",
+    "subdomain": "アルゴリズムとプログラミング（配列）",
+    "stem": "配列[6,2,9,4]を左から隣接交換で昇順に並べる。1巡後の配列はどれか。",
+    "options": [
+      "[2,6,4,9]",
+      "[2,4,6,9]",
+      "[6,2,4,9]",
+      "[2,6,9,4]"
+    ],
+    "answerIndex": 0,
+    "explanation": "6と2を交換して[2,6,9,4]、6と9はそのまま、9と4を交換するため[2,6,4,9]となる。1巡で最大値9が末尾へ移る。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0205",
+    "section": "B",
+    "domain": "algorithm",
+    "subdomain": "アルゴリズムとプログラミング（配列）",
+    "stem": "a=[2,5,1,4]を左から走査し、直前までの最大値より大きい値が現れた回数を数える。初期最大値を2とすると回数はいくつか。",
+    "options": [
+      "0",
+      "1",
+      "2",
+      "3"
+    ],
+    "answerIndex": 1,
+    "explanation": "初期値2の後に5が現れたときだけ新しい最大値となる。1と4はいずれも現在の最大値5より小さいので、更新回数は1回である。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0206",
+    "section": "B",
+    "domain": "algorithm",
+    "subdomain": "アルゴリズムとプログラミング（反復）",
+    "stem": "sum←0としてi=1..5を繰り返し、iが奇数ならsum←sum+2iとする。終了時のsumはいくつか。",
+    "options": [
+      "9",
+      "12",
+      "18",
+      "30"
+    ],
+    "answerIndex": 2,
+    "explanation": "奇数のiは1、3、5であり、加算値は2、6、10となる。合計は18なので選択肢の3番目が正しい。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0207",
+    "section": "B",
+    "domain": "algorithm",
+    "subdomain": "アルゴリズムとプログラミング（配列）",
+    "stem": "配列[3,6,9,12]の各要素を2で割った余りに置き換える。結果はどれか。",
+    "options": [
+      "[1,0,1,0]",
+      "[0,1,0,1]",
+      "[3,3,3,3]",
+      "[1,1,1,1]"
+    ],
+    "answerIndex": 0,
+    "explanation": "3 mod 2=1、6 mod 2=0、9 mod 2=1、12 mod 2=0である。各要素を順に余りへ置き換えると[1,0,1,0]となる。",
+    "difficulty": 1,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0208",
+    "section": "B",
+    "domain": "algorithm",
+    "subdomain": "アルゴリズムとプログラミング（関数）",
+    "stem": "再帰関数f(n)をn=1なら1、n>1ならn×f(n−1)とする。f(5)はいくつか。",
+    "options": [
+      "24",
+      "60",
+      "120",
+      "125"
+    ],
+    "answerIndex": 2,
+    "explanation": "f(5)=5×4×3×2×f(1)でありf(1)=1なので、結果は120となる。階乗を再帰で計算している。",
+    "difficulty": 1,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0209",
+    "section": "B",
+    "domain": "algorithm",
+    "subdomain": "アルゴリズムとプログラミング（文字列）",
+    "stem": "文字列\"BANANA\"に含まれる文字Aの個数はいくつか。",
+    "options": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "answerIndex": 2,
+    "explanation": "BANANAの文字を順に確認するとAは2番目、4番目、6番目にあり、合計3個である。",
+    "difficulty": 1,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0210",
+    "section": "B",
+    "domain": "algorithm",
+    "subdomain": "アルゴリズムとプログラミング（データ構造）",
+    "stem": "二分探索木へキー5、3、7、2の順に挿入したとき、根のキーはどれか。",
+    "options": [
+      "2",
+      "3",
+      "5",
+      "7"
+    ],
+    "answerIndex": 2,
+    "explanation": "最初に挿入した5が根になる。以後の3と2は左部分木、7は右部分木へ配置されるため、根は変わらず5である。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0211",
+    "section": "B",
+    "domain": "algorithm",
+    "subdomain": "アルゴリズムとプログラミング（配列）",
+    "stem": "昇順配列[2,4,6,8]を左へ1要素だけ循環シフトした後、a[0]+a[3]はいくつか。",
+    "options": [
+      "6",
+      "8",
+      "10",
+      "12"
+    ],
+    "answerIndex": 0,
+    "explanation": "左循環シフト後は[4,6,8,2]となる。a[0]=4、a[3]=2なので和は6であり、選択肢の1番目となる。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0212",
+    "section": "B",
+    "domain": "algorithm",
+    "subdomain": "アルゴリズムとプログラミング（計算量）",
+    "stem": "線形探索で要素数nの配列を探索する場合、最悪の比較回数はどれか。",
+    "options": [
+      "1",
+      "log2(n)程度",
+      "n",
+      "n²"
+    ],
+    "answerIndex": 2,
+    "explanation": "目的値が末尾にあるか存在しない場合、全てのn要素を確認する。最悪の比較回数はn回で、計算量はO(n)である。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0213",
+    "section": "B",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（安全な実装）",
+    "stem": "パスワード入力欄に入力値をそのままログ出力する実装の問題はどれか。",
+    "options": [
+      "ログ閲覧者やログ保管先へ秘密情報が漏れる",
+      "パスワードが必ず暗号化される",
+      "認証が自動で強化される",
+      "ログ量が必ず減る"
+    ],
+    "answerIndex": 0,
+    "explanation": "ログに平文パスワードを残すと、ログ閲覧権限を持つ者やログ基盤の侵害を通じて認証情報が漏れる。パスワードやトークンは記録しないか適切にマスキングする。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0214",
+    "section": "B",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（アクセス制御）",
+    "stem": "アクセス制御リスト（ACL）が表すものはどれか。",
+    "options": [
+      "主体ごとに資源への許可操作を定めた一覧",
+      "通信データの圧縮率",
+      "バックアップ取得時刻",
+      "データベースの索引順序"
+    ],
+    "answerIndex": 0,
+    "explanation": "ACLにはファイルやネットワーク資源などの対象と、利用者・グループごとの読取りや更新などの権限を記録する。認可判断に使われる。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0215",
+    "section": "B",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（安全な実装）",
+    "stem": "サーバ側で入力値の検証を行う理由として適切なものはどれか。",
+    "options": [
+      "クライアント側の入力制御は回避される可能性があるため",
+      "入力検証をすれば通信暗号化が不要になるため",
+      "利用者の画面サイズを決めるため",
+      "ソースコードを非公開にするため"
+    ],
+    "answerIndex": 0,
+    "explanation": "ブラウザ側の検証は利用者が変更・回避できるため、サーバ側でも型、長さ、範囲、許容形式などを確認する。入力検証は他のセキュリティ対策を代替しない。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0216",
+    "section": "B",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（運用）",
+    "stem": "セキュリティインシデントの初動で時刻を正確に記録する理由はどれか。",
+    "options": [
+      "ログや関係システムの事象を時系列で突き合わせるため",
+      "データベースを正規化するため",
+      "端末の画面を暗号化するため",
+      "契約料金を決めるため"
+    ],
+    "answerIndex": 0,
+    "explanation": "正確な時刻があれば複数システムのログを時系列で照合し、侵入経路や影響範囲を調べやすい。各機器の時刻同期も調査の精度に関係する。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0217",
+    "section": "B",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（ネットワーク防御）",
+    "stem": "ネットワークを利用者端末、サーバ、管理系などに分割する主な効果はどれか。",
+    "options": [
+      "侵害時の横展開を抑え、通信を必要範囲に限定する",
+      "全ての攻撃を不可能にする",
+      "端末のパスワードを不要にする",
+      "バックアップを自動生成する"
+    ],
+    "answerIndex": 0,
+    "explanation": "ネットワーク分割と通信制御により、侵害された区画から他の重要区画へ移動する範囲を抑えられる。分割だけで全ての攻撃を防げるわけではない。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0218",
+    "section": "B",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（暗号）",
+    "stem": "電子署名を検証する公開鍵の信頼性を確かめる仕組みとして適切なのはどれか。",
+    "options": [
+      "信頼できる証明書チェーンを検証する",
+      "公開鍵をメール本文から無条件に信頼する",
+      "秘密鍵を受信者へ送る",
+      "署名データを削除する"
+    ],
+    "answerIndex": 0,
+    "explanation": "公開鍵証明書と認証局の信頼チェーンを検証することで、公開鍵が想定した署名者に対応するか確認する。出所不明の公開鍵を無条件に使うと、なりすましを見抜けない。",
+    "difficulty": 2,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0219",
+    "section": "B",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（認証）",
+    "stem": "利用者が退職した後もクラウドサービスのアカウントが残るリスクへの対策はどれか。",
+    "options": [
+      "ID管理と人事手続きを連携してアカウントを停止する",
+      "パスワードを全社員で共有する",
+      "監査ログを無効にする",
+      "退職者の権限を増やす"
+    ],
+    "answerIndex": 0,
+    "explanation": "人事異動・退職の情報とID管理を連携し、不要となったアカウントや認証トークンを速やかに停止する。利用者棚卸しも残存アカウントの発見に役立つ。",
+    "difficulty": 1,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
+  },
+  {
+    "id": "FE-B-0220",
+    "section": "B",
+    "domain": "security",
+    "subdomain": "情報セキュリティ（脆弱性管理）",
+    "stem": "公開サーバの不要なサービスを停止する主な効果はどれか。",
+    "options": [
+      "攻撃対象となる機能や待受ポートを減らす",
+      "利用者の認証情報を自動更新する",
+      "通信内容を必ず暗号化する",
+      "サービスのバックアップを作る"
+    ],
+    "answerIndex": 0,
+    "explanation": "不要なサービスを停止すると、脆弱性を悪用される入口や管理対象を減らせる。必要なサービスも更新と設定確認を継続する必要がある。",
+    "difficulty": 1,
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   }
 ]

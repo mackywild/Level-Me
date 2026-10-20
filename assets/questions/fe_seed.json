@@ -1052,5 +1052,345 @@
     "difficulty": 2,
     "reviewStatus": "initial-draft",
     "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0063",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のsumはいくつか。\na=[4,1,3,2]\nsum←0\nfor i=0..3:\n  if a[i]>i:\n    sum←sum+a[i]",
+    "options": [
+      "4",
+      "5",
+      "7",
+      "10"
+    ],
+    "answerIndex": 2,
+    "explanation": "添字0の4と添字2の3だけが条件を満たすため4+3=7。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0064",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のxはいくつか。\nx←0\nfor i=1..4:\n  x←x+i\n  if x>=6: break",
+    "options": [
+      "3",
+      "6",
+      "10",
+      "4"
+    ],
+    "answerIndex": 1,
+    "explanation": "xは1→3→6となり条件を満たしてループを抜ける。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0065",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後の配列はどれか。\na=[1,2,3,4]\nfor i=0..1:\n  swap(a[i],a[3−i])",
+    "options": [
+      "[4,3,2,1]",
+      "[4,2,3,1]",
+      "[3,4,1,2]",
+      "[1,3,2,4]"
+    ],
+    "answerIndex": 0,
+    "explanation": "最初に0番と3番、次に1番と2番を交換する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0066",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の関数f(7)の戻り値はいくつか。\nf(n):\n  if n<2: return n\n  return f(n div 2)+n mod 2",
+    "options": [
+      "2",
+      "3",
+      "4",
+      "7"
+    ],
+    "answerIndex": 1,
+    "explanation": "f(7)=f(3)+1=f(1)+1+1=3。2進数111の1の個数を返す。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0067",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のcountはいくつか。\ncount←0\nfor i=1..4:\n  for j=1..4:\n    if i<j: count←count+1",
+    "options": [
+      "4",
+      "6",
+      "8",
+      "10"
+    ],
+    "answerIndex": 1,
+    "explanation": "i<jとなる組は(1,2),(1,3),(1,4),(2,3),(2,4),(3,4)の6組。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0068",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のxはいくつか。\nx←1\ny←2\nfor i=1..3:\n  t←x\n  x←y\n  y←t+y",
+    "options": [
+      "2",
+      "3",
+      "5",
+      "8"
+    ],
+    "answerIndex": 2,
+    "explanation": "(x,y)は(1,2)→(2,3)→(3,5)→(5,8)なのでxは5。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0069",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のsはいくつか。\ns←0\nfor i=1..5:\n  if i mod 3=0: continue\n  s←s+i",
+    "options": [
+      "9",
+      "12",
+      "15",
+      "6"
+    ],
+    "answerIndex": 1,
+    "explanation": "3だけ除き1+2+4+5=12。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0070",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のa[3]はいくつか。\na=[1,2,3,4]\nfor i=1..3:\n  a[i]←a[i]+a[i−1]",
+    "options": [
+      "4",
+      "7",
+      "9",
+      "10"
+    ],
+    "answerIndex": 3,
+    "explanation": "a[1]=3、a[2]=6、a[3]=10と左から更新する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0071",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のxはいくつか。\nx←20\nwhile x>=5:\n  x←x div 2",
+    "options": [
+      "2",
+      "4",
+      "5",
+      "10"
+    ],
+    "answerIndex": 0,
+    "explanation": "20→10→5→2でx>=5が偽となる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0072",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "次の処理後のresultはいくつか。\na=[2,4,6,8,10]\nresult←0\nfor i=0..4:\n  if i mod 2=0: result←result+a[i]",
+    "options": [
+      "12",
+      "18",
+      "20",
+      "30"
+    ],
+    "answerIndex": 1,
+    "explanation": "添字0,2,4の2+6+10=18。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0073",
+    "section": "B",
+    "domain": "security",
+    "stem": "パスワードの保存時に、利用者ごとに異なるランダムな値を加えてハッシュ化する主な目的はどれか。",
+    "options": [
+      "パスワードを復号できるようにする",
+      "同一パスワードのハッシュ一致を避け事前計算攻撃を困難にする",
+      "通信量を減らす",
+      "認証回数を増やす"
+    ],
+    "answerIndex": 1,
+    "explanation": "ソルトを用いると同じパスワードでもハッシュ値が異なり、レインボーテーブルなどの事前計算を利用しにくくなる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0074",
+    "section": "B",
+    "domain": "security",
+    "stem": "不審なメールのリンクから認証情報を入力させる攻撃への対策として最も適切なのはどれか。",
+    "options": [
+      "メール記載のURLを必ず開く",
+      "公式サイトを自分で開いてログインし、多要素認証を使う",
+      "パスワードを複数人で共有する",
+      "ブラウザの警告を無視する"
+    ],
+    "answerIndex": 1,
+    "explanation": "フィッシング対策として正規の入口を利用し、多要素認証で認証情報漏えい時の被害を減らす。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0075",
+    "section": "B",
+    "domain": "security",
+    "stem": "Webアプリが利用者の権限を確認せず、URL中の他人の注文IDを指定すると注文詳細を閲覧できる。問題となる脆弱性はどれか。",
+    "options": [
+      "アクセス制御の不備",
+      "メモリリーク",
+      "DNS障害",
+      "SQLの構文エラー"
+    ],
+    "answerIndex": 0,
+    "explanation": "IDを変更して他人のデータにアクセスできるのはオブジェクト単位の認可確認不足。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0076",
+    "section": "B",
+    "domain": "security",
+    "stem": "HTTPS接続時、サーバ証明書の検証で主に確認するものはどれか。",
+    "options": [
+      "利用者の年齢",
+      "接続先名との一致と信頼できる認証局による署名など",
+      "CPUの型番",
+      "ページの文字数"
+    ],
+    "answerIndex": 1,
+    "explanation": "証明書の有効期限、信頼の連鎖、接続先ホスト名との一致などを検証する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0077",
+    "section": "B",
+    "domain": "security",
+    "stem": "システム管理者のアカウントに必要な操作だけを許可する考え方はどれか。",
+    "options": [
+      "最小権限の原則",
+      "可用性の否定",
+      "無制限アクセス",
+      "平文保存"
+    ],
+    "answerIndex": 0,
+    "explanation": "最小権限の原則は業務に必要な権限だけを付与して被害範囲を抑える。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0078",
+    "section": "A",
+    "domain": "technology",
+    "stem": "通信速度100Mbpsで50MBのデータを理論上転送する時間は何秒か。ただし通信効率は100%とする。",
+    "options": [
+      "0.5秒",
+      "4秒",
+      "8秒",
+      "40秒"
+    ],
+    "answerIndex": 1,
+    "explanation": "50MB=400Mbit。400Mbit÷100Mbit/秒=4秒。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0079",
+    "section": "A",
+    "domain": "technology",
+    "stem": "データベースの正規化で、繰返し項目を分離し各列を原子的な値にする段階はどれか。",
+    "options": [
+      "第1正規形",
+      "第2正規形",
+      "第3正規形",
+      "ボイス・コッド正規形"
+    ],
+    "answerIndex": 0,
+    "explanation": "第1正規形では各属性が原子的な値を持つようにする。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0080",
+    "section": "A",
+    "domain": "technology",
+    "stem": "キャッシュヒット率80%、ヒット時1ns、ミス時に主記憶アクセスを追加で51ns要する場合の平均アクセス時間はどれか。",
+    "options": [
+      "1.2ns",
+      "10.2ns",
+      "11.2ns",
+      "51ns"
+    ],
+    "answerIndex": 2,
+    "explanation": "毎回キャッシュを1ns参照し、ミス20%で51ns追加するため1+0.2×51=11.2ns。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0081",
+    "section": "A",
+    "domain": "management",
+    "stem": "開発費100万円、テスト費30万円、運用費が年間20万円で3年間の場合、単純な総保有費用はどれか。",
+    "options": [
+      "130万円",
+      "150万円",
+      "170万円",
+      "190万円"
+    ],
+    "answerIndex": 3,
+    "explanation": "初期費用100+30万円と運用20×3万円を合計して190万円。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0082",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "売上高800万円、変動費480万円、固定費200万円の利益はいくらか。",
+    "options": [
+      "80万円",
+      "120万円",
+      "320万円",
+      "600万円"
+    ],
+    "answerIndex": 1,
+    "explanation": "利益=売上高−変動費−固定費=800−480−200=120万円。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
   }
 ]

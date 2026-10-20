@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import '../models/quest.dart';
 import '../models/stat_type.dart';
+import 'fe_question_screen.dart';
 class QuestsScreen extends StatefulWidget{
  const QuestsScreen({super.key,required this.controller});
  final AppController controller;
@@ -14,6 +15,7 @@ class _QuestsScreenState extends State<QuestsScreen>{
  @override Widget build(BuildContext context){
   final quests=widget.controller.state.quests.where((q)=>filter==null||q.cadence==filter).toList();
   return Scaffold(backgroundColor:Colors.transparent,body:Column(children:[
+   Padding(padding:const EdgeInsets.symmetric(horizontal:16),child:SizedBox(width:double.infinity,child:OutlinedButton.icon(icon:const Icon(Icons.quiz),label:const Text('基本情報・問題演習（20問プレビュー）'),onPressed:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const FeQuestionScreen()))))),
    SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.all(8),children:[
     ChoiceChip(label:const Text('ALL'),selected:filter==null,onSelected:(_)=>setState(()=>filter=null)),
     for(final c in QuestCadence.values)Padding(padding:const EdgeInsets.only(left:8),child:

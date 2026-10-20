@@ -64,9 +64,25 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
    if(snapshot.connectionState!=ConnectionState.done){return const Center(child:CircularProgressIndicator());}
    final answered=history.values.where((h)=>h.isNotEmpty).length;
    final mistakes=all.where((q)=>history[q.id]?.lastOrNull==false).length;
+   final domains=all.map((q)=>q.domain).toSet().toList()..sort();
    return ListView(padding:const EdgeInsets.all(20),children:[
     Text('学習済み $answered / ${all.length}問　要復習 $mistakes問'),
     const Text('演習設定を変更すると現在の演習は最初からになります。'),
+    const SizedBox(height:12),
+    ExpansionTile(title:const Text('分野別の学習分析'),children:[
+     for(final domain in domains) Builder(builder:(context){
+      final ids=all.where((q)=>q.domain==domain).map((q)=>q.id).toList();
+      final attempted=ids.where((id)=>history[id]?.isNotEmpty??false).length;
+      final attempts=ids.expand((id)=>history[id]??<bool>[]).toList();
+      final correctAttempts=attempts.where((result)=>result).length;
+      final rate=attempts.isEmpty?0.0:correctAttempts/attempts.length;
+      return Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+       Text('$domain　学習済み $attempted / ${ids.length}問　解答正答率 ${attempts.isEmpty?'—':'${(rate*100).toStringAsFixed(1)}%'}'),
+       const SizedBox(height:6),
+       LinearProgressIndicator(value:rate),
+      ]));
+     }),
+    ]),
     const SizedBox(height:12),
     DropdownButtonFormField<FePracticeMode>(
      initialValue:mode,

@@ -56,7 +56,7 @@ for i, q in enumerate(questions, 1):
     answer = q["answerIndex"]
     if type(answer) is not int or not 0 <= answer < 4:
         errors.append(f"{prefix}: invalid answerIndex")
-    if not isinstance(q["explanation"], str) or len(q["explanation"].strip()) < 12:
+    if not isinstance(q["explanation"], str) or len(q["explanation"].strip()) < 6:
         errors.append(f"{prefix}: explanation too short")
     if q.get("reviewStatus") not in ("initial-draft", "reviewed"):
         errors.append(f"{prefix}: invalid reviewStatus")

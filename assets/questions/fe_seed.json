@@ -1392,5 +1392,685 @@
     "difficulty": 2,
     "reviewStatus": "initial-draft",
     "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0083",
+    "section": "A",
+    "domain": "technology",
+    "stem": "OSI参照モデルでIPによる経路選択を担当する層はどれか。",
+    "options": [
+      "物理層",
+      "データリンク層",
+      "ネットワーク層",
+      "アプリケーション層"
+    ],
+    "answerIndex": 2,
+    "explanation": "IPはネットワーク層のプロトコルで、ネットワーク間のパケット転送を扱う。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0084",
+    "section": "A",
+    "domain": "technology",
+    "stem": "TCPがUDPと異なり標準的に提供する機能はどれか。",
+    "options": [
+      "ポート番号",
+      "再送制御による信頼性確保",
+      "IPアドレスの割当て",
+      "暗号鍵の生成"
+    ],
+    "answerIndex": 1,
+    "explanation": "TCPは確認応答や再送制御、順序制御によって信頼性のある通信を提供する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0085",
+    "section": "A",
+    "domain": "technology",
+    "stem": "DNSの主な役割として正しいものはどれか。",
+    "options": [
+      "ドメイン名からIPアドレスなどを問い合わせる",
+      "Webページを暗号化する",
+      "端末に電源を供給する",
+      "ファイルを圧縮する"
+    ],
+    "answerIndex": 0,
+    "explanation": "DNSは名前とIPアドレスなどの対応情報を提供する名前解決の仕組み。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0086",
+    "section": "A",
+    "domain": "technology",
+    "stem": "DHCPサーバがクライアントに通常配布する情報はどれか。",
+    "options": [
+      "CPUの命令セット",
+      "IPアドレスとサブネットマスクなど",
+      "画面の解像度",
+      "アプリのソースコード"
+    ],
+    "answerIndex": 1,
+    "explanation": "DHCPはIPアドレスやデフォルトゲートウェイ、DNSサーバなどを自動設定する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0087",
+    "section": "A",
+    "domain": "technology",
+    "stem": "公開鍵暗号方式の特徴として適切なものはどれか。",
+    "options": [
+      "暗号化と復号に同じ秘密鍵を使う",
+      "鍵を全員に秘密にする",
+      "公開鍵と秘密鍵の組を利用する",
+      "暗号化すると必ず圧縮される"
+    ],
+    "answerIndex": 2,
+    "explanation": "公開鍵暗号では数学的に関連する公開鍵と秘密鍵を異なる役割で利用する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0088",
+    "section": "A",
+    "domain": "technology",
+    "stem": "ハッシュ関数の性質として適切なものはどれか。",
+    "options": [
+      "任意長の入力から固定長の値を計算する",
+      "常に元データへ復号できる",
+      "必ず衝突しない",
+      "入力が同じでも毎回異なる値になる"
+    ],
+    "answerIndex": 0,
+    "explanation": "暗号学的ハッシュ関数は任意長データから一定長のダイジェストを計算する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0089",
+    "section": "A",
+    "domain": "technology",
+    "stem": "データベースのトランザクションでROLLBACKを行う目的はどれか。",
+    "options": [
+      "未確定の変更を取り消す",
+      "索引を必ず削除する",
+      "全利用者をログアウトする",
+      "表の列数を増やす"
+    ],
+    "answerIndex": 0,
+    "explanation": "ROLLBACKは原則としてトランザクション内の未コミット変更を取り消す。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0090",
+    "section": "A",
+    "domain": "technology",
+    "stem": "データベースのインデックスを追加した場合に起こり得る影響はどれか。",
+    "options": [
+      "検索が速くなる一方で更新負荷が増える",
+      "全検索が必ず遅くなる",
+      "記憶領域が必ず減る",
+      "データの暗号化が自動で完了する"
+    ],
+    "answerIndex": 0,
+    "explanation": "索引は条件検索を高速化し得るが、挿入・更新・削除時の索引維持コストが生じる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0091",
+    "section": "A",
+    "domain": "technology",
+    "stem": "主キーの性質として正しいものはどれか。",
+    "options": [
+      "重複値を自由に持てる",
+      "NULLを含めてもよい",
+      "行を一意に識別する",
+      "必ず文字列型である"
+    ],
+    "answerIndex": 2,
+    "explanation": "主キーは表の行を一意に識別し、重複やNULLを許さない。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0092",
+    "section": "A",
+    "domain": "technology",
+    "stem": "デッドロックが発生する状況として適切なものはどれか。",
+    "options": [
+      "二つの処理が互いに相手の保持する資源の解放を待つ",
+      "CPUが高速に動作する",
+      "キャッシュがヒットする",
+      "処理が順番に終了する"
+    ],
+    "answerIndex": 0,
+    "explanation": "互いに必要な資源を保持したまま待ち続ける循環待ちがデッドロックの典型例。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0093",
+    "section": "A",
+    "domain": "technology",
+    "stem": "仮想記憶のページフォールトが起きるのはどのような場合か。",
+    "options": [
+      "参照したページが主記憶に存在しない場合",
+      "CPUが割込みを禁止した場合",
+      "キーボードを接続した場合",
+      "画面が消灯した場合"
+    ],
+    "answerIndex": 0,
+    "explanation": "必要なページが物理メモリにない場合、OSがページの読み込みなどを行う。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0094",
+    "section": "A",
+    "domain": "technology",
+    "stem": "LRU方式で置換対象として選ぶページはどれか。",
+    "options": [
+      "最も新しく使ったページ",
+      "最も長く使われていないページ",
+      "最もサイズの大きいページ",
+      "最も小さいページ番号"
+    ],
+    "answerIndex": 1,
+    "explanation": "LRUはLeast Recently Usedの略で、最後の利用から最も時間が経ったページを選ぶ。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0095",
+    "section": "A",
+    "domain": "technology",
+    "stem": "単方向連結リストの先頭への要素挿入に必要な計算量は通常どれか。",
+    "options": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n²)"
+    ],
+    "answerIndex": 0,
+    "explanation": "先頭ポインタと新要素の参照を更新するだけなので一定時間で挿入できる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0096",
+    "section": "A",
+    "domain": "technology",
+    "stem": "スタックのデータ取り出し順序はどれか。",
+    "options": [
+      "FIFO",
+      "LIFO",
+      "ランダム",
+      "優先度順のみ"
+    ],
+    "answerIndex": 1,
+    "explanation": "スタックは後入れ先出し（LIFO）のデータ構造。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0097",
+    "section": "A",
+    "domain": "technology",
+    "stem": "ヒープソートの平均時間計算量はどれか。",
+    "options": [
+      "O(1)",
+      "O(log n)",
+      "O(n log n)",
+      "O(n² log n)"
+    ],
+    "answerIndex": 2,
+    "explanation": "ヒープ構築と各要素の取り出しにより全体でO(n log n)となる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0098",
+    "section": "A",
+    "domain": "technology",
+    "stem": "論理式NOT(A AND B)と等価な式はどれか。",
+    "options": [
+      "NOT A AND NOT B",
+      "NOT A OR NOT B",
+      "A OR B",
+      "A AND NOT B"
+    ],
+    "answerIndex": 1,
+    "explanation": "ド・モルガンの法則よりANDの否定は各項の否定のORに等しい。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0099",
+    "section": "A",
+    "domain": "technology",
+    "stem": "浮動小数点数で桁落ちが生じやすい演算はどれか。",
+    "options": [
+      "ほぼ等しい数同士の減算",
+      "正の整数の加算",
+      "0との乗算",
+      "ビットごとのAND"
+    ],
+    "answerIndex": 0,
+    "explanation": "近い値を引くと有効数字が失われ、相対誤差が大きくなる場合がある。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0100",
+    "section": "A",
+    "domain": "technology",
+    "stem": "RAID 1の基本的な仕組みはどれか。",
+    "options": [
+      "データを複数ディスクに同一内容で複製する",
+      "誤り訂正を行わず分散するだけ",
+      "テープへ自動退避する",
+      "データを必ず暗号化する"
+    ],
+    "answerIndex": 0,
+    "explanation": "RAID 1はミラーリングによって同じデータを複数ディスクに保存する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0101",
+    "section": "A",
+    "domain": "technology",
+    "stem": "コンテナ技術と仮想マシンの一般的な違いはどれか。",
+    "options": [
+      "コンテナはホストのカーネルを共有する",
+      "コンテナは必ず独立したカーネルを持つ",
+      "仮想マシンはOSを動かせない",
+      "コンテナはネットワークを使えない"
+    ],
+    "answerIndex": 0,
+    "explanation": "OSレベル仮想化のコンテナはホストのカーネルを共有し、プロセスなどを分離する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0102",
+    "section": "A",
+    "domain": "technology",
+    "stem": "REST APIでリソースの取得に通常使用するHTTPメソッドはどれか。",
+    "options": [
+      "GET",
+      "POST",
+      "PATCH",
+      "DELETE"
+    ],
+    "answerIndex": 0,
+    "explanation": "GETはリソースの表現を取得するためのHTTPメソッド。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0103",
+    "section": "A",
+    "domain": "technology",
+    "stem": "HTTPステータスコード404が意味するものはどれか。",
+    "options": [
+      "認証成功",
+      "サーバ内部エラー",
+      "指定したリソースが見つからない",
+      "要求が正常終了した"
+    ],
+    "answerIndex": 2,
+    "explanation": "404 Not Foundは要求された対象リソースが見つからないことを示す。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0104",
+    "section": "A",
+    "domain": "technology",
+    "stem": "SQLのGROUP BY句の目的として正しいものはどれか。",
+    "options": [
+      "行を指定列の値でグループ化して集計する",
+      "すべての列を削除する",
+      "トランザクションを確定する",
+      "アクセス権を設定する"
+    ],
+    "answerIndex": 0,
+    "explanation": "GROUP BYは同じキー値を持つ行をまとめ、COUNTやSUMなどの集約を行う。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0105",
+    "section": "A",
+    "domain": "technology",
+    "stem": "二分木の中間順走査（inorder）で訪問する順序はどれか。",
+    "options": [
+      "根・左・右",
+      "左・根・右",
+      "左・右・根",
+      "右・左・根"
+    ],
+    "answerIndex": 1,
+    "explanation": "中間順走査は左部分木、根、右部分木の順で訪問する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0106",
+    "section": "A",
+    "domain": "technology",
+    "stem": "機械学習の過学習を説明するものはどれか。",
+    "options": [
+      "訓練データに適合しすぎ未知データで性能が低下する",
+      "学習データが常にゼロになる",
+      "計算機の電源が落ちる",
+      "必ず学習時間が短縮する"
+    ],
+    "answerIndex": 0,
+    "explanation": "過学習では訓練データの特徴やノイズを覚え込み、汎化性能が悪化する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0107",
+    "section": "A",
+    "domain": "technology",
+    "stem": "教師あり学習に用いるデータの特徴はどれか。",
+    "options": [
+      "正解ラベルを伴う入力例がある",
+      "ラベルが一切ない",
+      "必ず画像だけを使う",
+      "必ず人手の操作を伴わない"
+    ],
+    "answerIndex": 0,
+    "explanation": "教師あり学習では入力と対応する正解ラベルを用いて予測モデルを学習する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0108",
+    "section": "A",
+    "domain": "management",
+    "stem": "WBSを作成する主な目的はどれか。",
+    "options": [
+      "成果物と作業を階層的に分解して管理する",
+      "社員の給与を計算する",
+      "IPアドレスを割り当てる",
+      "パスワードを暗号化する"
+    ],
+    "answerIndex": 0,
+    "explanation": "WBSはプロジェクトの成果物や作業を管理可能な単位に分解する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0109",
+    "section": "A",
+    "domain": "management",
+    "stem": "クリティカルパスの特徴として正しいものはどれか。",
+    "options": [
+      "遅延がプロジェクト全体の完了日に直結しやすい経路",
+      "必ず作業数が最少の経路",
+      "費用が最小の経路",
+      "担当者が最も多い経路"
+    ],
+    "answerIndex": 0,
+    "explanation": "余裕時間がない作業の経路は遅れると全体の完了が遅れる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0110",
+    "section": "A",
+    "domain": "management",
+    "stem": "サービスレベル合意（SLA）で通常定めるものはどれか。",
+    "options": [
+      "サービスの品質水準や責任範囲",
+      "ソースコードの変数名",
+      "端末の壁紙",
+      "社内イベントの服装"
+    ],
+    "answerIndex": 0,
+    "explanation": "SLAは可用性や応答時間などサービス提供条件を合意する文書。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0111",
+    "section": "A",
+    "domain": "management",
+    "stem": "インシデント管理の主な目的はどれか。",
+    "options": [
+      "サービスを可能な限り早く正常状態へ戻す",
+      "すべての変更を禁止する",
+      "製品価格を決める",
+      "業務システムを必ず廃止する"
+    ],
+    "answerIndex": 0,
+    "explanation": "インシデント管理では障害による業務影響を抑え迅速にサービスを復旧する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0112",
+    "section": "A",
+    "domain": "management",
+    "stem": "問題管理の主な目的として適切なものはどれか。",
+    "options": [
+      "インシデントの根本原因を特定し再発を防ぐ",
+      "全ユーザの端末を交換する",
+      "売上を直接計上する",
+      "必ず全サーバを停止する"
+    ],
+    "answerIndex": 0,
+    "explanation": "問題管理はインシデントの原因分析や恒久対策に重点を置く。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0113",
+    "section": "A",
+    "domain": "management",
+    "stem": "変更管理で変更実施前に確認すべき事項として適切なのはどれか。",
+    "options": [
+      "影響範囲とリスク、戻し手順",
+      "開発者の好きな色",
+      "モニタのメーカーだけ",
+      "変更後の広告文だけ"
+    ],
+    "answerIndex": 0,
+    "explanation": "変更の影響、リスク、承認、ロールバック計画などを事前に確認する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0114",
+    "section": "A",
+    "domain": "management",
+    "stem": "ソフトウェアテストの境界値分析で重点的に選ぶ入力はどれか。",
+    "options": [
+      "有効範囲の境界とその前後",
+      "乱数だけ",
+      "中央値だけ",
+      "最大桁数と無関係な値だけ"
+    ],
+    "answerIndex": 0,
+    "explanation": "不具合が発生しやすい境界付近の値を選んで検証する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0115",
+    "section": "A",
+    "domain": "management",
+    "stem": "ブラックボックステストで主に着目するものはどれか。",
+    "options": [
+      "外部仕様に対する入力と出力",
+      "プログラム内部の分岐網羅だけ",
+      "CPUの配線図",
+      "開発者の勤務時間"
+    ],
+    "answerIndex": 0,
+    "explanation": "ブラックボックステストは内部実装を前提とせず機能仕様に基づいて検証する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0116",
+    "section": "A",
+    "domain": "management",
+    "stem": "回帰テストを実施する主な目的はどれか。",
+    "options": [
+      "変更によって既存機能が壊れていないか確認する",
+      "開発者の人数を減らす",
+      "必ず処理速度を2倍にする",
+      "ソースコードを自動削除する"
+    ],
+    "answerIndex": 0,
+    "explanation": "修正や追加による既存機能への副作用を検出するために行う。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0117",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "SWOT分析で外部環境に分類される組合せはどれか。",
+    "options": [
+      "強みと弱み",
+      "機会と脅威",
+      "強みと機会",
+      "弱みと脅威"
+    ],
+    "answerIndex": 1,
+    "explanation": "SWOTの機会と脅威は外部環境、強みと弱みは内部環境を表す。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0118",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "PPMで市場成長率が高く相対的市場占有率も高い事業はどれか。",
+    "options": [
+      "花形",
+      "金のなる木",
+      "問題児",
+      "負け犬"
+    ],
+    "answerIndex": 0,
+    "explanation": "PPMでは高成長・高シェアの事業を花形（スター）に分類する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0119",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "損益計算書で売上高から売上原価を差し引いた利益はどれか。",
+    "options": [
+      "営業利益",
+      "経常利益",
+      "売上総利益",
+      "当期純利益"
+    ],
+    "answerIndex": 2,
+    "explanation": "売上総利益（粗利益）は売上高−売上原価で求める。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0120",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "ROIを算出する際に基本となる考え方はどれか。",
+    "options": [
+      "投資に対する利益の割合",
+      "売上高に対する従業員数",
+      "通信速度に対する容量",
+      "固定費に対する在庫数量"
+    ],
+    "answerIndex": 0,
+    "explanation": "ROIは投資利益率であり投資額に対する利益の割合を示す。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0121",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "BCPの目的として最も適切なものはどれか。",
+    "options": [
+      "災害時などに重要業務を継続・早期復旧する",
+      "売上税を計算する",
+      "ソフトウェアの色を統一する",
+      "すべての障害を完全に防ぐ"
+    ],
+    "answerIndex": 0,
+    "explanation": "事業継続計画は危機発生時に重要業務を維持・復旧するための計画。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0122",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "サプライチェーンマネジメントで最適化の対象となるものはどれか。",
+    "options": [
+      "調達から生産、物流、販売までの流れ",
+      "社内の画面配色だけ",
+      "一人の作業日報だけ",
+      "暗号アルゴリズムの鍵長だけ"
+    ],
+    "answerIndex": 0,
+    "explanation": "SCMは企業間も含めて調達から顧客までの物と情報の流れを最適化する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
   }
 ]

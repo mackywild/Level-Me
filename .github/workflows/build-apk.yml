@@ -24,6 +24,8 @@ jobs:
       - run: flutter pub get
       - name: Clean Android build outputs
         run: flutter clean && flutter pub get
+      - name: Validate FE question bank
+        run: python3 tool/validate_fe_questions.py
       - run: flutter analyze
       - run: flutter test
       - run: flutter build apk --release

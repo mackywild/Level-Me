@@ -97,6 +97,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
     ]),
     const SizedBox(height:12),
     DropdownButtonFormField<FePracticeMode>(
+     key:ValueKey(mode),
      initialValue:mode,
      items:const [
       DropdownMenuItem(value:FePracticeMode.all,child:Text('全問題')),

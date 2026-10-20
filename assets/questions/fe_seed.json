@@ -338,5 +338,379 @@
     "difficulty": 1,
     "reviewStatus": "initial-draft",
     "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0021",
+    "section": "A",
+    "domain": "technology",
+    "stem": "10進数の45を16進数で表すとどれか。",
+    "options": [
+      "1D",
+      "2D",
+      "3D",
+      "4D"
+    ],
+    "answerIndex": 1,
+    "explanation": "45=2×16+13なので16進数では2D。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0022",
+    "section": "A",
+    "domain": "technology",
+    "stem": "2進数の1010と1100のビットごとのAND演算結果はどれか。",
+    "options": [
+      "1000",
+      "1110",
+      "0110",
+      "0010"
+    ],
+    "answerIndex": 0,
+    "explanation": "両方が1の桁のみ1になるため1000。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0023",
+    "section": "A",
+    "domain": "technology",
+    "stem": "稼働率90%の独立した装置を2台並列にした場合の稼働率はどれか。",
+    "options": [
+      "81%",
+      "90%",
+      "95%",
+      "99%"
+    ],
+    "answerIndex": 3,
+    "explanation": "両方停止する確率は0.1×0.1=0.01。1−0.01=0.99。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0024",
+    "section": "A",
+    "domain": "technology",
+    "stem": "4KiBの記憶領域をバイト単位で指定するためのアドレス長は何ビットか。",
+    "options": [
+      "10",
+      "11",
+      "12",
+      "16"
+    ],
+    "answerIndex": 2,
+    "explanation": "4KiB=4096=2の12乗バイトなので12ビット。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0025",
+    "section": "A",
+    "domain": "technology",
+    "stem": "平均4クロックで1命令を実行する2GHzのCPUの命令実行速度はどれか。",
+    "options": [
+      "5億命令/秒",
+      "8億命令/秒",
+      "20億命令/秒",
+      "80億命令/秒"
+    ],
+    "answerIndex": 0,
+    "explanation": "20億クロック/秒÷4クロック/命令=5億命令/秒。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0026",
+    "section": "A",
+    "domain": "technology",
+    "stem": "10進数の小数0.625を2進数で表したものはどれか。",
+    "options": [
+      "0.001",
+      "0.011",
+      "0.101",
+      "0.110"
+    ],
+    "answerIndex": 2,
+    "explanation": "0.625=0.5+0.125なので2進数では0.101。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0027",
+    "section": "A",
+    "domain": "technology",
+    "stem": "要素数nの整列済み配列に対する二分探索の計算量はどれか。",
+    "options": [
+      "O(1)",
+      "O(log n)",
+      "O(n)",
+      "O(n²)"
+    ],
+    "answerIndex": 1,
+    "explanation": "探索範囲を毎回半分にするので比較回数は対数的に増える。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0028",
+    "section": "A",
+    "domain": "technology",
+    "stem": "ページサイズ4KiBの仮想記憶でページ内オフセットは何ビットか。",
+    "options": [
+      "8",
+      "10",
+      "12",
+      "20"
+    ],
+    "answerIndex": 2,
+    "explanation": "4KiB=2の12乗バイトなのでオフセットは12ビット。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0029",
+    "section": "A",
+    "domain": "technology",
+    "stem": "排他的論理和XORの結果が1になる入力の組合せはどれか。",
+    "options": [
+      "0と0",
+      "1と1",
+      "0と1",
+      "両方同じ値"
+    ],
+    "answerIndex": 2,
+    "explanation": "XORは二つの入力が異なる場合だけ1を返す。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0030",
+    "section": "A",
+    "domain": "technology",
+    "stem": "IPv4アドレス192.168.10.130/26のネットワークアドレスはどれか。",
+    "options": [
+      "192.168.10.0",
+      "192.168.10.64",
+      "192.168.10.128",
+      "192.168.10.192"
+    ],
+    "answerIndex": 2,
+    "explanation": "/26のブロック幅は64。130は128〜191の範囲に属する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0031",
+    "section": "A",
+    "domain": "technology",
+    "stem": "トランザクションのACID特性で確定した更新の保持を意味するものはどれか。",
+    "options": [
+      "原子性",
+      "一貫性",
+      "独立性",
+      "永続性"
+    ],
+    "answerIndex": 3,
+    "explanation": "永続性はコミット済みの変更が障害後も保持される性質。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0032",
+    "section": "A",
+    "domain": "technology",
+    "stem": "SQLのLEFT OUTER JOINで右側に一致行がないときの結果はどれか。",
+    "options": [
+      "左側行を除外する",
+      "左側行を残し右側列をNULLにする",
+      "右側行だけ返す",
+      "必ずエラーになる"
+    ],
+    "answerIndex": 1,
+    "explanation": "左外部結合は左表の全行を残し、一致しない右表の列をNULLとする。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0033",
+    "section": "A",
+    "domain": "management",
+    "stem": "作業Aが3日、Bが5日で並行し、両方完了後にCを2日実行する最短日数はどれか。",
+    "options": [
+      "5日",
+      "7日",
+      "8日",
+      "10日"
+    ],
+    "answerIndex": 1,
+    "explanation": "並行作業の長い方5日と後続作業2日を合計して7日。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0034",
+    "section": "A",
+    "domain": "management",
+    "stem": "損失100万円のリスクの発生確率が20%のとき期待損失額はいくらか。",
+    "options": [
+      "5万円",
+      "20万円",
+      "80万円",
+      "120万円"
+    ],
+    "answerIndex": 1,
+    "explanation": "100万円×20%=20万円が期待損失額。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-A-0035",
+    "section": "A",
+    "domain": "strategy",
+    "stem": "固定費300万円、販売単価5000円、単位変動費3000円の損益分岐点販売数量はどれか。",
+    "options": [
+      "600個",
+      "1000個",
+      "1500個",
+      "2500個"
+    ],
+    "answerIndex": 2,
+    "explanation": "限界利益は1個2000円。300万円÷2000円=1500個。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0036",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "整数配列[2,5,1,4]から偶数だけを加算した合計はいくつか。",
+    "options": [
+      "6",
+      "7",
+      "9",
+      "12"
+    ],
+    "answerIndex": 0,
+    "explanation": "偶数は2と4なので合計6。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0037",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "a=2,b=5からa←a+b、b←a−b、a←a−bを順に実行した結果はどれか。",
+    "options": [
+      "(2,5)",
+      "(5,2)",
+      "(7,3)",
+      "(3,7)"
+    ],
+    "answerIndex": 1,
+    "explanation": "順に(7,5),(7,2),(5,2)となり値が交換される。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0038",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "整数n=13からnが0になるまでnを2で割った整数商で更新する。更新回数は何回か。",
+    "options": [
+      "3回",
+      "4回",
+      "5回",
+      "13回"
+    ],
+    "answerIndex": 1,
+    "explanation": "13→6→3→1→0で4回更新する。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0039",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "配列[3,1,4,2]を左から隣接比較するバブルソートの最初の1巡後はどれか。",
+    "options": [
+      "[1,3,2,4]",
+      "[1,2,3,4]",
+      "[3,1,2,4]",
+      "[1,4,2,3]"
+    ],
+    "answerIndex": 0,
+    "explanation": "3と1、4と2を交換するので[1,3,2,4]になる。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0040",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "関数f(n)をnが1以下なら1、そうでなければn×f(n−1)と定義する。f(4)はいくつか。",
+    "options": [
+      "10",
+      "16",
+      "24",
+      "32"
+    ],
+    "answerIndex": 2,
+    "explanation": "f(4)=4×3×2×1=24。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0041",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "空のキューへA、Bを追加し、1回取り出してCを追加し、もう1回取り出す。最後の値はどれか。",
+    "options": [
+      "A",
+      "B",
+      "C",
+      "値なし"
+    ],
+    "answerIndex": 1,
+    "explanation": "FIFOなので最初はA、次はBを取り出す。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
+  },
+  {
+    "id": "FE-B-0042",
+    "section": "B",
+    "domain": "algorithm",
+    "stem": "x=1とし、iを1から4まで増やしながらx←x+iを実行する。終了時のxはいくつか。",
+    "options": [
+      "10",
+      "11",
+      "12",
+      "15"
+    ],
+    "answerIndex": 1,
+    "explanation": "初期値1に1+2+3+4=10を加えて11。",
+    "difficulty": 2,
+    "reviewStatus": "initial-draft",
+    "syllabusVersion": "verification-pending"
   }
 ]

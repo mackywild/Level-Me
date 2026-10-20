@@ -23,7 +23,6 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
  bool saving=false;
  bool shuffle=true;
  String? domainFilter;
- bool onlyUnseen=false;
  int limit=10;
  final Random _random=Random();
  @override void initState(){super.initState();_loading=_load();}
@@ -46,7 +45,6 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
    FePracticeMode.sectionB=>all.where((q)=>q.section=='B').toList(),
   };
   if(domainFilter!=null){questions=questions.where((q)=>q.domain==domainFilter).toList();}
-  if(onlyUnseen){questions=questions.where((q)=>history[q.id]?.isEmpty??true).toList();}
   if(mode==FePracticeMode.weak){
    questions.sort((a,b){
     double score(FeQuestion q){final h=history[q.id]!;return h.where((v)=>!v).length/h.length;}
@@ -138,6 +136,9 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
      Text('今回の正答率 ${(correct/questions.length*100).toStringAsFixed(1)}%'),
      const SizedBox(height:8),
      Text('誤答した問題は「間違えた問題」から復習できます。'),
+     const SizedBox(height:12),
+     FilledButton.tonal(onPressed:()=>setState((){mode=FePracticeMode.incorrect;_filter();}),child:const Text('間違えた問題を復習する')),
+
      const SizedBox(height:12),
      FilledButton(onPressed:()=>setState(_filter),child:const Text('もう一度')),
     ]else ...[

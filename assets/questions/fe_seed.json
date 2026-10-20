@@ -13,8 +13,10 @@
     "answerIndex": 2,
     "explanation": "32+8+4+1=45。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0002",
@@ -30,8 +32,10 @@
     "answerIndex": 1,
     "explanation": "2の8乗-1=255。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0003",
@@ -47,25 +51,29 @@
     "answerIndex": 1,
     "explanation": "最後に格納したデータを最初に取り出すLIFO方式。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0004",
     "section": "A",
     "domain": "technology",
-    "stem": "キューのデータ取り出し順序はどれか。",
+    "stem": "優先度付きキューで、優先度の値が小さい要素から取り出し、同じ優先度では先に登録した要素を先に取り出す。登録順に(値,優先度)=(A,2),(B,1),(C,1)としたとき、最初に取り出される要素はどれか。",
     "options": [
-      "LIFO",
-      "FIFO",
-      "降順",
-      "ランダム"
+      "A",
+      "B",
+      "C",
+      "登録順は関係しない"
     ],
     "answerIndex": 1,
-    "explanation": "最初に格納したデータを最初に取り出すFIFO方式。",
+    "explanation": "優先度1のBとCが優先度2のAより先に取り出される。同じ優先度なら先に登録した要素を先にするため、Bが最初となる。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0005",
@@ -81,8 +89,10 @@
     "answerIndex": 1,
     "explanation": "探索対象がキー順にソートされている必要がある。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0006",
@@ -98,8 +108,10 @@
     "answerIndex": 2,
     "explanation": "主キーは行を一意に特定しNULLを許さない。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0007",
@@ -115,8 +127,10 @@
     "answerIndex": 3,
     "explanation": "HAVINGはGROUP BYによるグループの集約結果を条件で絞る。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0008",
@@ -132,8 +146,10 @@
     "answerIndex": 1,
     "explanation": "HTTPSはHTTPをTLSで保護する。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0009",
@@ -149,8 +165,10 @@
     "answerIndex": 1,
     "explanation": "ドメイン名をIPアドレスなどに対応付ける。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "ネットワーク",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0010",
@@ -166,8 +184,10 @@
     "answerIndex": 1,
     "explanation": "一部が故障してもサービスを継続できる構成を用意する。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0011",
@@ -183,8 +203,10 @@
     "answerIndex": 0,
     "explanation": "Work Breakdown Structureは成果物や作業を階層的に分解する。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0012",
@@ -200,25 +222,29 @@
     "answerIndex": 1,
     "explanation": "クリティカルパス上の遅延は原則として全体の完了日に影響する。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0013",
     "section": "A",
     "domain": "strategy",
-    "stem": "損益分岐点売上高を求める式はどれか。",
+    "stem": "重要成功要因（CSF）に対する達成度を、測定可能な指標で継続的に把握するものはどれか。",
     "options": [
-      "固定費÷限界利益率",
-      "変動費÷固定費",
-      "利益÷売上高",
-      "固定費×変動費率"
+      "KPI",
+      "WBS",
+      "SLA",
+      "RTO"
     ],
     "answerIndex": 0,
-    "explanation": "損益分岐点売上高=固定費/(1-変動費率)。",
+    "explanation": "KPIは重要成功要因（CSF）の達成度を測る重要業績評価指標である。WBSは作業分解、SLAはサービス水準の合意、RTOは目標復旧時間を表す。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0014",
@@ -234,8 +260,10 @@
     "answerIndex": 2,
     "explanation": "OpportunityとThreatは外部環境、StrengthとWeaknessは内部環境。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "企業活動・経営戦略",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0015",
@@ -251,8 +279,10 @@
     "answerIndex": 1,
     "explanation": "秘密鍵は所有者のみが保持し、公開鍵は公開できる。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報セキュリティ",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0016",
@@ -268,8 +298,10 @@
     "answerIndex": 2,
     "explanation": "1回目7、2回目15。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0017",
@@ -285,8 +317,10 @@
     "answerIndex": 3,
     "explanation": "最初の4より大きい要素がないため4。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0018",
@@ -302,8 +336,10 @@
     "answerIndex": 0,
     "explanation": "偶数は2と4なので合計6。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0019",
@@ -319,8 +355,10 @@
     "answerIndex": 0,
     "explanation": "試行回数を制限しパスワード推測攻撃の効率を下げる。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報セキュリティ",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0020",
@@ -336,8 +374,10 @@
     "answerIndex": 0,
     "explanation": "プレースホルダを使い入力をSQL構文と分離する。",
     "difficulty": 1,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0021",
@@ -353,8 +393,10 @@
     "answerIndex": 1,
     "explanation": "45=2×16+13なので16進数では2D。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0022",
@@ -370,8 +412,10 @@
     "answerIndex": 0,
     "explanation": "両方が1の桁のみ1になるため1000。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0023",
@@ -387,8 +431,10 @@
     "answerIndex": 3,
     "explanation": "両方停止する確率は0.1×0.1=0.01。1−0.01=0.99。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（確率・統計）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0024",
@@ -404,8 +450,10 @@
     "answerIndex": 2,
     "explanation": "4KiB=4096=2の12乗バイトなので12ビット。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0025",
@@ -421,8 +469,10 @@
     "answerIndex": 0,
     "explanation": "20億クロック/秒÷4クロック/命令=5億命令/秒。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "コンピュータシステム",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0026",
@@ -438,8 +488,10 @@
     "answerIndex": 2,
     "explanation": "0.625=0.5+0.125なので2進数では0.101。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0027",
@@ -455,8 +507,10 @@
     "answerIndex": 1,
     "explanation": "探索範囲を毎回半分にするので比較回数は対数的に増える。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0028",
@@ -472,8 +526,10 @@
     "answerIndex": 2,
     "explanation": "4KiB=2の12乗バイトなのでオフセットは12ビット。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0029",
@@ -489,8 +545,10 @@
     "answerIndex": 2,
     "explanation": "XORは二つの入力が異なる場合だけ1を返す。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0030",
@@ -506,8 +564,10 @@
     "answerIndex": 2,
     "explanation": "/26のブロック幅は64。130は128〜191の範囲に属する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "ネットワーク",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0031",
@@ -523,8 +583,10 @@
     "answerIndex": 3,
     "explanation": "永続性はコミット済みの変更が障害後も保持される性質。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0032",
@@ -540,8 +602,10 @@
     "answerIndex": 1,
     "explanation": "左外部結合は左表の全行を残し、一致しない右表の列をNULLとする。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0033",
@@ -557,8 +621,10 @@
     "answerIndex": 1,
     "explanation": "並行作業の長い方5日と後続作業2日を合計して7日。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0034",
@@ -574,8 +640,10 @@
     "answerIndex": 1,
     "explanation": "100万円×20%=20万円が期待損失額。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（確率・統計）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0035",
@@ -591,8 +659,10 @@
     "answerIndex": 2,
     "explanation": "限界利益は1個2000円。300万円÷2000円=1500個。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "企業活動・経営戦略",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0036",
@@ -608,8 +678,10 @@
     "answerIndex": 0,
     "explanation": "偶数は2と4なので合計6。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0037",
@@ -625,8 +697,10 @@
     "answerIndex": 1,
     "explanation": "順に(7,5),(7,2),(5,2)となり値が交換される。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0038",
@@ -642,8 +716,10 @@
     "answerIndex": 1,
     "explanation": "13→6→3→1→0で4回更新する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0039",
@@ -659,8 +735,10 @@
     "answerIndex": 0,
     "explanation": "3と1、4と2を交換するので[1,3,2,4]になる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0040",
@@ -676,25 +754,29 @@
     "answerIndex": 2,
     "explanation": "f(4)=4×3×2×1=24。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0041",
     "section": "B",
     "domain": "algorithm",
-    "stem": "空のキューへA、Bを追加し、1回取り出してCを追加し、もう1回取り出す。最後の値はどれか。",
+    "stem": "3件のジョブA、B、Cが時刻0に到着し、到着順の単一待ち行列で処理する。各ジョブの処理時間がAは4分、Bは3分、Cは2分のとき、ジョブCの待ち時間は何分か。",
     "options": [
-      "A",
-      "B",
-      "C",
-      "値なし"
+      "2分",
+      "4分",
+      "7分",
+      "9分"
     ],
-    "answerIndex": 1,
-    "explanation": "FIFOなので最初はA、次はBを取り出す。",
+    "answerIndex": 2,
+    "explanation": "先着順ではAとBの処理が終わるまでCは開始できない。待ち時間は4+3=7分であり、C自身の処理時間2分は待ち時間に含めない。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0042",
@@ -710,8 +792,10 @@
     "answerIndex": 1,
     "explanation": "初期値1に1+2+3+4=10を加えて11。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0043",
@@ -727,8 +811,10 @@
     "answerIndex": 0,
     "explanation": "i=0でa[1]=3、i=1でa[2]=6、i=2でa[3]=10。更新後の値を次の計算で利用する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0044",
@@ -744,8 +830,10 @@
     "answerIndex": 2,
     "explanation": "内側の反復回数は1,2,3,4,5回。合計は15回。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0045",
@@ -761,8 +849,10 @@
     "answerIndex": 1,
     "explanation": "17→12→7→2で条件x>3が偽となる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0046",
@@ -778,8 +868,10 @@
     "answerIndex": 0,
     "explanation": "5と2を交換し、5と8は交換せず、8と1を交換する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0047",
@@ -795,8 +887,10 @@
     "answerIndex": 2,
     "explanation": "g(6)=6+4+2+0=12。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0048",
@@ -812,8 +906,10 @@
     "answerIndex": 0,
     "explanation": "奇数の1,3,5だけを加算するので9。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0049",
@@ -829,8 +925,10 @@
     "answerIndex": 2,
     "explanation": "i=1で3、i=2で8、i=3で19。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0050",
@@ -846,8 +944,10 @@
     "answerIndex": 0,
     "explanation": "mは最小値を保持する。4→2と更新され最終値は2。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0051",
@@ -863,8 +963,10 @@
     "answerIndex": 0,
     "explanation": "両端を交換しながら中央へ進むので配列が逆順になる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0052",
@@ -880,8 +982,10 @@
     "answerIndex": 1,
     "explanation": "3だけ加算しないので1+2+4=7。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0053",
@@ -897,8 +1001,10 @@
     "answerIndex": 1,
     "explanation": "6と8の2要素が条件を満たす。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0054",
@@ -914,8 +1020,10 @@
     "answerIndex": 1,
     "explanation": "3回の反復でxは8から5に減る。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0055",
@@ -931,8 +1039,10 @@
     "answerIndex": 1,
     "explanation": "f(0)=0,f(1)=1から順に1,2,3,5と進む。f(5)=5。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0056",
@@ -948,8 +1058,10 @@
     "answerIndex": 0,
     "explanation": "i=0で最小の1を先頭へ、i=1で2を中央へ移し昇順になる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0057",
@@ -965,8 +1077,10 @@
     "answerIndex": 2,
     "explanation": "初期値1に2,3,4を順に掛けて24。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0058",
@@ -982,8 +1096,10 @@
     "answerIndex": 2,
     "explanation": "各iを2回加算するため2×(1+2+3)=12。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0059",
@@ -999,8 +1115,10 @@
     "answerIndex": 1,
     "explanation": "a[1]=2、a[2]=1+2=3。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0060",
@@ -1016,8 +1134,10 @@
     "answerIndex": 2,
     "explanation": "偶数i=0,2,4について0+4+8=12。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0061",
@@ -1033,8 +1153,10 @@
     "answerIndex": 3,
     "explanation": "最小値1がある添字3を保持する。添字は0始まり。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0062",
@@ -1050,8 +1172,10 @@
     "answerIndex": 3,
     "explanation": "2→4→16→256と3回二乗する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0063",
@@ -1067,8 +1191,10 @@
     "answerIndex": 2,
     "explanation": "添字0の4と添字2の3だけが条件を満たすため4+3=7。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0064",
@@ -1084,8 +1210,10 @@
     "answerIndex": 1,
     "explanation": "xは1→3→6となり条件を満たしてループを抜ける。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0065",
@@ -1101,8 +1229,10 @@
     "answerIndex": 0,
     "explanation": "最初に0番と3番、次に1番と2番を交換する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0066",
@@ -1118,8 +1248,10 @@
     "answerIndex": 1,
     "explanation": "f(7)=f(3)+1=f(1)+1+1=3。2進数111の1の個数を返す。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0067",
@@ -1135,8 +1267,10 @@
     "answerIndex": 1,
     "explanation": "i<jとなる組は(1,2),(1,3),(1,4),(2,3),(2,4),(3,4)の6組。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0068",
@@ -1152,8 +1286,10 @@
     "answerIndex": 2,
     "explanation": "(x,y)は(1,2)→(2,3)→(3,5)→(5,8)なのでxは5。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0069",
@@ -1169,8 +1305,10 @@
     "answerIndex": 1,
     "explanation": "3だけ除き1+2+4+5=12。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0070",
@@ -1186,8 +1324,10 @@
     "answerIndex": 3,
     "explanation": "a[1]=3、a[2]=6、a[3]=10と左から更新する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0071",
@@ -1203,8 +1343,10 @@
     "answerIndex": 0,
     "explanation": "20→10→5→2でx>=5が偽となる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0072",
@@ -1220,8 +1362,10 @@
     "answerIndex": 1,
     "explanation": "添字0,2,4の2+6+10=18。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0073",
@@ -1237,8 +1381,10 @@
     "answerIndex": 1,
     "explanation": "ソルトを用いると同じパスワードでもハッシュ値が異なり、レインボーテーブルなどの事前計算を利用しにくくなる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報セキュリティ",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0074",
@@ -1254,8 +1400,10 @@
     "answerIndex": 1,
     "explanation": "フィッシング対策として正規の入口を利用し、多要素認証で認証情報漏えい時の被害を減らす。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報セキュリティ",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0075",
@@ -1271,8 +1419,10 @@
     "answerIndex": 0,
     "explanation": "IDを変更して他人のデータにアクセスできるのはオブジェクト単位の認可確認不足。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報セキュリティ",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0076",
@@ -1288,8 +1438,10 @@
     "answerIndex": 1,
     "explanation": "証明書の有効期限、信頼の連鎖、接続先ホスト名との一致などを検証する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "ネットワーク",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-B-0077",
@@ -1305,8 +1457,10 @@
     "answerIndex": 0,
     "explanation": "最小権限の原則は業務に必要な権限だけを付与して被害範囲を抑える。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報セキュリティ",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0078",
@@ -1322,8 +1476,10 @@
     "answerIndex": 1,
     "explanation": "50MB=400Mbit。400Mbit÷100Mbit/秒=4秒。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "ネットワーク",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0079",
@@ -1339,8 +1495,10 @@
     "answerIndex": 0,
     "explanation": "第1正規形では各属性が原子的な値を持つようにする。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0080",
@@ -1356,8 +1514,10 @@
     "answerIndex": 2,
     "explanation": "毎回キャッシュを1ns参照し、ミス20%で51ns追加するため1+0.2×51=11.2ns。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "コンピュータシステム",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0081",
@@ -1373,8 +1533,10 @@
     "answerIndex": 3,
     "explanation": "初期費用100+30万円と運用20×3万円を合計して190万円。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0082",
@@ -1390,8 +1552,10 @@
     "answerIndex": 1,
     "explanation": "利益=売上高−変動費−固定費=800−480−200=120万円。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "企業活動・経営戦略",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0083",
@@ -1407,8 +1571,10 @@
     "answerIndex": 2,
     "explanation": "IPはネットワーク層のプロトコルで、ネットワーク間のパケット転送を扱う。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "ネットワーク",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0084",
@@ -1424,25 +1590,29 @@
     "answerIndex": 1,
     "explanation": "TCPは確認応答や再送制御、順序制御によって信頼性のある通信を提供する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "ネットワーク",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0085",
     "section": "A",
     "domain": "technology",
-    "stem": "DNSの主な役割として正しいものはどれか。",
+    "stem": "DNSリゾルバが応答をキャッシュするとき、TTLが示すものはどれか。",
     "options": [
-      "ドメイン名からIPアドレスなどを問い合わせる",
-      "Webページを暗号化する",
-      "端末に電源を供給する",
-      "ファイルを圧縮する"
+      "キャッシュした応答を保持してよい時間",
+      "ドメイン名の最大文字数",
+      "IPパケットの生存時間",
+      "暗号鍵の有効長"
     ],
     "answerIndex": 0,
-    "explanation": "DNSは名前とIPアドレスなどの対応情報を提供する名前解決の仕組み。",
+    "explanation": "DNSレコードのTTLは、その応答をキャッシュしてよい時間を示す。IPパケットのTTL（ホップ制限）とは別の値である。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "ネットワーク",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0086",
@@ -1458,25 +1628,29 @@
     "answerIndex": 1,
     "explanation": "DHCPはIPアドレスやデフォルトゲートウェイ、DNSサーバなどを自動設定する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "ネットワーク",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0087",
     "section": "A",
     "domain": "technology",
-    "stem": "公開鍵暗号方式の特徴として適切なものはどれか。",
+    "stem": "電子署名を用いて送信者の本人性とデータの改ざん有無を検証するとき、受信者が使う鍵はどれか。",
     "options": [
-      "暗号化と復号に同じ秘密鍵を使う",
-      "鍵を全員に秘密にする",
-      "公開鍵と秘密鍵の組を利用する",
-      "暗号化すると必ず圧縮される"
+      "送信者の秘密鍵",
+      "送信者の公開鍵",
+      "受信者の秘密鍵",
+      "共通鍵"
     ],
-    "answerIndex": 2,
-    "explanation": "公開鍵暗号では数学的に関連する公開鍵と秘密鍵を異なる役割で利用する。",
+    "answerIndex": 1,
+    "explanation": "送信者は自分の秘密鍵で署名を作り、受信者は対応する送信者の公開鍵で検証する。署名は機密性を与える暗号化とは目的が異なる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報セキュリティ",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0088",
@@ -1492,8 +1666,10 @@
     "answerIndex": 0,
     "explanation": "暗号学的ハッシュ関数は任意長データから一定長のダイジェストを計算する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報セキュリティ",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0089",
@@ -1509,8 +1685,10 @@
     "answerIndex": 0,
     "explanation": "ROLLBACKは原則としてトランザクション内の未コミット変更を取り消す。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0090",
@@ -1526,25 +1704,29 @@
     "answerIndex": 0,
     "explanation": "索引は条件検索を高速化し得るが、挿入・更新・削除時の索引維持コストが生じる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0091",
     "section": "A",
     "domain": "technology",
-    "stem": "主キーの性質として正しいものはどれか。",
+    "stem": "外部キー（外部参照キー）の役割として適切なものはどれか。",
     "options": [
-      "重複値を自由に持てる",
-      "NULLを含めてもよい",
-      "行を一意に識別する",
-      "必ず文字列型である"
+      "別の表の行を参照し、表間の整合性を保つ",
+      "表の各行を必ず一つの値で暗号化する",
+      "検索結果の並び順を固定する",
+      "列の重複値をすべて禁止する"
     ],
-    "answerIndex": 2,
-    "explanation": "主キーは表の行を一意に識別し、重複やNULLを許さない。",
+    "answerIndex": 0,
+    "explanation": "外部キーは他表の主キーなどを参照し、参照先に存在しない値の登録を防ぐなど、表間の参照整合性を保つ。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0092",
@@ -1560,8 +1742,10 @@
     "answerIndex": 0,
     "explanation": "互いに必要な資源を保持したまま待ち続ける循環待ちがデッドロックの典型例。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "コンピュータシステム",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0093",
@@ -1577,8 +1761,10 @@
     "answerIndex": 0,
     "explanation": "必要なページが物理メモリにない場合、OSがページの読み込みなどを行う。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "コンピュータシステム",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0094",
@@ -1594,8 +1780,10 @@
     "answerIndex": 1,
     "explanation": "LRUはLeast Recently Usedの略で、最後の利用から最も時間が経ったページを選ぶ。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "コンピュータシステム",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0095",
@@ -1611,25 +1799,29 @@
     "answerIndex": 0,
     "explanation": "先頭ポインタと新要素の参照を更新するだけなので一定時間で挿入できる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "コンピュータシステム",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0096",
     "section": "A",
     "domain": "technology",
-    "stem": "スタックにA、B、Cの順にデータを積んだ後、最初に取り出されるデータはどれか。",
+    "stem": "スタックで後置記法の式「5 2 − 3 ×」を左から評価する。演算子は右オペランド、左オペランドの順に取り出す。式の値はどれか。",
     "options": [
-      "A",
-      "B",
-      "C",
-      "取り出せない"
+      "−9",
+      "9",
+      "15",
+      "21"
     ],
-    "answerIndex": 2,
-    "explanation": "スタックは後入れ先出し（LIFO）なので、最後に積んだCを最初に取り出す。",
+    "answerIndex": 1,
+    "explanation": "5と2を取り出して5−2=3を積む。次に3と3を取り出して乗算するので、式の値は9となる。引き算ではオペランドの順序に注意する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0097",
@@ -1645,8 +1837,10 @@
     "answerIndex": 2,
     "explanation": "ヒープ構築と各要素の取り出しにより全体でO(n log n)となる。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0098",
@@ -1662,8 +1856,10 @@
     "answerIndex": 1,
     "explanation": "ド・モルガンの法則よりANDの否定は各項の否定のORに等しい。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0099",
@@ -1679,8 +1875,10 @@
     "answerIndex": 0,
     "explanation": "近い値を引くと有効数字が失われ、相対誤差が大きくなる場合がある。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "基礎理論（数値・論理）",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0100",
@@ -1696,8 +1894,10 @@
     "answerIndex": 0,
     "explanation": "RAID 1はミラーリングによって同じデータを複数ディスクに保存する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "コンピュータシステム",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0101",
@@ -1713,8 +1913,10 @@
     "answerIndex": 0,
     "explanation": "OSレベル仮想化のコンテナはホストのカーネルを共有し、プロセスなどを分離する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "コンピュータシステム",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0102",
@@ -1730,8 +1932,10 @@
     "answerIndex": 0,
     "explanation": "GETはリソースの表現を取得するためのHTTPメソッド。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0103",
@@ -1747,8 +1951,10 @@
     "answerIndex": 2,
     "explanation": "404 Not Foundは要求された対象リソースが見つからないことを示す。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "ネットワーク",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0104",
@@ -1764,8 +1970,10 @@
     "answerIndex": 0,
     "explanation": "GROUP BYは同じキー値を持つ行をまとめ、COUNTやSUMなどの集約を行う。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "データベース",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0105",
@@ -1781,8 +1989,10 @@
     "answerIndex": 1,
     "explanation": "中間順走査は左部分木、根、右部分木の順で訪問する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "アルゴリズムとプログラミング",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0106",
@@ -1798,8 +2008,10 @@
     "answerIndex": 0,
     "explanation": "過学習では訓練データの特徴やノイズを覚え込み、汎化性能が悪化する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報に関する理論・AI",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0107",
@@ -1815,42 +2027,48 @@
     "answerIndex": 0,
     "explanation": "教師あり学習では入力と対応する正解ラベルを用いて予測モデルを学習する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "情報に関する理論・AI",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0108",
     "section": "A",
     "domain": "management",
-    "stem": "WBSを作成する主な目的はどれか。",
+    "stem": "ある時点の計画価値（PV）が120万円、出来高（EV）が100万円である。スケジュール差異（SV）はいくらか。",
     "options": [
-      "成果物と作業を階層的に分解して管理する",
-      "社員の給与を計算する",
-      "IPアドレスを割り当てる",
-      "パスワードを暗号化する"
+      "−20万円",
+      "20万円",
+      "100万円",
+      "120万円"
     ],
     "answerIndex": 0,
-    "explanation": "WBSはプロジェクトの成果物や作業を管理可能な単位に分解する。",
+    "explanation": "スケジュール差異SVはEV−PVで求める。100−120=−20万円なので、計画より進捗が遅れていることを示す。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0109",
     "section": "A",
     "domain": "management",
-    "stem": "クリティカルパスの特徴として正しいものはどれか。",
+    "stem": "ある作業の最早開始時刻が4日目、最遅開始時刻が7日目である。この作業の開始時点の余裕時間はどれか。",
     "options": [
-      "遅延がプロジェクト全体の完了日に直結しやすい経路",
-      "必ず作業数が最少の経路",
-      "費用が最小の経路",
-      "担当者が最も多い経路"
+      "3日",
+      "4日",
+      "7日",
+      "11日"
     ],
     "answerIndex": 0,
-    "explanation": "余裕時間がない作業の経路は遅れると全体の完了が遅れる。",
+    "explanation": "開始時点の余裕時間は最遅開始時刻−最早開始時刻で求める。7−4=3日であり、この範囲内の遅れなら直ちに後続工程へ影響しない。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0110",
@@ -1866,8 +2084,10 @@
     "answerIndex": 0,
     "explanation": "SLAは可用性や応答時間などサービス提供条件を合意する文書。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0111",
@@ -1883,8 +2103,10 @@
     "answerIndex": 0,
     "explanation": "インシデント管理では障害による業務影響を抑え迅速にサービスを復旧する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0112",
@@ -1900,8 +2122,10 @@
     "answerIndex": 0,
     "explanation": "問題管理はインシデントの原因分析や恒久対策に重点を置く。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0113",
@@ -1917,8 +2141,10 @@
     "answerIndex": 0,
     "explanation": "変更の影響、リスク、承認、ロールバック計画などを事前に確認する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0114",
@@ -1934,8 +2160,10 @@
     "answerIndex": 0,
     "explanation": "不具合が発生しやすい境界付近の値を選んで検証する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0115",
@@ -1951,8 +2179,10 @@
     "answerIndex": 0,
     "explanation": "ブラックボックステストは内部実装を前提とせず機能仕様に基づいて検証する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0116",
@@ -1968,25 +2198,29 @@
     "answerIndex": 0,
     "explanation": "修正や追加による既存機能への副作用を検出するために行う。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "プロジェクトマネジメント・サービスマネジメント",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0117",
     "section": "A",
     "domain": "strategy",
-    "stem": "SWOT分析で外部環境に分類される組合せはどれか。",
+    "stem": "個人情報を取得する際に、利用目的を本人に明らかにすることが求められる主な理由はどれか。",
     "options": [
-      "強みと弱み",
-      "機会と脅威",
-      "強みと機会",
-      "弱みと脅威"
+      "本人が情報の利用範囲を認識できるようにするため",
+      "データベースの処理速度を上げるため",
+      "すべての情報を匿名化するため",
+      "第三者への提供を常に自由にするため"
     ],
-    "answerIndex": 1,
-    "explanation": "SWOTの機会と脅威は外部環境、強みと弱みは内部環境を表す。",
+    "answerIndex": 0,
+    "explanation": "利用目的を明確にすることで、本人がどの目的で個人情報が扱われるかを認識できる。目的の明示は匿名化や自由な第三者提供を意味しない。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "企業活動・経営戦略",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0118",
@@ -2002,8 +2236,10 @@
     "answerIndex": 0,
     "explanation": "PPMでは高成長・高シェアの事業を花形（スター）に分類する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "企業活動・経営戦略",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0119",
@@ -2019,8 +2255,10 @@
     "answerIndex": 2,
     "explanation": "売上総利益（粗利益）は売上高−売上原価で求める。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "企業活動・経営戦略",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0120",
@@ -2036,8 +2274,10 @@
     "answerIndex": 0,
     "explanation": "ROIは投資利益率であり投資額に対する利益の割合を示す。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "企業活動・経営戦略",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0121",
@@ -2053,8 +2293,10 @@
     "answerIndex": 0,
     "explanation": "事業継続計画は危機発生時に重要業務を維持・復旧するための計画。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "企業活動・経営戦略",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   },
   {
     "id": "FE-A-0122",
@@ -2070,7 +2312,9 @@
     "answerIndex": 0,
     "explanation": "SCMは企業間も含めて調達から顧客までの物と情報の流れを最適化する。",
     "difficulty": 2,
-    "reviewStatus": "initial-draft",
-    "syllabusVersion": "verification-pending"
+    "reviewStatus": "reviewed",
+    "syllabusVersion": "IPA-FE-Ver.9.2",
+    "subdomain": "企業活動・経営戦略",
+    "referenceUrl": "https://www.ipa.go.jp/shiken/syllabus/omgdg50000005kpe-att/syllabus_fe_ver9_2.pdf"
   }
 ]

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/fe_question.dart';
@@ -20,6 +21,9 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
  int index=0,correct=0;
  int? selected;
  bool saving=false;
+ bool shuffle=true;
+ int limit=10;
+ final Random _random=Random();
  @override void initState(){super.initState();_loading=_load();}
  Future<void> _load() async {
   final raw=await rootBundle.loadString('assets/questions/fe_seed.json');
@@ -34,6 +38,8 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
    FePracticeMode.sectionA=>all.where((q)=>q.section=='A').toList(),
    FePracticeMode.sectionB=>all.where((q)=>q.section=='B').toList(),
   };
+  if(shuffle){questions.shuffle(_random);}
+  if(limit>0 && questions.length>limit){questions=questions.take(limit).toList();}
   index=0;correct=0;selected=null;
  }
  Future<void> _answer(int choice,FeQuestion question) async {
@@ -60,6 +66,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
    final mistakes=all.where((q)=>history[q.id]?.lastOrNull==false).length;
    return ListView(padding:const EdgeInsets.all(20),children:[
     Text('学習済み $answered / ${all.length}問　要復習 $mistakes問'),
+    const Text('演習設定を変更すると現在の演習は最初からになります。'),
     const SizedBox(height:12),
     DropdownButtonFormField<FePracticeMode>(
      initialValue:mode,
@@ -70,6 +77,18 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
       DropdownMenuItem(value:FePracticeMode.sectionB,child:Text('科目B')),
      ],
      onChanged:(v){if(v!=null){setState((){mode=v;_filter();});}},
+    ),
+    const SizedBox(height:12),
+    SwitchListTile(title:const Text('問題をシャッフル'),value:shuffle,onChanged:(v)=>setState((){shuffle=v;_filter();})),
+    DropdownButtonFormField<int>(
+     initialValue:limit,
+     decoration:const InputDecoration(labelText:'1回の演習問題数'),
+     items:const [
+      DropdownMenuItem(value:10,child:Text('10問')),
+      DropdownMenuItem(value:20,child:Text('20問')),
+      DropdownMenuItem(value:0,child:Text('全件')),
+     ],
+     onChanged:(v){if(v!=null){setState((){limit=v;_filter();});}},
     ),
     const SizedBox(height:16),
     if(questions.isEmpty)

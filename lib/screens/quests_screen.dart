@@ -3,6 +3,7 @@ import '../controllers/app_controller.dart';
 import '../models/quest.dart';
 import '../models/stat_type.dart';
 import 'fe_question_screen.dart';
+import 'fe_study_screen.dart';
 class QuestsScreen extends StatefulWidget{
  const QuestsScreen({super.key,required this.controller});
  final AppController controller;

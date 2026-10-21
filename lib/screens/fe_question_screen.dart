@@ -6,10 +6,15 @@ import '../models/fe_question.dart';
 import '../services/fe_progress_store.dart';
 import '../services/fe_question_selector.dart';
 
-enum FePracticeMode { all, incorrect, unseen, weak, sectionA, sectionB, examB }
+enum FePracticeMode { all, incorrect, review, unseen, weak, sectionA, sectionB, examB }
 
 class FeQuestionScreen extends StatefulWidget {
- const FeQuestionScreen({super.key});
+ const FeQuestionScreen({super.key, this.initialMode=FePracticeMode.all,
+  this.initialQuestionIds, this.onAnswerRecorded, this.onReviewFlagChanged});
+ final FePracticeMode initialMode;
+ final Set<String>? initialQuestionIds;
+ final void Function(String id,bool correct)? onAnswerRecorded;
+ final void Function(String id,bool flagged)? onReviewFlagChanged;
  @override State<FeQuestionScreen> createState()=>_FeQuestionScreenState();
 }
 class _FeQuestionScreenState extends State<FeQuestionScreen>{
@@ -17,8 +22,9 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
  late Future<void> _loading;
  List<FeQuestion> all=[];
  Map<String,List<bool>> history={};
+ Set<String> flaggedIds={};
  List<FeQuestion> questions=[];
- FePracticeMode mode=FePracticeMode.all;
+ late FePracticeMode mode;
  int index=0,correct=0;
  int? selected;
  bool saving=false;
@@ -26,17 +32,25 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
  String? domainFilter;
  int limit=10;
  final Random _random=Random();
- @override void initState(){super.initState();_loading=_load();}
+ @override void initState(){
+  super.initState();
+  mode=widget.initialMode;
+  if(widget.initialQuestionIds!=null)limit=0;
+  _loading=_load();
+ }
  Future<void> _load() async {
   final raw=await rootBundle.loadString('assets/questions/fe_seed.json');
   all=(jsonDecode(raw) as List).map((e)=>FeQuestion.fromJson(e as Map<String,dynamic>)).toList();
   history=await _store.load();
+  flaggedIds=await _store.loadFlags();
   _filter();
  }
  void _filter(){
   questions=switch(mode){
    FePracticeMode.all=>List.of(all),
    FePracticeMode.incorrect=>all.where((q)=>history[q.id]?.lastOrNull==false).toList(),
+   FePracticeMode.review=>FeQuestionSelector.selectForReview(
+    all,history,flaggedIds,targetIds:widget.initialQuestionIds),
    FePracticeMode.unseen=>all.where((q)=>history[q.id]?.isEmpty??true).toList(),
    FePracticeMode.weak=>all.where((q){
     final h=history[q.id];
@@ -63,6 +77,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
   try{
    await _store.record(question.id,result);
    history.putIfAbsent(question.id,()=>[]).add(result);
+   widget.onAnswerRecorded?.call(question.id,result);
    if(!mounted)return;
    setState((){selected=choice;if(result)correct++;saving=false;});
   }catch(error){
@@ -71,16 +86,28 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('解答履歴を保存できません: $error')));
   }
  }
+ Future<void> _toggleReviewFlag(FeQuestion question) async {
+  final flagged=!flaggedIds.contains(question.id);
+  try{
+   await _store.setFlag(question.id,flagged);
+   if(!mounted)return;
+   setState(()=>flagged?flaggedIds.add(question.id):flaggedIds.remove(question.id));
+   widget.onReviewFlagChanged?.call(question.id,flagged);
+  }catch(error){
+   if(!mounted)return;
+   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('見直し設定を保存できません: $error')));
+  }
+ }
  @override Widget build(BuildContext context)=>Scaffold(
   appBar:AppBar(title:const Text('基本情報・問題演習')),
   body:FutureBuilder<void>(future:_loading,builder:(context,snapshot){
    if(snapshot.hasError){return Center(child:Text('問題読込失敗: ${snapshot.error}'));}
    if(snapshot.connectionState!=ConnectionState.done){return const Center(child:CircularProgressIndicator());}
    final answered=history.values.where((h)=>h.isNotEmpty).length;
-   final mistakes=all.where((q)=>history[q.id]?.lastOrNull==false).length;
+   final reviewCount=FeQuestionSelector.selectForReview(all,history,flaggedIds).length;
    final domains=all.map((q)=>q.domain).toSet().toList()..sort();
    return ListView(padding:const EdgeInsets.all(20),children:[
-    Text('学習済み $answered / ${all.length}問　要復習 $mistakes問'),
+    Text('学習済み $answered / ${all.length}問　要復習 $reviewCount問'),
     const Text('演習設定を変更すると現在の演習は最初からになります。'),
     const SizedBox(height:12),
     ExpansionTile(title:const Text('分野別の学習分析'),children:[
@@ -104,6 +131,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
      items:const [
       DropdownMenuItem(value:FePracticeMode.all,child:Text('全問題')),
       DropdownMenuItem(value:FePracticeMode.incorrect,child:Text('間違えた問題')),
+      DropdownMenuItem(value:FePracticeMode.review,child:Text('要復習（間違えた・要確認）')),
       DropdownMenuItem(value:FePracticeMode.unseen,child:Text('未学習の問題')),
       DropdownMenuItem(value:FePracticeMode.weak,child:Text('苦手問題を優先（誤答率50%以上）')),
       DropdownMenuItem(value:FePracticeMode.sectionA,child:Text('科目A')),
@@ -143,7 +171,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
      const SizedBox(height:8),
      Text('誤答した問題は「間違えた問題」から復習できます。'),
      const SizedBox(height:12),
-     FilledButton.tonal(onPressed:()=>setState((){mode=FePracticeMode.incorrect;_filter();}),child:const Text('間違えた問題を復習する')),
+     FilledButton.tonal(onPressed:()=>setState((){mode=FePracticeMode.review;_filter();}),child:const Text('要復習問題を解く')),
 
      const SizedBox(height:12),
      FilledButton(onPressed:()=>setState(_filter),child:const Text('もう一度')),
@@ -154,6 +182,10 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
      const SizedBox(height:16),
      Text(questions[index].stem,style:Theme.of(context).textTheme.titleLarge),
      const SizedBox(height:16),
+     Align(alignment:Alignment.centerLeft,child:TextButton.icon(
+      onPressed:()=>_toggleReviewFlag(questions[index]),
+      icon:Icon(flaggedIds.contains(questions[index].id)?Icons.bookmark:Icons.bookmark_border),
+      label:Text(flaggedIds.contains(questions[index].id)?'要確認から外す':'あとで見直す'))),
      for(var i=0;i<questions[index].options.length;i++)
       Padding(padding:const EdgeInsets.only(bottom:8),child:OutlinedButton(
        onPressed:selected==null&&!saving?()=>_answer(i,questions[index]):null,

@@ -14,7 +14,7 @@ class AppStateData {
  factory AppStateData.initial()=>AppStateData(totalExp:0,completionCount:0,
   stats:{for(final stat in StatType.values)stat:0},
   quests:[
-   Quest(id:'starter-study',title:'勉強を30分する',rewards:const [QuestReward(stat:StatType.intelligence,exp:20),QuestReward(stat:StatType.discipline,exp:5)],createdAt:DateTime.now(),cadence:QuestCadence.daily),
+   Quest(id:'starter-study',title:'基本情報技術者の勉強をする',rewards:const [QuestReward(stat:StatType.intelligence,exp:20),QuestReward(stat:StatType.discipline,exp:5)],createdAt:DateTime.now(),cadence:QuestCadence.daily),
    Quest(id:'starter-workout',title:'筋トレをする',rewards:const [QuestReward(stat:StatType.fitness,exp:15),QuestReward(stat:StatType.discipline,exp:5)],createdAt:DateTime.now(),cadence:QuestCadence.daily),
   ],achievements:[],activeDates:[],boss:defaultBoss());
  Map<String,dynamic> toJson()=>{'totalExp':totalExp,'completionCount':completionCount,

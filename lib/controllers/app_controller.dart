@@ -14,9 +14,9 @@ class AppController extends ChangeNotifier {
  AppStateData get state=>_state;
  bool get ready=>_ready;
  Future<void> initialize() async{_state=await _store.load();_ready=true;notifyListeners();}
- Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime}) async {
+ Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime,List<String> reviewQuestionIds=const []}) async {
   if(title.trim().isEmpty||rewards.isEmpty||rewards.any((r)=>r.exp<=0))return;
-  _state.quests.insert(0,Quest(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title.trim(),rewards:rewards,createdAt:DateTime.now(),cadence:cadence));
+  _state.quests.insert(0,Quest(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title.trim(),rewards:rewards,createdAt:DateTime.now(),cadence:cadence,reviewQuestionIds:List.of(reviewQuestionIds)));
   await _persist();
  }
  Future<void> completeQuest(Quest quest) async{

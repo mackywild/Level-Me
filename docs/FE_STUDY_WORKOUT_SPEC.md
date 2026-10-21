@@ -14,11 +14,12 @@
 - Store reviewed questions as versioned offline assets. No unreviewed template permutations.
 
 ## Study session
-- START -> monotonic elapsed-time clock; display time and current questions.
+- The daily `starter-study` quest is the entry point for FE study; its session contains the timer and access to the A/B question bank. There is no separate preview entry.
+- START -> monotonic elapsed-time clock; questions can be opened while the session timer runs.
 - PAUSE/RESUME/FINISH; app background/foreground reconciliation.
 - Credit elapsed active seconds, not answered-question count; daily credit cap prevents idle farming.
 - On finish persist session, attempts and incorrect-question IDs before issuing EXP.
-- Generate a review quest from incorrect/flagged questions, with spaced repetition; a review quest cannot be completed merely by creation.
+- Generate a review quest from incorrect/flagged question IDs; opening it starts a timed session filtered to those questions. A review quest cannot be completed merely by creation.
 - Never overwrite an incomplete session silently.
 
 ## Exam-day quest

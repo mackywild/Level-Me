@@ -63,14 +63,14 @@ def classify(q):
         if any(w in label for w in ("テスト", "要求", "設計", "品質", "構造")):
             return "12"
         return "05"
+    if label == "プロジェクトマネジメント・サービスマネジメント":
+        return "15" if any(w in stem for w in ("サービス", "インシデント", "SLA", "可用性")) else "14"
     if label.startswith("プロジェクトマネジメント"):
         return "14"
     if label.startswith("サービスマネジメント"):
         return "15"
     if label.startswith("システム監査"):
         return "16"
-    if label == "プロジェクトマネジメント・サービスマネジメント":
-        return "15" if any(w in stem for w in ("サービス", "インシデント", "SLA", "可用性")) else "14"
     if label.startswith("企業活動・経営戦略"):
         return "22" if any(w in stem for w in ("会計", "利益", "原価", "財務", "在庫")) else "19"
     if label.startswith("企業活動"):

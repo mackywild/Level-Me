@@ -12,7 +12,7 @@ from pathlib import Path
 BANK = Path(__file__).resolve().parents[1] / "assets/questions/fe_seed.json"
 
 # IPA Ver.9.2 中分類 (middle classifications).
-IPA = {
+MIN_A_ITEMS = 5  # Local coverage floor; this is not an IPA requirement.\n\nIPA = {
     "01": "基礎理論", "02": "アルゴリズムとプログラミング",
     "03": "コンピュータ構成要素", "04": "システム構成要素",
     "05": "ソフトウェア", "06": "ハードウェア",
@@ -37,7 +37,7 @@ def classify(q):
 
     label = q.get("subdomain", "")
     stem = q.get("stem", "")
-    if label.startswith("基礎理論") or label == "情報に関する理論・AI":
+    if label.startswith("ハードウェア"):\n        return "06"\n    if label.startswith("ユーザーインタフェース"):\n        return "07"\n    if label.startswith("情報メディア"):\n        return "08"\n    if label.startswith("基礎理論") or label == "情報に関する理論・AI":
         return "01"
     if label.startswith("アルゴリズムとプログラミング"):
         return "02"
@@ -128,7 +128,7 @@ def main():
             print(f"  {section} {label}: {len(ids)} ({', '.join(ids[:8])})")
         return 1 if args.strict else 0
     print(f"Unmapped questions: 0/{len(questions)}")
-    return 1 if args.strict and empty_a else 0
+    return 1 if args.strict and thin_a else 0
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import '../models/quest.dart';
 import '../models/stat_type.dart';
-import '../services/fe_question_selector.dart';
 import 'fe_question_screen.dart';
 
 /// Timed study flow launched from the daily study quest.
@@ -43,7 +42,8 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
  Future<void> _openQuestions() async {
   if(_openingQuestions||_finished)return;
   setState(()=>_openingQuestions=true);
-  await Navigator.of(context).push<void>(MaterialPageRoute<void>(builder:(_)=>FeQuestionScreen(
+  final route = MaterialPageRoute<void>(
+   builder: (_) => FeQuestionScreen(
    initialMode:_isReviewQuest?FePracticeMode.review:FePracticeMode.all,
    initialQuestionIds:widget.quest.reviewQuestionIds.isEmpty
     ?null:widget.quest.reviewQuestionIds.toSet(),
@@ -60,7 +60,9 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
      if(flagged){_flaggedIds.add(id);}else{_flaggedIds.remove(id);}
     });
    },
-  ))));
+   ),
+  );
+  await Navigator.of(context).push<void>(route);
   if(mounted)setState(()=>_openingQuestions=false);
  }
 

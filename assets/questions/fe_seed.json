@@ -10929,7 +10929,7 @@
     "section": "B",
     "domain": "algorithm",
     "subdomain": "アルゴリズムとプログラミング（反復）",
-    "stem": "次の処理を実行した後のsはいくつか。\\ns←0\\nfor i=1..4:\\n  s←s+(2×i−1)",
+    "stem": "次の処理を実行した後のsはいくつか。\ns←0\nfor i=1..4:\n  s←s+(2×i−1)",
     "options": [
       "16",
       "12",

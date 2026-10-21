@@ -32,7 +32,12 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
  String? domainFilter;
  int limit=10;
  final Random _random=Random();
- @override void initState(){super.initState();mode=widget.initialMode;_loading=_load();}
+ @override void initState(){
+  super.initState();
+  mode=widget.initialMode;
+  if(widget.initialQuestionIds!=null)limit=0;
+  _loading=_load();
+ }
  Future<void> _load() async {
   final raw=await rootBundle.loadString('assets/questions/fe_seed.json');
   all=(jsonDecode(raw) as List).map((e)=>FeQuestion.fromJson(e as Map<String,dynamic>)).toList();

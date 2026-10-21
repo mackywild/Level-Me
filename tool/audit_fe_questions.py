@@ -14,7 +14,8 @@ from pathlib import Path
 
 BANK = Path("assets/questions/fe_seed.json")
 TARGETS = {"A": 800, "B": 300}
-REQUIRED_REVIEW_FIELDS = ("subdomain", "referenceUrl")\nOPTIONAL_ENHANCEMENT_FIELDS = ("distractorRationales",)
+REQUIRED_REVIEW_FIELDS = ("subdomain", "referenceUrl")
+OPTIONAL_ENHANCEMENT_FIELDS = ("distractorRationales",)
 
 
 def normalize(text):

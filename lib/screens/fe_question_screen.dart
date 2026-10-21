@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/fe_question.dart';
 import '../services/fe_progress_store.dart';
+import '../services/fe_question_selector.dart';
 
-enum FePracticeMode { all, incorrect, unseen, weak, sectionA, sectionB }
+enum FePracticeMode { all, incorrect, unseen, weak, sectionA, sectionB, examB }
 
 class FeQuestionScreen extends StatefulWidget {
  const FeQuestionScreen({super.key});
@@ -43,15 +44,16 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
    }).toList(),
    FePracticeMode.sectionA=>all.where((q)=>q.section=='A').toList(),
    FePracticeMode.sectionB=>all.where((q)=>q.section=='B').toList(),
+   FePracticeMode.examB=>FeQuestionSelector.selectBExamSet(all,random:_random),
   };
-  if(domainFilter!=null){questions=questions.where((q)=>q.domain==domainFilter).toList();}
+  if(domainFilter!=null&&mode!=FePracticeMode.examB){questions=questions.where((q)=>q.domain==domainFilter).toList();}
   if(mode==FePracticeMode.weak){
    questions.sort((a,b){
     double score(FeQuestion q){final h=history[q.id]!;return h.where((v)=>!v).length/h.length;}
     return score(b).compareTo(score(a));
    });
-  }else if(shuffle){questions.shuffle(_random);}
-  if(limit>0 && questions.length>limit){questions=questions.take(limit).toList();}
+  }else if(shuffle||mode==FePracticeMode.examB){questions.shuffle(_random);}
+  if(mode!=FePracticeMode.examB&&limit>0 && questions.length>limit){questions=questions.take(limit).toList();}
   index=0;correct=0;selected=null;
  }
  Future<void> _answer(int choice,FeQuestion question) async {
@@ -106,9 +108,11 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
       DropdownMenuItem(value:FePracticeMode.weak,child:Text('苦手問題を優先（誤答率50%以上）')),
       DropdownMenuItem(value:FePracticeMode.sectionA,child:Text('科目A')),
       DropdownMenuItem(value:FePracticeMode.sectionB,child:Text('科目B')),
+      DropdownMenuItem(value:FePracticeMode.examB,child:Text('科目B 模擬構成（20問・16/4）')),
      ],
      onChanged:(v){if(v!=null){setState((){mode=v;_filter();});}},
     ),
+    if(mode==FePracticeMode.examB) const Padding(padding:EdgeInsets.only(bottom:12),child:Text('本試験の科目B構成に合わせ、アルゴリズム16問と情報セキュリティ4問を出題します。')),
     const SizedBox(height:12),
     DropdownButtonFormField<String>(
      key:ValueKey(domainFilter),
@@ -133,7 +137,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
     if(questions.isEmpty)
      const Text('この条件に該当する問題はありません。')
     else if(index>=questions.length)...[
-     Text('演習完了　$correct / ${questions.length}',style:Theme.of(context).textTheme.headlineSmall),
+     Text(mode==FePracticeMode.examB?'科目B模擬構成の演習完了　$correct / ${questions.length}':'演習完了　$correct / ${questions.length}',style:Theme.of(context).textTheme.headlineSmall),
      Text('今回の正答率 ${(correct/questions.length*100).toStringAsFixed(1)}%'),
      const SizedBox(height:8),
      Text('誤答した問題は「間違えた問題」から復習できます。'),

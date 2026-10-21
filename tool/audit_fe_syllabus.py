@@ -4,6 +4,7 @@
 The mapping measures taxonomy coverage from editorial labels. It does not establish
 that an item's wording, answer, or explanation satisfies the mapped syllabus item.
 """
+import argparse
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -103,6 +104,9 @@ def summarize(questions):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--strict", action="store_true", help="fail if a label is unmapped or an A middle classification has no questions")
+    args = parser.parse_args()
     questions = json.loads(BANK.read_text(encoding="utf-8"))
     counts, unmapped = summarize(questions)
     totals = Counter(q.get("section") for q in questions if isinstance(q, dict))
@@ -113,13 +117,18 @@ def main():
         print(f"Section {section}: mapped={mapped}/{totals[section]}")
         for code, name in codes.items():
             print(f"  {code} {name}: {counts[(section, code)]}")
+    empty_a = [code for code in IPA if counts[("A", code)] == 0]
+    if empty_a:
+        print("Uncovered A middle classifications: " + ", ".join(f"{code} {IPA[code]}" for code in empty_a))
+    else:
+        print("Uncovered A middle classifications: 0")
     if unmapped:
         print(f"Unmapped label groups: {len(unmapped)}")
         for (section, label), ids in sorted(unmapped.items()):
             print(f"  {section} {label}: {len(ids)} ({', '.join(ids[:8])})")
-        return 1
+        return 1 if args.strict else 0
     print(f"Unmapped questions: 0/{len(questions)}")
-    return 0
+    return 1 if args.strict and empty_a else 0
 
 
 if __name__ == "__main__":

@@ -87,6 +87,8 @@ def classify(q):
     if label.startswith("経営戦略"):
         if "システム企画" in label:
             return "18"
+        if "ビジネスインダストリ" in label or "産業システム" in label:
+            return "21"
         if any(w in label for w in ("システム戦略", "業務分析", "業務改善")):
             return "17"
         if "技術" in label:

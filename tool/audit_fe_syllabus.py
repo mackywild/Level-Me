@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Map FE question labels to IPA FE syllabus Ver.9.2 middle classifications.
 
-The mapping measures taxonomy coverage from editorial labels. It does not establish
-that an item's wording, answer, or explanation satisfies the mapped syllabus item.
+This checks taxonomy coverage from editorial labels. It does not establish that
+an item's wording, answer, or explanation satisfies the mapped syllabus item.
 """
 import argparse
 import json
@@ -10,9 +10,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 BANK = Path(__file__).resolve().parents[1] / "assets/questions/fe_seed.json"
+MIN_A_ITEMS = 5  # Local coverage floor, not an IPA requirement.
 
-# IPA Ver.9.2 中分類 (middle classifications).
-MIN_A_ITEMS = 5  # Local coverage floor; this is not an IPA requirement.\n\nIPA = {
+IPA = {
     "01": "基礎理論", "02": "アルゴリズムとプログラミング",
     "03": "コンピュータ構成要素", "04": "システム構成要素",
     "05": "ソフトウェア", "06": "ハードウェア",
@@ -37,7 +37,13 @@ def classify(q):
 
     label = q.get("subdomain", "")
     stem = q.get("stem", "")
-    if label.startswith("ハードウェア"):\n        return "06"\n    if label.startswith("ユーザーインタフェース"):\n        return "07"\n    if label.startswith("情報メディア"):\n        return "08"\n    if label.startswith("基礎理論") or label == "情報に関する理論・AI":
+    if label.startswith("ハードウェア"):
+        return "06"
+    if label.startswith("ユーザーインタフェース"):
+        return "07"
+    if label.startswith("情報メディア"):
+        return "08"
+    if label.startswith("基礎理論") or label == "情報に関する理論・AI":
         return "01"
     if label.startswith("アルゴリズムとプログラミング"):
         return "02"
@@ -105,7 +111,8 @@ def summarize(questions):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--strict", action="store_true", help="fail if a label is unmapped or an A middle classification has no questions")
+    parser.add_argument("--strict", action="store_true",
+                        help=f"fail if a label is unmapped or any A classification has fewer than {MIN_A_ITEMS} items")
     args = parser.parse_args()
     questions = json.loads(BANK.read_text(encoding="utf-8"))
     counts, unmapped = summarize(questions)
@@ -117,18 +124,18 @@ def main():
         print(f"Section {section}: mapped={mapped}/{totals[section]}")
         for code, name in codes.items():
             print(f"  {code} {name}: {counts[(section, code)]}")
-    empty_a = [code for code in IPA if counts[("A", code)] == 0]
-    if empty_a:
-        print("Uncovered A middle classifications: " + ", ".join(f"{code} {IPA[code]}" for code in empty_a))
+    thin_a = [code for code in IPA if counts[("A", code)] < MIN_A_ITEMS]
+    if thin_a:
+        print(f"A classifications below local floor ({MIN_A_ITEMS}): " +
+              ", ".join(f"{code} {IPA[code]}={counts[('A', code)]}" for code in thin_a))
     else:
-        print("Uncovered A middle classifications: 0")
+        print("A classifications below local floor: 0")
     if unmapped:
         print(f"Unmapped label groups: {len(unmapped)}")
         for (section, label), ids in sorted(unmapped.items()):
             print(f"  {section} {label}: {len(ids)} ({', '.join(ids[:8])})")
-        return 1 if args.strict else 0
-    print(f"Unmapped questions: 0/{len(questions)}")
-    return 1 if args.strict and thin_a else 0
+    print(f"Unmapped questions: {sum(len(v) for v in unmapped.values())}/{len(questions)}")
+    return 1 if args.strict and (unmapped or thin_a) else 0
 
 
 if __name__ == "__main__":

@@ -33,7 +33,7 @@ class HomeScreen extends StatelessWidget{
    const SizedBox(height:18),
    Text('TODAY\'S QUEST',style:Theme.of(context).textTheme.titleMedium),
    Panel(child:Column(children:[
-    for(final q in quests)ListTile(title:Text(q.title),subtitle:Text(q.cadence.name.toUpperCase()),trailing:Text('+${q.totalExp} EXP')),
+    for(final q in quests)ListTile(title:Text(q.id=='starter-study'?'基本情報技術者の勉強をする':q.title),subtitle:Text(q.cadence.name.toUpperCase()),trailing:Text('+${q.totalExp} EXP')),
     if(quests.isEmpty)const Text('ALL QUESTS CLEARED!'),
    ])),
    const SizedBox(height:18),

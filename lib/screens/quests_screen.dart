@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import '../models/quest.dart';
 import '../models/stat_type.dart';
-import 'fe_question_screen.dart';
 import 'fe_study_screen.dart';
 class QuestsScreen extends StatefulWidget{
  const QuestsScreen({super.key,required this.controller});
@@ -16,7 +15,6 @@ class _QuestsScreenState extends State<QuestsScreen>{
  @override Widget build(BuildContext context){
   final quests=widget.controller.state.quests.where((q)=>filter==null||q.cadence==filter).toList();
   return Scaffold(backgroundColor:Colors.transparent,body:Column(children:[
-   Padding(padding:const EdgeInsets.symmetric(horizontal:16),child:SizedBox(width:double.infinity,child:OutlinedButton.icon(icon:const Icon(Icons.quiz),label:const Text('基本情報・問題演習（20問プレビュー）'),onPressed:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const FeQuestionScreen()))))),
    SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.all(8),children:[
     ChoiceChip(label:const Text('ALL'),selected:filter==null,onSelected:(_)=>setState(()=>filter=null)),
     for(final c in QuestCadence.values)Padding(padding:const EdgeInsets.only(left:8),child:
@@ -24,11 +22,27 @@ class _QuestsScreenState extends State<QuestsScreen>{
    ])),
    Expanded(child:ListView.builder(padding:const EdgeInsets.fromLTRB(16,8,16,120),itemCount:quests.length,itemBuilder:(context,i){
     final q=quests[i],done=q.isCompleted;
+    final isStudyQuest=q.id=='starter-study';
+    final isReviewQuest=q.title.startsWith(FeStudyScreen.reviewQuestPrefix);
+    final startsStudy=isStudyQuest||isReviewQuest;
     return Card(child:ListTile(
      leading:Icon(done?Icons.check_circle:Icons.bolt,color:done?Colors.greenAccent:Colors.amberAccent),
-     title:Text(q.title,style:TextStyle(decoration:done?TextDecoration.lineThrough:null)),
-     subtitle:Text('${label(q.cadence)} | ${q.rewards.map((r)=>'${r.stat.shortLabel} +${r.exp}').join(' / ')}'),
-     trailing:done?const Text('CLEARED'):FilledButton(onPressed:()=>q.id=='starter-study' ? Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>FeStudyScreen(controller:widget.controller,quest:q))) : widget.controller.completeQuest(q),child:Text(q.id=='starter-study'?'START':'CLEAR'))
+     title:Text(isStudyQuest?'基本情報技術者の勉強をする':q.title,style:TextStyle(decoration:done?TextDecoration.lineThrough:null)),
+     subtitle:Text(isStudyQuest
+      ?'${label(q.cadence)} | タイマー記録・問題演習つき'
+      :'${label(q.cadence)} | ${q.rewards.map((r)=>'${r.stat.shortLabel} +${r.exp}').join(' / ')}'),
+     trailing:done
+      ?isStudyQuest?OutlinedButton(
+       onPressed:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>FeStudyScreen(
+        controller:widget.controller,quest:q,
+       ))),child:const Text('PRACTICE'))
+       :const Text('CLEARED')
+      :FilledButton(
+       onPressed:startsStudy?()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>FeStudyScreen(
+        controller:widget.controller,quest:q,
+        reviewOnly:isReviewQuest,
+       ))):()=>widget.controller.completeQuest(q),
+       child:Text(isStudyQuest?'START':isReviewQuest?'REVIEW':'CLEAR'))
     ));
    })),
   ]),

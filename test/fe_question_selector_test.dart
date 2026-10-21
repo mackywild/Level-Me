@@ -43,4 +43,43 @@ void main() {
       throwsA(isA<StateError>()),
     );
   });
+
+  test('review selection combines latest wrong answers and saved flags', () {
+    final pool = [
+      question('wrong', 'A', 'technology'),
+      question('flagged', 'A', 'security'),
+      question('both', 'B', 'algorithm'),
+      question('correct', 'B', 'security'),
+      question('fixed', 'A', 'management'),
+    ];
+    final selected = FeQuestionSelector.selectForReview(
+      pool,
+      {
+        'wrong': [true, false],
+        'both': [false],
+        'correct': [true],
+        'fixed': [false, true],
+      },
+      {'flagged', 'both'},
+    );
+
+    expect(selected.map((q) => q.id).toSet(), {'wrong', 'flagged', 'both'});
+    expect(selected, hasLength(3));
+  });
+
+  test('review quest can limit practice to its recorded question IDs', () {
+    final pool = [
+      question('target-a', 'A', 'technology'),
+      question('target-b', 'B', 'security'),
+      question('unrelated-wrong', 'A', 'management'),
+    ];
+    final selected = FeQuestionSelector.selectForReview(
+      pool,
+      {'unrelated-wrong': [false]},
+      {'unrelated-wrong'},
+      targetIds: {'target-a', 'target-b'},
+    );
+
+    expect(selected.map((q) => q.id).toSet(), {'target-a', 'target-b'});
+  });
 }

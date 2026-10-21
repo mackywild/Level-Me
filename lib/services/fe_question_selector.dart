@@ -7,6 +7,20 @@ class FeQuestionSelector {
   static const algorithmQuestionCount = 16;
   static const securityQuestionCount = 4;
 
+  static List<FeQuestion> selectForReview(
+    List<FeQuestion> questions,
+    Map<String, List<bool>> history,
+    Set<String> flaggedIds,
+    {Set<String>? targetIds}
+  ) {
+    return questions.where((question) {
+      if(targetIds!=null)return targetIds.contains(question.id);
+      final attempts = history[question.id];
+      return flaggedIds.contains(question.id) ||
+          (attempts != null && attempts.isNotEmpty && !attempts.last);
+    }).toList();
+  }
+
   static List<FeQuestion> selectBExamSet(
     List<FeQuestion> questions, {
     Random? random,

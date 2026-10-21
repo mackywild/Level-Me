@@ -28,10 +28,14 @@ jobs:
         run: python3 tool/validate_fe_questions.py
       - name: Audit FE question-bank coverage and review gaps
         run: python3 tool/audit_fe_questions.py
+      - name: Audit FE answer position balance
+        run: python3 tool/rebalance_fe_answer_positions.py --check
       - name: Audit IPA syllabus classification coverage
         run: python3 tool/audit_fe_syllabus.py
       - name: Test IPA syllabus coverage mapping
         run: python3 -m unittest discover -s tool -p "test_audit_fe_syllabus.py"
+      - name: Test FE answer position balancing
+        run: python3 -m unittest discover -s tool -p "test_rebalance_fe_answer_positions.py"
       - run: flutter analyze
       - run: flutter test
       - run: flutter build apk --release

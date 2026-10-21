@@ -124,6 +124,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
     ),
     SwitchListTile(title:const Text('問題をシャッフル'),value:shuffle,onChanged:(v)=>setState((){shuffle=v;_filter();})),
     DropdownButtonFormField<int>(
+     key:ValueKey(mode==FePracticeMode.examB?20:limit),
      initialValue:mode==FePracticeMode.examB?20:limit,
      decoration:const InputDecoration(labelText:'1回の演習問題数'),
      items:const [

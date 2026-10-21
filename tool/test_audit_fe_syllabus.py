@@ -18,7 +18,10 @@ class SyllabusCoverageTests(unittest.TestCase):
         section_counts = Counter(q["section"] for q in questions)
         self.assertEqual(section_counts, {"A": 800, "B": 300})
         thin_a = [code for code in IPA if counts[("A", code)] < MIN_A_ITEMS]
-        self.assertEqual(thin_a, ["06", "07", "18", "20", "21"])
+        self.assertEqual(thin_a, [])
+        self.assertEqual(counts[("A", "18")], 5)
+        self.assertEqual(counts[("A", "20")], 5)
+        self.assertEqual(counts[("A", "21")], 5)
 
     def test_new_questions_cover_hardware_ui_media_and_technology_strategy(self):
         self.assertEqual(classify({"section": "A", "subdomain": "ハードウェア（センサー）"}), "06")

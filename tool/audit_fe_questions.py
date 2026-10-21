@@ -14,7 +14,7 @@ from pathlib import Path
 
 BANK = Path("assets/questions/fe_seed.json")
 TARGETS = {"A": 800, "B": 300}
-REQUIRED_REVIEW_FIELDS = ("subdomain", "distractorRationales", "referenceUrl")
+REQUIRED_REVIEW_FIELDS = ("subdomain", "referenceUrl")\nOPTIONAL_ENHANCEMENT_FIELDS = ("distractorRationales",)
 
 
 def normalize(text):
@@ -52,7 +52,7 @@ def main():
     by_domain = defaultdict(Counter)
     by_status = Counter()
     by_syllabus = Counter()
-    missing = Counter()
+    missing = Counter()\n    missing_optional = Counter()
     blockers = []
     for q in questions:
         if not isinstance(q, dict):

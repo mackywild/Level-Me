@@ -122,7 +122,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
       for(final domain in domains) DropdownMenuItem(value:domain,child:Text(domain))],
      onChanged:mode==FePracticeMode.examB?null:(v)=>setState((){domainFilter=v;_filter();}),
     ),
-    SwitchListTile(title:const Text('問題をシャッフル'),value:shuffle,onChanged:(v)=>setState((){shuffle=v;_filter();})),
+    SwitchListTile(title:const Text('問題順をシャッフル'),value:shuffle,onChanged:mode==FePracticeMode.examB?null:(v)=>setState((){shuffle=v;_filter();})),
     DropdownButtonFormField<int>(
      key:ValueKey(mode==FePracticeMode.examB?20:limit),
      initialValue:mode==FePracticeMode.examB?20:limit,

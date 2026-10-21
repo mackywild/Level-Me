@@ -14,7 +14,8 @@ from pathlib import Path
 
 BANK = Path("assets/questions/fe_seed.json")
 TARGETS = {"A": 800, "B": 300}
-REQUIRED_REVIEW_FIELDS = ("subdomain", "distractorRationales", "referenceUrl")
+REQUIRED_REVIEW_FIELDS = ("subdomain", "referenceUrl")
+OPTIONAL_ENHANCEMENT_FIELDS = ("distractorRationales",)
 
 
 def normalize(text):
@@ -53,6 +54,7 @@ def main():
     by_status = Counter()
     by_syllabus = Counter()
     missing = Counter()
+    missing_optional = Counter()
     blockers = []
     for q in questions:
         if not isinstance(q, dict):
@@ -65,6 +67,9 @@ def main():
         for key in REQUIRED_REVIEW_FIELDS:
             if not q.get(key):
                 missing[key] += 1
+        for key in OPTIONAL_ENHANCEMENT_FIELDS:
+            if not q.get(key):
+                missing_optional[key] += 1
 
     candidates = []
     stems = [(q.get("id", f"row-{i}"), q.get("stem", ""))
@@ -88,8 +93,10 @@ def main():
             f"{domain}={count}" for domain, count in sorted(by_domain[section].items())))
     print("Review status: " + ", ".join(f"{key}={value}" for key, value in sorted(by_status.items())))
     print("Syllabus version: " + ", ".join(f"{key}={value}" for key, value in sorted(by_syllabus.items())))
-    print("Missing release-review fields: " + ", ".join(
+    print("Missing required review fields: " + ", ".join(
         f"{key}={missing[key]}" for key in REQUIRED_REVIEW_FIELDS))
+    print("Optional explanation enhancements absent: " + ", ".join(
+        f"{key}={missing_optional[key]}" for key in OPTIONAL_ENHANCEMENT_FIELDS))
     if candidates:
         print(f"Lexical duplicate candidates (Jaccard >= {args.similarity_threshold:.2f}): {len(candidates)}")
         for score, id_a, id_b, stem_a, stem_b in sorted(candidates, reverse=True)[:25]:

@@ -42,8 +42,24 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
  Future<void> _openQuestions() async {
   if(_openingQuestions||_finished)return;
   setState(()=>_openingQuestions=true);
-  final route = MaterialPageRoute<void>(
-   builder: (_) => FeQuestionScreen(
+  if(!_watch.isRunning)_watch.start();
+  await showDialog<void>(
+   context:context,
+   builder:(dialogContext)=>Dialog(
+    insetPadding:const EdgeInsets.symmetric(horizontal:8,vertical:12),
+    child:SafeArea(child:Column(children:[
+     Padding(padding:const EdgeInsets.symmetric(horizontal:12,vertical:8),child:Row(children:[
+      const Icon(Icons.timer_outlined),
+      const SizedBox(width:8),
+      StreamBuilder<int>(
+       stream:Stream.periodic(const Duration(seconds:1),(tick)=>tick),
+       builder:(_,snapshot)=>Text(_clock,style:const TextStyle(fontSize:22,fontWeight:FontWeight.bold)),
+      ),
+      const Spacer(),
+      IconButton(tooltip:'演習を閉じる',onPressed:()=>Navigator.of(dialogContext).pop(),icon:const Icon(Icons.close)),
+     ])),
+     const Divider(height:1),
+     Expanded(child:FeQuestionScreen(
    initialMode:_isReviewQuest?FePracticeMode.review:FePracticeMode.all,
    initialQuestionIds:widget.quest.reviewQuestionIds.isEmpty
     ?null:widget.quest.reviewQuestionIds.toSet(),
@@ -60,9 +76,10 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
      if(flagged){_flaggedIds.add(id);}else{_flaggedIds.remove(id);}
     });
    },
+   )),
+    ])),
    ),
   );
-  await Navigator.of(context).push<void>(route);
   if(mounted)setState(()=>_openingQuestions=false);
  }
 
@@ -99,9 +116,15 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
    const SizedBox(height:12),
    Text(_watch.isRunning?'学習中':_watch.elapsed==Duration.zero?'開始待ち':'一時停止中',textAlign:TextAlign.center),
    const SizedBox(height:20),
-   FilledButton.icon(onPressed:()=>setState((){_watch.isRunning?_watch.stop():_watch.start();}),
-    icon:Icon(_watch.isRunning?Icons.pause:Icons.play_arrow),
-    label:Text(_watch.isRunning?'PAUSE':'START / RESUME')),
+   FilledButton.icon(onPressed:_finished||_openingQuestions?null:_openQuestions,
+    icon:const Icon(Icons.play_arrow),
+    label:Text(_watch.elapsed==Duration.zero?'START / 問題を解く':'問題演習を開く')),
+   if(_watch.elapsed>Duration.zero)...[
+    const SizedBox(height:8),
+    TextButton.icon(onPressed:()=>setState((){_watch.isRunning?_watch.stop():_watch.start();}),
+     icon:Icon(_watch.isRunning?Icons.pause:Icons.play_arrow),
+     label:Text(_watch.isRunning?'タイマーを一時停止':'タイマーを再開')),
+   ],
    const SizedBox(height:20),
    Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text(_isReviewQuest?'今回の復習':'今日の問題演習',style:Theme.of(context).textTheme.titleMedium),

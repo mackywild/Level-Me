@@ -80,11 +80,38 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
    widget.onAnswerRecorded?.call(question.id,result);
    if(!mounted)return;
    setState((){selected=choice;if(result)correct++;saving=false;});
+   await _showAnswerDialog(question,result);
   }catch(error){
    if(!mounted)return;
    setState(()=>saving=false);
    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('解答履歴を保存できません: $error')));
   }
+ }
+ Future<void> _showAnswerDialog(FeQuestion question,bool isCorrect) async{
+  await showDialog<void>(
+   context:context,
+   barrierDismissible:false,
+   builder:(dialogContext)=>AlertDialog(
+    scrollable:true,
+    title:Column(mainAxisSize:MainAxisSize.min,children:[
+     Icon(isCorrect?Icons.circle_outlined:Icons.close,
+      color:isCorrect?Colors.redAccent:Colors.blueAccent,size:76),
+     const SizedBox(height:8),
+     Text(isCorrect?'正解！':'不正解',style:const TextStyle(fontWeight:FontWeight.bold)),
+    ]),
+    content:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+     Text('正解：${question.options[question.answerIndex]}',
+      style:const TextStyle(fontWeight:FontWeight.bold)),
+     const SizedBox(height:12),
+     Text(question.explanation),
+    ]),
+    actions:[
+     FilledButton(onPressed:()=>Navigator.of(dialogContext).pop(),child:const Text('次の問題へ')),
+    ],
+   ),
+  );
+  if(!mounted)return;
+  setState((){index++;selected=null;});
  }
  Future<void> _toggleReviewFlag(FeQuestion question) async {
   final flagged=!flaggedIds.contains(question.id);
@@ -192,15 +219,7 @@ class _FeQuestionScreenState extends State<FeQuestionScreen>{
        child:Align(alignment:Alignment.centerLeft,child:Padding(
         padding:const EdgeInsets.symmetric(vertical:12),
         child:Text('${i+1}. ${questions[index].options[i]}'))))),
-     if(selected!=null)...[
-      const SizedBox(height:12),
-      Text(selected==questions[index].answerIndex?'正解！':'不正解',style:Theme.of(context).textTheme.titleMedium),
-      Text('正解：${questions[index].options[questions[index].answerIndex]}'),
-      const SizedBox(height:8),
-      Text(questions[index].explanation),
-      const SizedBox(height:16),
-      FilledButton(onPressed:()=>setState((){index++;selected=null;}),child:const Text('次の問題')),
-     ],
+
     ],
    ]);
   }));

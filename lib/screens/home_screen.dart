@@ -10,7 +10,7 @@ class HomeScreen extends StatelessWidget{
   final state=controller.state,progress=LevelCalculator.fromTotalExp(state.totalExp);
   final quests=state.quests.where((q)=>!q.isCompleted).take(4);
   return ListView(padding:const EdgeInsets.fromLTRB(16,8,16,120),children:[
-   Text('PLAYER STATUS',style:Theme.of(context).textTheme.titleMedium),
+   Text('プレイヤー情報',style:Theme.of(context).textTheme.titleMedium),
    const SizedBox(height:8),
    Panel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Row(children:[Text('LV ${progress.level}',style:Theme.of(context).textTheme.headlineLarge),const Spacer(),Text('${state.totalExp} TOTAL EXP')]),
@@ -18,34 +18,34 @@ class HomeScreen extends StatelessWidget{
     Text('${progress.expIntoLevel} / ${progress.expToNextLevel} EXP'),
    ])),
    const SizedBox(height:18),
-   Text('ATTRIBUTES',style:Theme.of(context).textTheme.titleMedium),
+   Text('ステータス',style:Theme.of(context).textTheme.titleMedium),
    Panel(child:Column(children:[
     for(final s in StatType.values)ListTile(
      contentPadding:EdgeInsets.zero,leading:Text(s.icon),title:Text(s.label),
-     trailing:Text('RANK ${LevelCalculator.statRankFromExp(state.stats[s]??0)} · ${state.stats[s]??0} EXP'))
+     trailing:Text('ランク ${LevelCalculator.statRankFromExp(state.stats[s]??0)} · ${state.stats[s]??0} EXP'))
    ])),
    const SizedBox(height:18),
    Row(children:[
-    Expanded(child:Panel(child:Text('🔥 ${controller.currentStreak} DAYS STREAK'))),
+    Expanded(child:Panel(child:Text('🔥 ${controller.currentStreak}日連続'))),
     const SizedBox(width:8),
-    Expanded(child:Panel(child:Text('✅ ${state.completionCount} CLEARS'))),
+    Expanded(child:Panel(child:Text('✅ ${state.completionCount}件達成'))),
    ]),
    const SizedBox(height:18),
    Text('TODAY\'S QUEST',style:Theme.of(context).textTheme.titleMedium),
    Panel(child:Column(children:[
     for(final q in quests)ListTile(title:Text(q.id=='starter-study'?'基本情報技術者の勉強をする':q.title),subtitle:Text(q.cadence.name.toUpperCase()),trailing:Text('+${q.totalExp} EXP')),
-    if(quests.isEmpty)const Text('ALL QUESTS CLEARED!'),
+    if(quests.isEmpty)const Text('すべてのクエストを達成しました！'),
    ])),
    const SizedBox(height:18),
-   Text('BOSS ENCOUNTER',style:Theme.of(context).textTheme.titleMedium),
+   Text('ボス戦',style:Theme.of(context).textTheme.titleMedium),
    Panel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     Text('🐉 ${state.boss.title}'),
     LinearProgressIndicator(value:state.boss.hp/state.boss.maxHp,color:Colors.redAccent),
     Text('HP ${state.boss.hp} / ${state.boss.maxHp}  ·  DEFEATS ${state.boss.defeats}'),
    ])),
    const SizedBox(height:18),
-   Text('RECENT ACHIEVEMENT',style:Theme.of(context).textTheme.titleMedium),
-   Panel(child:state.achievements.isEmpty?const Text('NO ACHIEVEMENT YET'):Text('🏆 ${state.achievements.first.title}')),
+   Text('最近の実績',style:Theme.of(context).textTheme.titleMedium),
+   Panel(child:state.achievements.isEmpty?const Text('実績はまだありません'):Text('🏆 ${state.achievements.first.title}')),
   ]);
  }
 }

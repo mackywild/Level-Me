@@ -34,9 +34,9 @@ class _BossScreenState extends State<BossScreen> with SingleTickerProviderStateM
   final reward=await widget.controller.drawBattleReward();
   if(!mounted)return;
   setState((){busy=false;event=reward??'ガチャ券がありません。';});
-  if(reward!=null)await showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
+  if(reward!=null){await showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
    title:const Text('戦闘報酬を獲得！'),content:Text(reward),
-   actions:[FilledButton(onPressed:()=>Navigator.pop(ctx),child:const Text('受け取る'))]));
+   actions:[FilledButton(onPressed:()=>Navigator.pop(ctx),child:const Text('受け取る'))]));}
  }
  @override Widget build(BuildContext context){
   final state=widget.controller.state,b=state.boss;

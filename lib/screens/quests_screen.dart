@@ -11,12 +11,12 @@ class QuestsScreen extends StatefulWidget{
 class _QuestsScreenState extends State<QuestsScreen>{
  QuestCadence? filter;
  String label(QuestCadence c)=>switch(c){
-  QuestCadence.oneTime=>'ONE TIME',QuestCadence.daily=>'DAILY',QuestCadence.weekly=>'WEEKLY'};
+  QuestCadence.oneTime=>'一度だけ',QuestCadence.daily=>'毎日',QuestCadence.weekly=>'毎週'};
  @override Widget build(BuildContext context){
   final quests=widget.controller.state.quests.where((q)=>filter==null||q.cadence==filter).toList();
   return Scaffold(backgroundColor:Colors.transparent,body:Column(children:[
    SizedBox(height:58,child:ListView(scrollDirection:Axis.horizontal,padding:const EdgeInsets.all(8),children:[
-    ChoiceChip(label:const Text('ALL'),selected:filter==null,onSelected:(_)=>setState(()=>filter=null)),
+    ChoiceChip(label:const Text('すべて'),selected:filter==null,onSelected:(_)=>setState(()=>filter=null)),
     for(final c in QuestCadence.values)Padding(padding:const EdgeInsets.only(left:8),child:
      ChoiceChip(label:Text(label(c)),selected:filter==c,onSelected:(_)=>setState(()=>filter=c))),
    ])),
@@ -35,18 +35,18 @@ class _QuestsScreenState extends State<QuestsScreen>{
       ?isStudyQuest?OutlinedButton(
        onPressed:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>FeStudyScreen(
         controller:widget.controller,quest:q,
-       ))),child:const Text('PRACTICE'))
-       :const Text('CLEARED')
+       ))),child:const Text('問題を解く'))
+       :const Text('達成済み')
       :FilledButton(
        onPressed:startsStudy?()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>FeStudyScreen(
         controller:widget.controller,quest:q,
         reviewOnly:isReviewQuest,
        ))):()=>widget.controller.completeQuest(q),
-       child:Text(isStudyQuest?'START':isReviewQuest?'REVIEW':'CLEAR'))
+       child:Text(isStudyQuest?'学習する':isReviewQuest?'復習する':'達成する'))
     ));
    })),
   ]),
-  floatingActionButton:FloatingActionButton.extended(onPressed:()=>showQuestForm(context),icon:const Icon(Icons.add),label:const Text('NEW QUEST')));
+  floatingActionButton:FloatingActionButton.extended(onPressed:()=>showQuestForm(context),icon:const Icon(Icons.add),label:const Text('クエストを追加')));
  }
  Future<void> showQuestForm(BuildContext context) async{
   final title=TextEditingController();
@@ -54,8 +54,8 @@ class _QuestsScreenState extends State<QuestsScreen>{
   await showModalBottomSheet<void>(context:context,isScrollControlled:true,builder:(sheet)=>StatefulBuilder(builder:(context,setModal)=>Padding(
    padding:EdgeInsets.fromLTRB(20,20,20,MediaQuery.of(context).viewInsets.bottom+20),
    child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-    Text('CREATE QUEST',style:Theme.of(context).textTheme.titleLarge),
-    TextField(controller:title,decoration:const InputDecoration(labelText:'QUEST NAME')),
+    Text('クエストを作成',style:Theme.of(context).textTheme.titleLarge),
+    TextField(controller:title,decoration:const InputDecoration(labelText:'クエスト名')),
     DropdownButtonFormField<QuestCadence>(initialValue:cadence,items:QuestCadence.values.map((c)=>DropdownMenuItem(value:c,child:Text(label(c)))).toList(),onChanged:(v)=>setModal(()=>cadence=v??cadence)),
     DropdownButtonFormField<StatType>(initialValue:stat,items:StatType.values.map((s)=>DropdownMenuItem(value:s,child:Text('${s.icon} ${s.label}'))).toList(),onChanged:(v)=>setModal(()=>stat=v??stat)),
     Text('EXP +$exp'),
@@ -64,7 +64,7 @@ class _QuestsScreenState extends State<QuestsScreen>{
      if(title.text.trim().isEmpty)return;
      await widget.controller.addQuest(title:title.text,rewards:[QuestReward(stat:stat,exp:exp)],cadence:cadence);
      if(sheet.mounted)Navigator.pop(sheet);
-    },child:const Text('REGISTER')),
+    },child:const Text('登録する')),
    ]))));
   title.dispose();
  }

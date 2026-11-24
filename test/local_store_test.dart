@@ -88,4 +88,75 @@ void main() {
   expect((await store.load()).world.gold,100);
   expect((await store.load()).totalExp,55);
  });
+ test('interrupted migration before marker retries from unchanged legacy data',() async {
+  final legacy=File('${directory.path}/${LocalStore.legacyFileName}');
+  final raw=jsonEncode((AppStateData.initial()..totalExp=55).toJson()..remove('world'));
+  await legacy.writeAsString(raw);
+  final staged=File('${primary.path}${LocalStore.initialSuffix}');
+  await staged.writeAsString('{partial');
+  final restarted=LocalStore(directory:directory);
+  final recovered=await restarted.load();
+  expect(recovered.totalExp,55);
+  await restarted.save(recovered);
+  expect((await restarted.load()).totalExp,55);
+  expect(await legacy.readAsString(),raw);
+  expect(await staged.exists(),false);
+  expect(await File('${primary.path}${LocalStore.markerSuffix}').exists(),true);
+ });
+ test('interrupted initial publication after marker promotes complete staging',() async {
+  final legacy=File('${directory.path}/${LocalStore.legacyFileName}');
+  await legacy.writeAsString(jsonEncode((AppStateData.initial()..totalExp=55).toJson()..remove('world')));
+  final staged=File('${primary.path}${LocalStore.initialSuffix}');
+  final state=AppStateData.initial()..totalExp=80;
+  state.world.gold=40;
+  await staged.writeAsString(jsonEncode(state.toJson()),flush:true);
+  await File('${primary.path}${LocalStore.markerSuffix}').writeAsString('v2',flush:true);
+  final restarted=LocalStore(directory:directory);
+  expect((await restarted.load()).totalExp,80);
+  expect((await restarted.load()).world.gold,40);
+  expect(await primary.exists(),true);
+  expect(await staged.exists(),false);
+ });
+ test('established v2 missing must not fall back to legacy',() async {
+  final legacy=File('${directory.path}/${LocalStore.legacyFileName}');
+  await legacy.writeAsString(jsonEncode((AppStateData.initial()..totalExp=55).toJson()..remove('world')));
+  final state=AppStateData.initial()..totalExp=80;
+  await store.save(state);
+  await primary.delete();
+  final restarted=LocalStore(directory:directory);
+  await expectLater(restarted.load(),throwsStateError);
+  await expectLater(restarted.save(state),throwsStateError);
+  expect(await primary.exists(),false);
+  expect(await restarted.hasBackup(),false);
+ });
+ test('regular recovery evidence blocks automatic legacy migration',() async {
+  final legacy=File('${directory.path}/${LocalStore.legacyFileName}');
+  await legacy.writeAsString(jsonEncode(AppStateData.initial().toJson()..remove('world')));
+  final staged=File('${primary.path}${LocalStore.initialSuffix}');
+  await staged.writeAsString('partial');
+  final regular=File('${primary.path}.tmp');
+  await regular.writeAsString('unfinished regular save');
+  await expectLater(store.load(),throwsStateError);
+  expect(await regular.readAsString(),'unfinished regular save');
+  expect(await staged.readAsString(),'partial');
+ });
+ test('invalid committed staging is preserved and never replaced by legacy',() async {
+  final legacy=File('${directory.path}/${LocalStore.legacyFileName}');
+  await legacy.writeAsString(jsonEncode(AppStateData.initial().toJson()..remove('world')));
+  final staged=File('${primary.path}${LocalStore.initialSuffix}');
+  await staged.writeAsString('{partial');
+  await File('${primary.path}${LocalStore.markerSuffix}').writeAsString('v2');
+  await expectLater(store.load(),throwsFormatException);
+  expect(await staged.readAsString(),'{partial');
+  expect(await primary.exists(),false);
+ });
+ test('fresh install retries incomplete initial write before marker',() async {
+  final staged=File('${primary.path}${LocalStore.initialSuffix}');
+  await staged.writeAsString('partial');
+  final state=await store.load();
+  expect(state.totalExp,0);
+  await store.save(state);
+  expect(await primary.exists(),true);
+  expect(await staged.exists(),false);
+ });
 }

@@ -26,7 +26,22 @@ class _StartupGateState extends State<StartupGate> {
  late Future<void> _loading;
  @override void initState(){super.initState();_start();}
  void _start(){
-  _loading=widget.controller.initialize().timeout(const Duration(seconds:12));
+  _loading=widget.controller.initialize();
+ }
+ Future<void> _restore() async {
+  final confirmed=await showDialog<bool>(
+   context:context,
+   builder:(dialogContext)=>AlertDialog(
+    title:const Text('直前のバックアップに戻しますか？'),
+    content:const Text('最後の保存以降の変更は失われる場合があります。現在の保存ファイルは別名で保全します。'),
+    actions:[
+     TextButton(onPressed:()=>Navigator.pop(dialogContext,false),child:const Text('取消')),
+     FilledButton(onPressed:()=>Navigator.pop(dialogContext,true),child:const Text('復元')),
+    ],
+   ),
+  );
+  if(!mounted||confirmed!=true)return;
+  setState(()=>_loading=widget.controller.restoreBackup());
  }
  @override Widget build(BuildContext context)=>FutureBuilder<void>(
   future:_loading,
@@ -47,6 +62,10 @@ class _StartupGateState extends State<StartupGate> {
       SelectableText('${snapshot.error}',textAlign:TextAlign.center),
       const SizedBox(height:20),
       FilledButton(onPressed:()=>setState(_start),child:const Text('RETRY')),
+      FutureBuilder<bool>(future:widget.controller.hasBackup(),builder:(context,backup){
+       if(backup.data!=true)return const SizedBox.shrink();
+       return OutlinedButton(onPressed:_restore,child:const Text('直前のバックアップを復元'));
+      }),
      ])))));
    }
    return const Scaffold(body:Center(child:Column(mainAxisSize:MainAxisSize.min,children:[

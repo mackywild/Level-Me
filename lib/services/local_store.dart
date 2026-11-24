@@ -8,11 +8,12 @@ class LocalStore {
  LocalStore({Directory? directory}) : _directory = directory;
  final Directory? _directory;
  Future<void> _pending = Future<void>.value();
- static const _fileName = 'level_me_state_v1.json';
+ static const fileName = 'level_me_state_v2.json';
+ static const legacyFileName = 'level_me_state_v1.json';
 
  Future<File> _file() async {
   final directory = _directory ?? await getApplicationSupportDirectory();
-  return File('${directory.path}/$_fileName');
+  return File('${directory.path}/$fileName');
  }
 
  AppStateData _decode(String raw) {
@@ -34,6 +35,9 @@ class LocalStore {
        await File('${file.path}.tmp').exists()) {
     throw StateError('Primary save missing; recovery files exist');
    }
+   final legacy=File('${file.parent.path}/$legacyFileName');
+   if(await legacy.exists())return _decode(await legacy.readAsString());
+   if(await File('${legacy.path}.bak').exists()||await File('${legacy.path}.tmp').exists())throw StateError('Legacy primary missing; recovery files exist');
    return AppStateData.initial();
   }
   return _decode(await file.readAsString());
@@ -74,7 +78,7 @@ class LocalStore {
  Future<bool> hasBackup() async {
   await _pending;
   final file = await _file();
-  final backup = File('${file.path}.bak');
+  final backup = await _recoverySource(file);
   if (!await backup.exists()) return false;
   try {
    _decode(await backup.readAsString());
@@ -84,10 +88,16 @@ class LocalStore {
   }
  }
 
+ Future<File> _recoverySource(File primary) async {
+  final backup=File('${primary.path}.bak');
+  if(await primary.exists()||await backup.exists()||await File('${primary.path}.tmp').exists())return backup;
+  return File('${primary.parent.path}/$legacyFileName.bak');
+ }
+
  /// Explicit rollback only. Preserve the original bytes for later inspection.
  Future<void> restoreBackup() => _enqueue(() async {
   final file = await _file();
-  final backup = File('${file.path}.bak');
+  final backup = await _recoverySource(file);
   final raw = await backup.readAsString();
   _decode(raw);
   if (await file.exists()) {

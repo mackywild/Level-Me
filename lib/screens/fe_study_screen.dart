@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import '../models/quest.dart';
-import '../models/stat_type.dart';
 import 'fe_question_screen.dart';
 
 /// Timed study flow launched from the daily study quest.
@@ -93,15 +92,14 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
   }
   setState(()=>_finished=true);
   final reviewIds={..._incorrectIds,..._flaggedIds};
-  if(reviewIds.isNotEmpty){
-   await widget.controller.addQuest(
-    title:'${FeStudyScreen.reviewQuestPrefix}（対象 ${reviewIds.length}問）',
-    cadence:QuestCadence.oneTime,
-    reviewQuestionIds:reviewIds.toList()..sort(),
-    rewards:const [QuestReward(stat:StatType.intelligence,exp:10),
-      QuestReward(stat:StatType.discipline,exp:3)]);
+  try {
+   await widget.controller.completeQuest(widget.quest, activeSeconds:seconds, reviewIds:reviewIds.toList()..sort());
+  } catch (error) {
+   if (!mounted) return;
+   setState(()=>_finished=false);
+   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('保存失敗: $error')));
+   return;
   }
-  await widget.controller.completeQuest(widget.quest);
   if(mounted)Navigator.of(context).pop();
  }
 

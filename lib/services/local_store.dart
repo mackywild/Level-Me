@@ -54,6 +54,7 @@ class LocalStore {
   final primary=await _file();
   if(await primary.exists()){
    final state=_decode(await primary.readAsString());
+   await _discardInitial(primary);
    await _ensureMarker(primary);
    return state;
   }
@@ -90,6 +91,11 @@ class LocalStore {
   await temporary.rename(destination.path);
  }
 
+ Future<void> _discardInitial(File primary) async {
+  final staged=_initial(primary);
+  if(await staged.exists())await staged.delete();
+ }
+
  Future<void> _publishInitial(File primary,String raw) async {
   final staged=_initial(primary);
   await staged.writeAsString(raw,flush:true);
@@ -104,6 +110,7 @@ class LocalStore {
   if(await primary.exists()){
    final previous=await primary.readAsString();
    _decode(previous);
+   await _discardInitial(primary);
    await _ensureMarker(primary);
    if(previous==snapshot)return;
    await _atomicWrite(backup,previous);
@@ -151,6 +158,7 @@ class LocalStore {
   }else{
    await _ensureMarker(primary);
    await _atomicWrite(primary,raw);
+   await _discardInitial(primary);
   }
  });
 }

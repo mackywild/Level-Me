@@ -5,6 +5,7 @@ import 'package:level_me/models/app_state.dart';
 import 'package:level_me/models/stat_type.dart';
 import 'package:level_me/models/quest.dart';
 import 'package:level_me/services/local_store.dart';
+import 'package:level_me/world/world_engine.dart';
 
 class MemoryStore extends LocalStore {
  String? data;
@@ -85,5 +86,33 @@ void main(){
   final restored=AppStateData.fromJson(json);
   expect(restored.sessions,isEmpty);
   expect(restored.sessionHistory,isEmpty);
+ });
+ test('world victory persists rewards without granting daily EXP',() async {
+  final exp=controller.state.totalExp;
+  await controller.startWorldBattle('p01_main');
+  final battle=controller.state.world.battle!;
+  await controller.worldCommand(WorldCommand.claw,battle.id,battle.turn);
+  expect(controller.state.world.cleared,contains('p01_main'));
+  expect(controller.state.world.summonTickets,3);
+  expect(controller.state.totalExp,exp);
+  await expectLater(controller.worldCommand(WorldCommand.claw,battle.id,1),throwsStateError);
+  final restored=AppController(store);
+  await restored.initialize();
+  expect(restored.state.world.summonTickets,3);
+  expect(restored.state.totalExp,exp);
+  restored.dispose();
+ });
+ test('failed world save rolls back battle turn and currency',() async {
+  await controller.startWorldBattle('p01_main');
+  final battle=controller.state.world.battle!;
+  store.fail=true;
+  await expectLater(controller.worldCommand(WorldCommand.claw,battle.id,battle.turn),throwsStateError);
+  expect(controller.state.world.battle!.enemyHp,10);
+  expect(controller.state.world.battle!.turn,1);
+  expect(controller.state.world.gold,0);
+  expect(controller.state.world.cleared,isEmpty);
+  store.fail=false;
+  await controller.worldCommand(WorldCommand.claw,battle.id,1);
+  expect(controller.state.world.gold,40);
  });
 }

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/achievement.dart';
 import '../models/achievement_catalog.dart';
@@ -12,24 +13,55 @@ class AppController extends ChangeNotifier {
  final LocalStore _store;
  AppStateData _state=AppStateData.initial();
  bool _ready=false;
+ Future<void> _queue=Future<void>.value();
+ Future<T> _transaction<T>(Future<T> Function() action) {
+  final result=_queue.then((_) async {
+   final snapshot=jsonEncode(_state.toJson());
+   try {return await action();} catch (_) {
+    _state=AppStateData.fromJson(jsonDecode(snapshot) as Map<String,dynamic>);
+    notifyListeners();
+    rethrow;
+   }
+  });
+  _queue=result.then<void>((_) {},onError:(Object e,StackTrace st){});
+  return result;
+ }
+ Future<void> saveSession(String questId, Map<String,dynamic> session)=>_transaction(() async {
+  _state.sessions[questId]=session;
+  await _persist();
+ });
+ Map<String,dynamic>? sessionFor(String questId){final value=_state.sessions[questId];return value is Map?Map<String,dynamic>.from(value):null;}
+
  AppStateData get state=>_state;
  bool get ready=>_ready;
  Future<void> initialize() async{_state=await _store.load();_recoverForNewDay();_ready=true;await _persist();}
- Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime,List<String> reviewQuestionIds=const []}) async {
+ Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime,List<String> reviewQuestionIds=const []}) => _transaction(() async {
   if(title.trim().isEmpty||rewards.isEmpty||rewards.any((r)=>r.exp<=0))return;
   _state.quests.insert(0,Quest(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title.trim(),rewards:rewards,createdAt:DateTime.now(),cadence:cadence,reviewQuestionIds:List.of(reviewQuestionIds)));
   await _persist();
- }
- Future<void> refreshDay() async {
+ });
+ Future<void> refreshDay() => _transaction(() async {
   if (_state.lastRecoveryDate == _dateKey(DateTime.now())) return;
   _recoverForNewDay();
   await _persist();
- }
- Future<void> completeQuest(Quest quest, {int? activeSeconds, List<String> reviewIds = const []}) async{
+ });
+ Future<void> completeQuest(Quest quest, {int? activeSeconds, List<String> reviewIds = const []}) => _transaction(() async {
+  if(activeSeconds!=null && activeSeconds<60)throw ArgumentError('Minimum session duration is 60 seconds');
   final index=_state.quests.indexWhere((q)=>q.id==quest.id);
   if(index<0)return;
   final current=_state.quests[index],now=DateTime.now();
-  if(current.isDoneAt(now))return;
+  if(current.isDoneAt(now)){
+   if(activeSeconds!=null){
+    _state.sessionHistory.add({'questId':current.id,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':false});
+    _state.sessions.remove(current.id);
+    await _persist();
+   }
+   return;
+  }
+  if(activeSeconds!=null){
+   _state.sessionHistory.add({'questId':current.id,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':true});
+   _state.sessions.remove(current.id);
+  }
   _state.quests[index]=current.completed(now);
   _recoverForNewDay();
   _state.completionCount++;
@@ -51,8 +83,8 @@ class AppController extends ChangeNotifier {
   _checkAchievements();
   _healOnLevelUp(beforeLevel);
   await _persist();
- }
- Future<void> unlockAchievement({required String title,required String description,required StatType stat,required int exp}) async{
+ });
+ Future<void> unlockAchievement({required String title,required String description,required StatType stat,required int exp}) => _transaction(() async{
   if(title.trim().isEmpty||exp<=0)return;
   final now=DateTime.now();
   _state.achievements.insert(0,Achievement(id:now.microsecondsSinceEpoch.toString(),title:title.trim(),description:description,stat:stat,exp:exp,unlockedAt:now));
@@ -62,7 +94,7 @@ class AppController extends ChangeNotifier {
   _markTodayActive();
   _checkAchievements();
   await _persist();
- }
+ });
  int get currentStreak{
   final dates=_state.activeDates.toSet();
   if(dates.isEmpty)return 0;
@@ -103,7 +135,7 @@ class AppController extends ChangeNotifier {
   if(level>previousLevel){_state.playerHp=_state.maxPlayerHp;}
   _state.lastKnownLevel=level;
  }
- Future<BattleResult?> attackBoss({bool magic=false}) async{
+ Future<BattleResult?> attackBoss({bool magic=false}) => _transaction(() async{
   _recoverForNewDay();
   if(_state.playerHp<=0||_state.attackEnergy<=0){await _persist();return null;}
   final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
@@ -124,8 +156,8 @@ class AppController extends ChangeNotifier {
   _healOnLevelUp(beforeLevel);
   await _persist();
   return BattleResult(damage:damage,counterDamage:counterDamage,defeated:defeated,playerKnockedOut:_state.playerHp==0);
- }
- Future<String?> drawBattleReward() async{
+ });
+ Future<String?> drawBattleReward() => _transaction(() async{
   if(_state.gachaTickets<=0)return null;
   _state.gachaTickets--;
   final roll=Random.secure().nextInt(100);
@@ -147,7 +179,7 @@ class AppController extends ChangeNotifier {
   }
   await _persist();
   return reward;
- }
+ });
  void _markTodayActive(){final key=_dateKey(DateTime.now());if(!_state.activeDates.contains(key))_state.activeDates.add(key);}
  String _dateKey(DateTime d)=>'${d.year.toString().padLeft(4,'0')}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
  Future<void> _persist() async{await _store.save(_state);notifyListeners();}

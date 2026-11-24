@@ -8,8 +8,10 @@ import '../models/quest.dart';
 import '../models/stat_type.dart';
 import '../services/level_calculator.dart';
 import '../services/local_store.dart';
+import '../services/portable_backup.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store);
+ AppController(this._store,{PortableBackup? portableBackup}):_portableBackup=portableBackup;
+ final PortableBackup? _portableBackup;
  final LocalStore _store;
  AppStateData _state=AppStateData.initial();
  bool _ready=false;
@@ -36,11 +38,24 @@ class AppController extends ChangeNotifier {
  bool get ready=>_ready;
  Future<void> initialize() async {
   _ready=false;
+  await _portableBackup?.resumePendingRestore();
   _state=await _store.load();
   _recoverForNewDay();
   await _store.save(_state);
   _ready=true;
   notifyListeners();
+ }
+ Future<String> exportPortableBackup()=>_transaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  return (_portableBackup??throw StateError('Backup unavailable')).export();
+ });
+ Future<void> importPortableBackup(String raw) {
+  PortableBackup.validate(raw);
+  _ready=false;
+  return _transaction(() async {
+   await (_portableBackup??throw StateError('Backup unavailable')).restore(raw);
+   await initialize();
+  });
  }
  Future<bool> hasBackup()=>_store.hasBackup();
  Future<void> restoreBackup() async {
@@ -81,7 +96,7 @@ class AppController extends ChangeNotifier {
   await _persist();
  });
  Future<void> refreshDay() => _transaction(() async {
-  if (_state.lastRecoveryDate == _dateKey(DateTime.now())) return;
+  if (!_ready || _state.lastRecoveryDate == _dateKey(DateTime.now())) return;
   _recoverForNewDay();
   await _persist();
  });

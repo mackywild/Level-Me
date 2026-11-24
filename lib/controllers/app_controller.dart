@@ -44,6 +44,8 @@ class AppController extends ChangeNotifier {
   return result;
  }
  Future<void> saveSession(String questId, Map<String,dynamic> session)=>_transaction(() async {
+  final id=session['sessionId'];
+  if(id!=null&&_state.sessionHistory.any((h)=>h['sessionId']==id))return;
   _state.sessions[questId]=session;
   await _persist();
  });
@@ -204,10 +206,11 @@ class AppController extends ChangeNotifier {
   'streak'=>currentStreak,'level'=>LevelCalculator.fromTotalExp(_state.totalExp).level,
   _=>_state.stats[StatType.values.byName(rule.metric)]??0,
  };
- void _checkAchievements(){
+ void _checkAchievements({bool battleOnly=false}){
   for(var pass=0;pass<achievementCatalog.length;pass++){
    var awarded=false;
    for(final rule in achievementCatalog){
+    if(battleOnly&&rule.metric!='bosses')continue;
     if(_state.achievements.any((a)=>a.id==rule.id)||achievementMetric(rule)<rule.target)continue;
     _state.achievements.insert(0,Achievement(id:rule.id,title:rule.title,description:rule.description,stat:rule.stat,exp:rule.reward,unlockedAt:DateTime.now()));
     if(rule.reward>0)_grantRewards([QuestReward(stat:rule.stat,exp:rule.reward)]);awarded=true;
@@ -246,7 +249,7 @@ class AppController extends ChangeNotifier {
    counterDamage=8+(_state.boss.defeats*2).clamp(0,20);
    _state.playerHp=max(0,_state.playerHp-counterDamage);
   }
-  _checkAchievements();
+  _checkAchievements(battleOnly:true);
   await _persist();
   return BattleResult(damage:damage,counterDamage:counterDamage,defeated:defeated,playerKnockedOut:_state.playerHp==0);
  });

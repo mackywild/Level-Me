@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import '../models/app_state.dart';
 import 'fe_progress_store.dart';
+import 'local_store.dart';
 
 /// A portable, versioned snapshot of all current user data.
 /// Restore uses a durable journal so an interrupted multi-file replacement
@@ -10,7 +11,8 @@ import 'fe_progress_store.dart';
 class PortableBackup {
  PortableBackup({Directory? directory}):_directory=directory;
  final Directory? _directory;
- static const playerName='level_me_state_v1.json';
+ static const playerName=LocalStore.fileName;
+ static const legacyPlayerName=LocalStore.legacyFileName;
  static const progressName='fe_progress_v1.json';
  static const flagsName='fe_review_flags_v1.json';
  static const names=[playerName,progressName,flagsName];
@@ -26,21 +28,22 @@ class PortableBackup {
  static Map<String,dynamic> validate(String raw) {
   if(utf8.encode(raw).length>maxBytes)throw const FormatException('Backup too large');
   final data=jsonDecode(raw);
-  if(data is! Map<String,dynamic>||data['format']!='level-me-backup'||data['version']!=1) {
+  if(data is! Map<String,dynamic>||data['format']!='level-me-backup'||(data['version']!=1&&data['version']!=2)) {
    throw const FormatException('Unsupported backup format');
   }
   final files=data['files'];
-  if(files is! Map<String,dynamic>||files.length!=names.length||names.any((n)=>!files.containsKey(n))) {
+  final sourcePlayer=data['version']==1?legacyPlayerName:playerName;
+  if(files is! Map<String,dynamic>||files.length!=names.length||[sourcePlayer,progressName,flagsName].any((n)=>!files.containsKey(n))) {
    throw const FormatException('Missing backup data');
   }
-  final p=files[playerName];
+  final p=files[sourcePlayer];
   if(p is! Map<String,dynamic>||p['totalExp'] is! int||p['stats'] is! Map||p['quests'] is! List) {
    throw const FormatException('Invalid player data');
   }
   AppStateData.fromJson(p);
   FeProgressStore.decodeProgress(jsonEncode(files[progressName]));
   FeProgressStore.decodeFlags(jsonEncode(files[flagsName]));
-  return data;
+  return {...data,'version':2,'files':{playerName:AppStateData.fromJson(p).toJson(),progressName:files[progressName],flagsName:files[flagsName]}};
  }
  Future<String> _snapshot(Directory dir) async {
   final files=<String,dynamic>{};
@@ -55,7 +58,7 @@ class PortableBackup {
     files[name]=name==progressName?<String,dynamic>{}:<String>[];
    }
   }
-  final raw=jsonEncode({'format':'level-me-backup','version':1,'createdAt':DateTime.now().toUtc().toIso8601String(),'files':files});
+  final raw=jsonEncode({'format':'level-me-backup','version':2,'createdAt':DateTime.now().toUtc().toIso8601String(),'files':files});
   validate(raw);
   return raw;
  }
@@ -71,8 +74,8 @@ class PortableBackup {
   if(await journal.exists())throw StateError('Restore already pending');
   // Preserve all original bytes, even if corrupted, before committing import.
   final recovery=await dir.createTemp('level_me_before_import_');
-  for(final name in names){
-   for(final suffix in ['', '.bak', '.tmp']){
+  for(final name in [...names,legacyPlayerName]){
+   for(final suffix in ['', '.bak', '.tmp', '.bak.tmp', LocalStore.initialSuffix, LocalStore.markerSuffix, '${LocalStore.markerSuffix}.tmp']){
     final file=_file(dir,'$name$suffix');
     if(await file.exists())await file.copy('${recovery.path}/$name$suffix');
    }
@@ -95,6 +98,8 @@ class PortableBackup {
    // A previous backup from another save must not silently undo this import.
    await _atomic(File('${file.path}.bak'),raw);
   }
+  final staged=_file(dir,'$playerName${LocalStore.initialSuffix}');
+  if(await staged.exists())await staged.delete();
   await journal.delete();
  }
 }

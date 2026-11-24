@@ -1,17 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'controllers/app_controller.dart';
 import 'screens/achievements_screen.dart';
 import 'screens/boss_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/quests_screen.dart';
+import 'screens/world_screen.dart';
 import 'services/local_store.dart';
 import 'services/portable_backup.dart';
 import 'theme/app_theme.dart';
+import 'world/world_catalog.dart';
 void main(){
  WidgetsFlutterBinding.ensureInitialized();
  final controller=AppController(LocalStore(),portableBackup:PortableBackup());
@@ -32,7 +34,11 @@ class _StartupGateState extends State<StartupGate> {
  bool _backupBusy=false;
  @override void initState(){super.initState();_start();}
  void _start(){
-  _loading=widget.controller.initialize();
+  _loading=_initialize();
+ }
+ Future<void> _initialize() async {
+  WorldCatalog.loadJson(await rootBundle.loadString(WorldCatalog.assetPath));
+  await widget.controller.initialize();
  }
  Future<void> _restore() async {
   final confirmed=await showDialog<bool>(
@@ -141,7 +147,8 @@ class _LevelMeShellState extends State<LevelMeShell> with WidgetsBindingObserver
    HomeScreen(controller:widget.controller),
    QuestsScreen(controller:widget.controller),
    BossScreen(controller:widget.controller),
-   AchievementsScreen(controller:widget.controller)
+   AchievementsScreen(controller:widget.controller),
+   WorldScreen(controller:widget.controller)
   ];
   return Scaffold(appBar:AppBar(title:const Text('LEVEL ME',style:TextStyle(fontWeight:FontWeight.w900,letterSpacing:2)),backgroundColor:Colors.transparent,actions:[PopupMenuButton<String>(tooltip:'データ管理',enabled:!widget.backupBusy,onSelected:widget.onBackupAction,itemBuilder:(_)=>const [PopupMenuItem(value:'export',child:Text('バックアップを保存')),PopupMenuItem(value:'import',child:Text('バックアップを復元'))])]),
    body:screens[index],
@@ -149,7 +156,8 @@ class _LevelMeShellState extends State<LevelMeShell> with WidgetsBindingObserver
     NavigationDestination(icon:Icon(Icons.person),label:'STATUS'),
     NavigationDestination(icon:Icon(Icons.task_alt),label:'QUESTS'),
     NavigationDestination(icon:Icon(Icons.shield),label:'BATTLE'),
-    NavigationDestination(icon:Icon(Icons.emoji_events),label:'TROPHIES')
+    NavigationDestination(icon:Icon(Icons.emoji_events),label:'TROPHIES'),
+    NavigationDestination(icon:Icon(Icons.public),label:'WORLD')
    ]));
  });
 }

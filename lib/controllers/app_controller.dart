@@ -9,10 +9,25 @@ import '../models/stat_type.dart';
 import '../services/level_calculator.dart';
 import '../services/local_store.dart';
 import '../services/portable_backup.dart';
+import '../world/world_engine.dart';
 class AppController extends ChangeNotifier {
  AppController(this._store,{PortableBackup? portableBackup}):_portableBackup=portableBackup;
  final PortableBackup? _portableBackup;
  final LocalStore _store;
+ final WorldEngine worldEngine=WorldEngine();
+ WorldStats get worldStats=>WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(_state.totalExp).level,fitness:LevelCalculator.statRankFromExp(_state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(_state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(_state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(_state.stats[StatType.creativity]??0));
+ int get _nowMs=>DateTime.now().millisecondsSinceEpoch;
+ Future<void> startWorldBattle(String id)=>_transaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  worldEngine.start(_state.world,worldStats,id,_nowMs);
+  await _persist();
+ });
+ Future<void> worldCommand(WorldCommand command,int battleId,int turn)=>_transaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  worldEngine.act(_state.world,command,battleId,turn,_nowMs);
+  worldEngine.refresh(_state.world,worldStats,_nowMs);
+  await _persist();
+ });
  AppStateData _state=AppStateData.initial();
  bool _ready=false;
  Future<void> _queue=Future<void>.value();
@@ -29,6 +44,8 @@ class AppController extends ChangeNotifier {
   return result;
  }
  Future<void> saveSession(String questId, Map<String,dynamic> session)=>_transaction(() async {
+  final id=session['sessionId'];
+  if(id!=null&&_state.sessionHistory.any((h)=>h['sessionId']==id))return;
   _state.sessions[questId]=session;
   await _persist();
  });
@@ -41,6 +58,7 @@ class AppController extends ChangeNotifier {
   await _portableBackup?.resumePendingRestore();
   _state=await _store.load();
   _recoverForNewDay();
+  worldEngine.refresh(_state.world,worldStats,_nowMs);
   await _store.save(_state);
   _ready=true;
   notifyListeners();
@@ -100,11 +118,14 @@ class AppController extends ChangeNotifier {
   await _persist();
  });
  Future<void> refreshDay() => _transaction(() async {
-  if (!_ready || _state.lastRecoveryDate == _dateKey(DateTime.now())) return;
-  _recoverForNewDay();
-  await _persist();
+  if (!_ready) return;
+  final newDay=_state.lastRecoveryDate != _dateKey(DateTime.now());
+  if(newDay)_recoverForNewDay();
+  final changed=worldEngine.refresh(_state.world,worldStats,_nowMs);
+  if(newDay||changed)await _persist();
  });
- Future<void> completeQuest(Quest quest, {int? activeSeconds, List<String> reviewIds = const []}) => _transaction(() async {
+ Future<void> completeQuest(Quest quest, {int? activeSeconds, List<String> reviewIds = const [], String? sessionId}) => _transaction(() async {
+  if(sessionId!=null&&_state.sessionHistory.any((h)=>h['sessionId']==sessionId))return;
   if(activeSeconds!=null && activeSeconds<60)throw ArgumentError('Minimum session duration is 60 seconds');
   final index=_state.quests.indexWhere((q)=>q.id==quest.id);
   if(index<0)return;
@@ -113,15 +134,16 @@ class AppController extends ChangeNotifier {
   if((current.id=='starter-study'||current.id=='starter-workout'||current.reviewQuestionIds.isNotEmpty)&&activeSeconds==null)throw ArgumentError('Timed session required');
   if(current.isDoneAt(now)){
    if(activeSeconds!=null){
-    _state.sessionHistory.add({'questId':current.id,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':false});
+    _state.sessionHistory.add({'questId':current.id,'sessionId':?sessionId,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':false});
     _state.sessions.remove(current.id);
     _addReview(current,now,reviewIds);
+    _rewardWorldEffort(current,activeSeconds,false);
     await _persist();
    }
    return;
   }
   if(activeSeconds!=null){
-   _state.sessionHistory.add({'questId':current.id,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':true});
+   _state.sessionHistory.add({'questId':current.id,'sessionId':?sessionId,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':true});
    _state.sessions.remove(current.id);
   }
   _state.quests[index]=current.completed(now);
@@ -141,8 +163,17 @@ class AppController extends ChangeNotifier {
   _markTodayActive();
   _checkAchievements();
   _healOnLevelUp(beforeLevel);
+  _rewardWorldEffort(current,activeSeconds,LevelCalculator.fromTotalExp(_state.totalExp).level>beforeLevel);
   await _persist();
  });
+ void _rewardWorldEffort(Quest current,int? activeSeconds,bool levelUp){
+  final study=current.id=='starter-study'||current.reviewQuestionIds.isNotEmpty;
+  final workout=current.id=='starter-workout';
+  final seconds=activeSeconds==null?0:min(7200,activeSeconds);
+  final physical=study?0:workout?max(1,seconds~/120):5;
+  final magic=workout?0:study?max(1,seconds~/100):5;
+  worldEngine.rewardEffort(_state.world,worldStats,_nowMs,physical:physical,magic:magic,levelUp:levelUp);
+ }
  void _addReview(Quest current,DateTime now,List<String> ids){
   final unique=ids.toSet().toList()..sort();
   if(unique.isEmpty)return;
@@ -175,13 +206,14 @@ class AppController extends ChangeNotifier {
   'streak'=>currentStreak,'level'=>LevelCalculator.fromTotalExp(_state.totalExp).level,
   _=>_state.stats[StatType.values.byName(rule.metric)]??0,
  };
- void _checkAchievements(){
+ void _checkAchievements({bool battleOnly=false}){
   for(var pass=0;pass<achievementCatalog.length;pass++){
    var awarded=false;
    for(final rule in achievementCatalog){
+    if(battleOnly&&rule.metric!='bosses')continue;
     if(_state.achievements.any((a)=>a.id==rule.id)||achievementMetric(rule)<rule.target)continue;
     _state.achievements.insert(0,Achievement(id:rule.id,title:rule.title,description:rule.description,stat:rule.stat,exp:rule.reward,unlockedAt:DateTime.now()));
-    _grantRewards([QuestReward(stat:rule.stat,exp:rule.reward)]);awarded=true;
+    if(rule.reward>0)_grantRewards([QuestReward(stat:rule.stat,exp:rule.reward)]);awarded=true;
    }
    if(!awarded)break;
   }
@@ -204,7 +236,6 @@ class AppController extends ChangeNotifier {
  Future<BattleResult?> attackBoss({bool magic=false}) => _transaction(() async{
   _recoverForNewDay();
   if(_state.playerHp<=0||_state.attackEnergy<=0){await _persist();return null;}
-  final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
   final energy=min(_state.attackEnergy,magic?35:25);
   _state.attackEnergy-=energy;
   final power=_state.stats[magic?StatType.intelligence:StatType.fitness]??0;
@@ -213,13 +244,12 @@ class AppController extends ChangeNotifier {
   _state.boss=_state.boss.damage(damage);
   var counterDamage=0;
   if(defeated){
-   _grantRewards([QuestReward(stat:StatType.discipline,exp:_state.boss.rewardExp)]);
+   _state.world.gold+=80;
   }else{
    counterDamage=8+(_state.boss.defeats*2).clamp(0,20);
    _state.playerHp=max(0,_state.playerHp-counterDamage);
   }
-  _checkAchievements();
-  _healOnLevelUp(beforeLevel);
+  _checkAchievements(battleOnly:true);
   await _persist();
   return BattleResult(damage:damage,counterDamage:counterDamage,defeated:defeated,playerKnockedOut:_state.playerHp==0);
  });
@@ -238,11 +268,8 @@ class AppController extends ChangeNotifier {
    _state.attackEnergy=(_state.attackEnergy+15).clamp(0,9999);
    reward='攻撃エネルギー +15';
   }else{
-   final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
-   _grantRewards([const QuestReward(stat:StatType.creativity,exp:10)]);
-   _checkAchievements();
-   _healOnLevelUp(beforeLevel);
-   reward='創造力経験値 +10';
+   _state.world.gold+=50;
+   reward='ゴールド +50 G';
   }
   await _persist();
   return reward;

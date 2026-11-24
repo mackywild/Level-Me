@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/models/app_state.dart';
@@ -6,6 +7,7 @@ import 'package:level_me/world/world_catalog.dart';
 import 'package:level_me/world/world_engine.dart';
 
 void main(){
+ setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
  final stats=WorldStats.fromRanks(level:1,fitness:1,intelligence:1,discipline:1,creativity:1);
  const now=10000000;
  late WorldEngine engine;
@@ -84,5 +86,34 @@ void main(){
   expect(engine.damage(40,0,1),40);
   expect(engine.damage(40,100,1),20);
   expect(engine.damage(1,1000,0.25),1);
+ });
+ test('battle preserves nine minutes of natural recovery including after reload',(){
+  clear('p01_main');
+  w.physical=0;w.hp=50;
+  engine.start(w,stats,'p01_elite',now+540000);
+  final restored=WorldState.fromJson(jsonDecode(jsonEncode(w.toJson())) as Map<String,dynamic>);
+  final b=restored.battle!;
+  engine.act(restored,WorldCommand.retreat,b.id,b.turn,now+900000);
+  engine.refresh(restored,stats,now+959999);
+  expect(restored.physical,0);
+  engine.refresh(restored,stats,now+960000);
+  expect(restored.physical,1);
+  engine.refresh(restored,stats,now+2160000);
+  expect(restored.hp,55);
+ });
+ test('stage identifiers support double-digit progression',(){
+  expect(WorldCatalog.mainId(9),'p09_main');
+  expect(WorldCatalog.mainId(10),'p10_main');
+  final e=WorldEncounter('p10_main',10,'test','enemy',10,1,0,0,main:true);
+  expect(engine.isUnlocked(w,e),false);
+  w.cleared.add('p09_main');
+  expect(engine.isUnlocked(w,e),true);
+ });
+ test('master validation rejects duplicate IDs without replacing loaded catalog',(){
+  final raw=jsonDecode(File(WorldCatalog.assetPath).readAsStringSync()) as Map<String,dynamic>;
+  final entries=raw['encounters'] as List;
+  entries.add(entries.first);
+  expect(()=>WorldCatalog.loadJson(jsonEncode(raw)),throwsFormatException);
+  expect(WorldCatalog.encounters.length,12);
  });
 }

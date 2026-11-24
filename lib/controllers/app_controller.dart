@@ -47,13 +47,17 @@ class AppController extends ChangeNotifier {
  }
  Future<String> exportPortableBackup()=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
-  return (_portableBackup??throw StateError('Backup unavailable')).export();
+  final backup=_portableBackup;
+  if(backup==null)throw StateError('Backup unavailable');
+  return backup.export();
  });
- Future<void> importPortableBackup(String raw) {
+ Future<void> importPortableBackup(String raw) async {
   PortableBackup.validate(raw);
+  final backup=_portableBackup;
+  if(backup==null)throw StateError('Backup unavailable');
   _ready=false;
-  return _transaction(() async {
-   await (_portableBackup??throw StateError('Backup unavailable')).restore(raw);
+  await _transaction(() async {
+   await backup.restore(raw);
    await initialize();
   });
  }

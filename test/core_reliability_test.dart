@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/controllers/app_controller.dart';
 import 'package:level_me/models/app_state.dart';
 import 'package:level_me/models/stat_type.dart';
+import 'package:level_me/models/quest.dart';
 import 'package:level_me/services/local_store.dart';
 
 class MemoryStore extends LocalStore {
@@ -54,6 +55,30 @@ void main(){
  test('timed quest rejects instant completion',() async {
   await expectLater(controller.completeQuest(controller.state.quests.first),throwsArgumentError);
   expect(controller.state.completionCount,0);
+ });
+ test('quest editing and archiving preserve awarded EXP and completion',() async {
+  await controller.addQuest(title:'Project',cadence:QuestCadence.daily,rewards:const [QuestReward(stat:StatType.creativity,exp:20),QuestReward(stat:StatType.intelligence,exp:10)]);
+  final q=controller.state.quests.first;
+  await controller.completeQuest(q);
+  final exp=controller.state.totalExp;
+  await controller.editQuest(q.id,title:'Project revised',cadence:QuestCadence.daily,rewards:const [QuestReward(stat:StatType.creativity,exp:30)]);
+  expect(controller.state.quests.first.isCompleted,true);
+  await controller.archiveQuest(q.id);
+  expect(controller.state.quests.first.archived,true);
+  await expectLater(controller.completeQuest(q),throwsStateError);
+  await controller.restoreQuest(q.id);
+  expect(controller.state.quests.first.archived,false);
+  await controller.completeQuest(q);
+  expect(controller.state.totalExp,exp);
+ });
+ test('cadence cannot change after claim',() async {
+  await controller.addQuest(title:'Daily',cadence:QuestCadence.daily,rewards:const [QuestReward(stat:StatType.social,exp:10)]);
+  final q=controller.state.quests.first;
+  await controller.completeQuest(q);
+  await expectLater(controller.editQuest(q.id,title:q.title,rewards:q.rewards,cadence:QuestCadence.oneTime),throwsStateError);
+ });
+ test('starter quests cannot be archived',() async {
+  await expectLater(controller.archiveQuest('starter-study'),throwsStateError);
  });
  test('legacy state accepts missing session fields',(){
   final json=AppStateData.initial().toJson()..remove('sessions')..remove('sessionHistory');

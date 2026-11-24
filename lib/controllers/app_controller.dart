@@ -134,7 +134,7 @@ class AppController extends ChangeNotifier {
   if((current.id=='starter-study'||current.id=='starter-workout'||current.reviewQuestionIds.isNotEmpty)&&activeSeconds==null)throw ArgumentError('Timed session required');
   if(current.isDoneAt(now)){
    if(activeSeconds!=null){
-    _state.sessionHistory.add({'questId':current.id,if(sessionId!=null)'sessionId':sessionId,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':false});
+    _state.sessionHistory.add({'questId':current.id,'sessionId':?sessionId,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':false});
     _state.sessions.remove(current.id);
     _addReview(current,now,reviewIds);
     _rewardWorldEffort(current,activeSeconds,false);
@@ -143,7 +143,7 @@ class AppController extends ChangeNotifier {
    return;
   }
   if(activeSeconds!=null){
-   _state.sessionHistory.add({'questId':current.id,if(sessionId!=null)'sessionId':sessionId,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':true});
+   _state.sessionHistory.add({'questId':current.id,'sessionId':?sessionId,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':true});
    _state.sessions.remove(current.id);
   }
   _state.quests[index]=current.completed(now);

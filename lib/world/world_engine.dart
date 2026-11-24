@@ -32,17 +32,18 @@ class WorldBattle {
 }
 
 class WorldState {
- WorldState({this.hp=100,this.physical=27,this.magic=38,this.gold=0,this.summonTickets=0,this.supplyTickets=0,this.sequence=0,this.energyAt=0,this.hpAt=0,BigInt? lifespan,Set<String>? cleared,this.battle,this.lastResult='' }):lifespan=lifespan??BigInt.zero,cleared=cleared??{};
- int hp,physical,magic,gold,summonTickets,supplyTickets,sequence,energyAt,hpAt;
+ WorldState({this.hp=100,this.physical=27,this.magic=38,this.gold=0,this.summonTickets=0,this.supplyTickets=0,this.sequence=0,this.energyAt=0,this.hpAt=0,this.pendingPhysical=0,this.pendingMagic=0,this.pendingLevelUp=false,BigInt? lifespan,Set<String>? cleared,this.battle,this.lastResult='' }):lifespan=lifespan??BigInt.zero,cleared=cleared??{};
+ int hp,physical,magic,gold,summonTickets,supplyTickets,sequence,energyAt,hpAt,pendingPhysical,pendingMagic;
+ bool pendingLevelUp;
  BigInt lifespan;
  final Set<String> cleared;
  WorldBattle? battle;
  String lastResult;
- Map<String,dynamic> toJson()=>{'version':1,'hp':hp,'physical':physical,'magic':magic,'gold':gold,'summonTickets':summonTickets,'supplyTickets':supplyTickets,'sequence':sequence,'energyAt':energyAt,'hpAt':hpAt,'lifespanDays':lifespan.toString(),'cleared':cleared.toList()..sort(),'battle':battle?.toJson(),'lastResult':lastResult};
+ Map<String,dynamic> toJson()=>{'version':1,'hp':hp,'physical':physical,'magic':magic,'gold':gold,'summonTickets':summonTickets,'supplyTickets':supplyTickets,'sequence':sequence,'energyAt':energyAt,'hpAt':hpAt,'pendingPhysical':pendingPhysical,'pendingMagic':pendingMagic,'pendingLevelUp':pendingLevelUp,'lifespanDays':lifespan.toString(),'cleared':cleared.toList()..sort(),'battle':battle?.toJson(),'lastResult':lastResult};
  factory WorldState.fromJson(Map<String,dynamic> j){
   if(j['version']!=1)throw const FormatException('Unsupported world save version');
-  final w=WorldState(hp:j['hp'] as int,physical:j['physical'] as int,magic:j['magic'] as int,gold:j['gold'] as int,summonTickets:j['summonTickets'] as int,supplyTickets:j['supplyTickets'] as int,sequence:j['sequence'] as int,energyAt:j['energyAt'] as int,hpAt:j['hpAt'] as int,lifespan:BigInt.parse(j['lifespanDays'] as String),cleared:List<String>.from(j['cleared'] as List).toSet(),battle:j['battle']==null?null:WorldBattle.fromJson(j['battle'] as Map<String,dynamic>),lastResult:j['lastResult'] as String);
-  if([w.hp,w.physical,w.magic,w.gold,w.summonTickets,w.supplyTickets,w.sequence,w.energyAt,w.hpAt].any((v)=>v<0)||w.lifespan<BigInt.zero)throw const FormatException('Negative world resource');
+  final w=WorldState(hp:j['hp'] as int,physical:j['physical'] as int,magic:j['magic'] as int,gold:j['gold'] as int,summonTickets:j['summonTickets'] as int,supplyTickets:j['supplyTickets'] as int,sequence:j['sequence'] as int,energyAt:j['energyAt'] as int,hpAt:j['hpAt'] as int,pendingPhysical:j['pendingPhysical'] as int? ?? 0,pendingMagic:j['pendingMagic'] as int? ?? 0,pendingLevelUp:j['pendingLevelUp'] as bool? ?? false,lifespan:BigInt.parse(j['lifespanDays'] as String),cleared:List<String>.from(j['cleared'] as List).toSet(),battle:j['battle']==null?null:WorldBattle.fromJson(j['battle'] as Map<String,dynamic>),lastResult:j['lastResult'] as String);
+  if([w.hp,w.physical,w.magic,w.gold,w.summonTickets,w.supplyTickets,w.sequence,w.energyAt,w.hpAt,w.pendingPhysical,w.pendingMagic].any((v)=>v<0)||w.lifespan<BigInt.zero)throw const FormatException('Negative world resource');
   if(w.battle!=null){final b=w.battle!;if(b.id!=w.sequence||b.turn<1||b.enemyHp<1||b.enemyHp>WorldCatalog.byId(b.encounterId).hp||b.stats.hp<1||b.stats.physicalMax<1||b.stats.magicMax<1||b.stats.defense<0||b.stats.physical<1||b.stats.magic<1||!b.stats.crit.isFinite||b.stats.crit<0||b.stats.crit>1||w.hp<1||w.hp>b.stats.hp||w.physical>b.stats.physicalMax||w.magic>b.stats.magicMax||b.slowTurns<0||b.slowTurns>2)throw const FormatException('Invalid active battle');}
   return w;
  }
@@ -59,18 +60,32 @@ class WorldEngine {
  bool refresh(WorldState w,WorldStats s,int now){
   if(w.battle!=null)return false;
   final before=[w.hp,w.physical,w.magic,w.energyAt,w.hpAt].join(',');
-  if(w.energyAt==0||now<w.energyAt)w.energyAt=now;
-  if(w.hpAt==0||now<w.hpAt)w.hpAt=now;
+  if(w.energyAt==0){w.energyAt=now;w.physical=s.physicalMax;w.magic=s.magicMax;}
+  if(now<w.energyAt)w.energyAt=now;
+  if(w.hpAt==0){w.hpAt=now;w.hp=s.hp;}
+  if(now<w.hpAt)w.hpAt=now;
   final ticks=(now-w.energyAt)~/energyInterval,heals=(now-w.hpAt)~/hpInterval;
   w.physical=min(s.physicalMax,w.physical+ticks);
   w.magic=min(s.magicMax,w.magic+ticks);
   w.hp=min(s.hp,w.hp+heals*max(1,(s.hp*0.05).floor()));
   w.energyAt+=ticks*energyInterval;
   w.hpAt+=heals*hpInterval;
-  return before!=[w.hp,w.physical,w.magic,w.energyAt,w.hpAt].join(',');
+  final pending=w.pendingPhysical>0||w.pendingMagic>0||w.pendingLevelUp;
+  if(pending){
+   w.physical=w.pendingLevelUp?s.physicalMax:min(s.physicalMax,w.physical+w.pendingPhysical);
+   w.magic=w.pendingLevelUp?s.magicMax:min(s.magicMax,w.magic+w.pendingMagic);
+   if(w.pendingLevelUp)w.hp=s.hp;
+   w.pendingPhysical=0;w.pendingMagic=0;w.pendingLevelUp=false;
+  }
+  return pending||before!=[w.hp,w.physical,w.magic,w.energyAt,w.hpAt].join(',');
  }
  void rewardEffort(WorldState w,WorldStats s,int now,{required int physical,required int magic,required bool levelUp}){
-  if(w.battle!=null)return; // Battle snapshot is isolated from changes in daily stats.
+  if(w.battle!=null){
+   w.pendingPhysical=min(s.physicalMax,w.pendingPhysical+physical);
+   w.pendingMagic=min(s.magicMax,w.pendingMagic+magic);
+   w.pendingLevelUp=w.pendingLevelUp||levelUp;
+   return;
+  }
   refresh(w,s,now);
   w.physical=levelUp?s.physicalMax:min(s.physicalMax,w.physical+physical);
   w.magic=levelUp?s.magicMax:min(s.magicMax,w.magic+magic);
@@ -116,7 +131,7 @@ class WorldEngine {
     case WorldCommand.claw:
      final strong=w.physical>=4;
      if(strong)w.physical-=4;
-     dealt=damage(s.physical,e.defense,strong?1:0.25,critical:critical,variance:variance);
+     dealt=damage(s.physical,e.defense,strong?1.0:0.25,critical:critical,variance:variance);
     case WorldCommand.heavyClaw:
      w.physical-=9;dealt=damage(s.physical,e.defense,1.8,critical:critical,variance:variance);
     case WorldCommand.magic:

@@ -12,6 +12,7 @@ class WorkoutScreen extends StatefulWidget {
 class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserver {
  final Stopwatch _watch=Stopwatch();
  int _restored=0;
+ late String _sessionId;
  bool _busy=false,_finished=false;
  Timer? _ticker;
  int get _seconds=>_restored+_watch.elapsed.inSeconds;
@@ -19,7 +20,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
  @override void initState(){
   super.initState();
   WidgetsBinding.instance.addObserver(this);
-  _restored=widget.controller.sessionFor(widget.quest.id)?['seconds'] as int? ?? 0;
+  final saved=widget.controller.sessionFor(widget.quest.id);
+  _restored=saved?['seconds'] as int? ?? 0;
+  _sessionId=saved?['sessionId'] as String? ?? 'workout-${DateTime.now().microsecondsSinceEpoch}';
   _ticker=Timer.periodic(const Duration(seconds:1),(timer){
    if(mounted)setState((){});
    if(_watch.isRunning&&timer.tick%10==0)_save();
@@ -27,7 +30,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
  }
  Future<void> _save() async {
   if(_finished||_busy||_seconds==0)return;
-  try {await widget.controller.saveSession(widget.quest.id,{'seconds':_seconds});}
+  try {await widget.controller.saveSession(widget.quest.id,{'seconds':_seconds,'sessionId':_sessionId});}
   catch(error){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('途中記録の保存失敗: $error')));}
  }
  @override void didChangeAppLifecycleState(AppLifecycleState state){
@@ -42,7 +45,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with WidgetsBindingObserv
   _watch.stop();
   setState(()=>_busy=true);
   try {
-   await widget.controller.completeQuest(widget.quest,activeSeconds:_seconds);
+   await widget.controller.completeQuest(widget.quest,activeSeconds:_seconds,sessionId:_sessionId);
    _finished=true;
    if(mounted)Navigator.pop(context);
   } catch(error){

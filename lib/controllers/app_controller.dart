@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/achievement.dart';
 import '../models/achievement_catalog.dart';
@@ -7,41 +8,148 @@ import '../models/quest.dart';
 import '../models/stat_type.dart';
 import '../services/level_calculator.dart';
 import '../services/local_store.dart';
+import '../services/portable_backup.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store);
+ AppController(this._store,{PortableBackup? portableBackup}):_portableBackup=portableBackup;
+ final PortableBackup? _portableBackup;
  final LocalStore _store;
  AppStateData _state=AppStateData.initial();
  bool _ready=false;
+ Future<void> _queue=Future<void>.value();
+ Future<T> _transaction<T>(Future<T> Function() action) {
+  final result=_queue.then((_) async {
+   final snapshot=jsonEncode(_state.toJson());
+   try {return await action();} catch (_) {
+    _state=AppStateData.fromJson(jsonDecode(snapshot) as Map<String,dynamic>);
+    notifyListeners();
+    rethrow;
+   }
+  });
+  _queue=result.then<void>((_) {},onError:(Object e,StackTrace st){});
+  return result;
+ }
+ Future<void> saveSession(String questId, Map<String,dynamic> session)=>_transaction(() async {
+  _state.sessions[questId]=session;
+  await _persist();
+ });
+ Map<String,dynamic>? sessionFor(String questId){final value=_state.sessions[questId];return value is Map?Map<String,dynamic>.from(value):null;}
+
  AppStateData get state=>_state;
  bool get ready=>_ready;
- Future<void> initialize() async{_state=await _store.load();_recoverForNewDay();_ready=true;await _persist();}
- Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime,List<String> reviewQuestionIds=const []}) async {
-  if(title.trim().isEmpty||rewards.isEmpty||rewards.any((r)=>r.exp<=0))return;
+ Future<void> initialize() async {
+  _ready=false;
+  await _portableBackup?.resumePendingRestore();
+  _state=await _store.load();
+  _recoverForNewDay();
+  await _store.save(_state);
+  _ready=true;
+  notifyListeners();
+ }
+ Future<String> exportPortableBackup()=>_transaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  final backup=_portableBackup;
+  if(backup==null)throw StateError('Backup unavailable');
+  return backup.export();
+ });
+ Future<void> importPortableBackup(String raw) async {
+  PortableBackup.validate(raw);
+  final backup=_portableBackup;
+  if(backup==null)throw StateError('Backup unavailable');
+  _ready=false;
+  await _transaction(() async {
+   await backup.restore(raw);
+   await initialize();
+  });
+ }
+ Future<bool> hasBackup()=>_store.hasBackup();
+ Future<void> restoreBackup() async {
+  await _store.restoreBackup();
+  await initialize();
+ }
+ Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime,List<String> reviewQuestionIds=const []}) => _transaction(() async {
+  if(title.trim().isEmpty||rewards.isEmpty||rewards.any((r)=>r.exp<=0))throw ArgumentError('Invalid quest');
+  if(reviewQuestionIds.isEmpty&&title.trim().startsWith('基本情報：見直し'))throw ArgumentError('Reserved title');
   _state.quests.insert(0,Quest(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title.trim(),rewards:rewards,createdAt:DateTime.now(),cadence:cadence,reviewQuestionIds:List.of(reviewQuestionIds)));
   await _persist();
- }
- Future<void> completeQuest(Quest quest) async{
+ });
+ bool canManageQuest(Quest q)=>!q.id.startsWith('starter-')&&q.reviewQuestionIds.isEmpty&&!q.title.startsWith('基本情報：見直し');
+ Future<void> editQuest(String id,{required String title,required List<QuestReward> rewards,required QuestCadence cadence})=>_transaction(() async {
+  final index=_state.quests.indexWhere((q)=>q.id==id);
+  if(index<0)throw StateError('Quest not found');
+  final q=_state.quests[index];
+  if(!canManageQuest(q)||q.archived)throw StateError('Protected quest');
+  if(title.trim().isEmpty||title.startsWith('基本情報：見直し')||rewards.isEmpty||rewards.any((r)=>r.exp<1||r.exp>50)||rewards.map((r)=>r.stat).toSet().length!=rewards.length)throw ArgumentError('Invalid quest');
+  if((q.completedAt!=null||q.completionKeys.isNotEmpty)&&q.cadence!=cadence)throw StateError('Cannot change cadence after completion');
+  _state.quests[index]=Quest(id:q.id,title:title.trim(),rewards:List.of(rewards),createdAt:q.createdAt,completedAt:q.completedAt,cadence:cadence,completionKeys:q.completionKeys,reviewQuestionIds:q.reviewQuestionIds);
+  await _persist();
+ });
+ Future<void> archiveQuest(String id)=>_transaction(() async {
+  final index=_state.quests.indexWhere((q)=>q.id==id);
+  if(index<0)throw StateError('Quest not found');
+  final q=_state.quests[index];
+  if(!canManageQuest(q)||_state.sessions.containsKey(id))throw StateError('Protected or active quest');
+  _state.quests[index]=Quest.fromJson({...q.toJson(),'archived':true});
+  await _persist();
+ });
+ Future<void> restoreQuest(String id)=>_transaction(() async {
+  final index=_state.quests.indexWhere((q)=>q.id==id);
+  if(index<0)throw StateError('Quest not found');
+  final q=_state.quests[index];
+  if(!canManageQuest(q))throw StateError('Protected quest');
+  _state.quests[index]=Quest.fromJson({...q.toJson(),'archived':false});
+  await _persist();
+ });
+ Future<void> refreshDay() => _transaction(() async {
+  if (!_ready || _state.lastRecoveryDate == _dateKey(DateTime.now())) return;
+  _recoverForNewDay();
+  await _persist();
+ });
+ Future<void> completeQuest(Quest quest, {int? activeSeconds, List<String> reviewIds = const []}) => _transaction(() async {
+  if(activeSeconds!=null && activeSeconds<60)throw ArgumentError('Minimum session duration is 60 seconds');
   final index=_state.quests.indexWhere((q)=>q.id==quest.id);
   if(index<0)return;
   final current=_state.quests[index],now=DateTime.now();
-  if(current.isDoneAt(now))return;
+  if(current.archived)throw StateError('Archived quest');
+  if((current.id=='starter-study'||current.id=='starter-workout'||current.reviewQuestionIds.isNotEmpty)&&activeSeconds==null)throw ArgumentError('Timed session required');
+  if(current.isDoneAt(now)){
+   if(activeSeconds!=null){
+    _state.sessionHistory.add({'questId':current.id,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':false});
+    _state.sessions.remove(current.id);
+    _addReview(current,now,reviewIds);
+    await _persist();
+   }
+   return;
+  }
+  if(activeSeconds!=null){
+   _state.sessionHistory.add({'questId':current.id,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':true});
+   _state.sessions.remove(current.id);
+  }
   _state.quests[index]=current.completed(now);
   _recoverForNewDay();
   _state.completionCount++;
   final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
-  _grantRewards(current.rewards);
-  _state.attackEnergy=(_state.attackEnergy+current.totalExp).clamp(0,9999);
+  final multiplier = activeSeconds == null ? 1 : (activeSeconds ~/ 60).clamp(1, 120);
+  final rewards = activeSeconds == null ? current.rewards : current.rewards.map((r) => QuestReward(stat:r.stat, exp:max(1, (r.exp * multiplier / 25).round()))).toList();
+  _addReview(current,now,reviewIds);
+  _grantRewards(rewards);
+  _state.attackEnergy=(_state.attackEnergy+rewards.fold<int>(0,(sum,r)=>sum+r.exp)).clamp(0,9999);
   _state.gachaTickets++;
   if(current.rewards.any((r)=>r.stat==StatType.fitness)){
    _state.maxPlayerHp+=2;
    _state.playerHp=(_state.playerHp+20).clamp(0,_state.maxPlayerHp);
   }
-  _healOnLevelUp(beforeLevel);
   _markTodayActive();
   _checkAchievements();
+  _healOnLevelUp(beforeLevel);
   await _persist();
+ });
+ void _addReview(Quest current,DateTime now,List<String> ids){
+  final unique=ids.toSet().toList()..sort();
+  if(unique.isEmpty)return;
+  if(_state.quests.any((q)=>!q.isDoneAt(now)&&q.reviewQuestionIds.length==unique.length&&q.reviewQuestionIds.toSet().containsAll(unique)))return;
+  _state.quests.insert(0,Quest(id:'review-${current.id}-${now.microsecondsSinceEpoch}',title:'基本情報：見直し（対象 ${unique.length}問）',rewards:const [QuestReward(stat:StatType.intelligence,exp:10),QuestReward(stat:StatType.discipline,exp:3)],createdAt:now,reviewQuestionIds:unique));
  }
- Future<void> unlockAchievement({required String title,required String description,required StatType stat,required int exp}) async{
+ Future<void> unlockAchievement({required String title,required String description,required StatType stat,required int exp}) => _transaction(() async{
   if(title.trim().isEmpty||exp<=0)return;
   final now=DateTime.now();
   _state.achievements.insert(0,Achievement(id:now.microsecondsSinceEpoch.toString(),title:title.trim(),description:description,stat:stat,exp:exp,unlockedAt:now));
@@ -50,8 +158,9 @@ class AppController extends ChangeNotifier {
   _healOnLevelUp(beforeLevel);
   _markTodayActive();
   _checkAchievements();
+  _healOnLevelUp(beforeLevel);
   await _persist();
- }
+ });
  int get currentStreak{
   final dates=_state.activeDates.toSet();
   if(dates.isEmpty)return 0;
@@ -92,9 +201,10 @@ class AppController extends ChangeNotifier {
   if(level>previousLevel){_state.playerHp=_state.maxPlayerHp;}
   _state.lastKnownLevel=level;
  }
- Future<BattleResult?> attackBoss({bool magic=false}) async{
+ Future<BattleResult?> attackBoss({bool magic=false}) => _transaction(() async{
   _recoverForNewDay();
   if(_state.playerHp<=0||_state.attackEnergy<=0){await _persist();return null;}
+  final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
   final energy=min(_state.attackEnergy,magic?35:25);
   _state.attackEnergy-=energy;
   final power=_state.stats[magic?StatType.intelligence:StatType.fitness]??0;
@@ -109,10 +219,11 @@ class AppController extends ChangeNotifier {
    _state.playerHp=max(0,_state.playerHp-counterDamage);
   }
   _checkAchievements();
+  _healOnLevelUp(beforeLevel);
   await _persist();
   return BattleResult(damage:damage,counterDamage:counterDamage,defeated:defeated,playerKnockedOut:_state.playerHp==0);
- }
- Future<String?> drawBattleReward() async{
+ });
+ Future<String?> drawBattleReward() => _transaction(() async{
   if(_state.gachaTickets<=0)return null;
   _state.gachaTickets--;
   final roll=Random.secure().nextInt(100);
@@ -129,12 +240,13 @@ class AppController extends ChangeNotifier {
   }else{
    final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
    _grantRewards([const QuestReward(stat:StatType.creativity,exp:10)]);
+   _checkAchievements();
    _healOnLevelUp(beforeLevel);
    reward='創造力経験値 +10';
   }
   await _persist();
   return reward;
- }
+ });
  void _markTodayActive(){final key=_dateKey(DateTime.now());if(!_state.activeDates.contains(key))_state.activeDates.add(key);}
  String _dateKey(DateTime d)=>'${d.year.toString().padLeft(4,'0')}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
  Future<void> _persist() async{await _store.save(_state);notifyListeners();}

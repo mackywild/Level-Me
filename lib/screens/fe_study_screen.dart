@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import '../models/quest.dart';
-import '../models/stat_type.dart';
 import 'fe_question_screen.dart';
 
 /// Timed study flow launched from the daily study quest.
@@ -16,8 +15,16 @@ class FeStudyScreen extends StatefulWidget {
  @override State<FeStudyScreen> createState()=>_FeStudyScreenState();
 }
 
-class _FeStudyScreenState extends State<FeStudyScreen> {
+class _FeStudyScreenState extends State<FeStudyScreen> with WidgetsBindingObserver {
  final Stopwatch _watch=Stopwatch();
+ int _restoredSeconds=0;
+ int get _seconds=>_restoredSeconds+_watch.elapsed.inSeconds;
+ Future<void> _checkpoint() async {
+  if(_finished || (_seconds==0 && _answeredIds.isEmpty && _flaggedIds.isEmpty))return;
+  try {await widget.controller.saveSession(widget.quest.id,{'seconds':_seconds,'answered':_answeredIds.toList(),'incorrect':_incorrectIds.toList(),'flagged':_flaggedIds.toList()});} catch(error){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('途中記録の保存失敗: $error')));}
+ }
+ @override void didChangeAppLifecycleState(AppLifecycleState state){if(state!=AppLifecycleState.resumed){_watch.stop();_checkpoint();}if(mounted)setState((){});}
+
  final Set<String> _answeredIds={};
  final Set<String> _incorrectIds={};
  final Set<String> _flaggedIds={};
@@ -29,13 +36,16 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
 
  @override void initState(){
   super.initState();
-  _ticker=Timer.periodic(const Duration(seconds:1),(_){if(mounted)setState((){});});
+  WidgetsBinding.instance.addObserver(this);
+  final saved=widget.controller.sessionFor(widget.quest.id);
+  if(saved!=null){_restoredSeconds=saved['seconds'] as int? ?? 0;_answeredIds.addAll((saved['answered'] as List? ?? []).cast<String>());_incorrectIds.addAll((saved['incorrect'] as List? ?? []).cast<String>());_flaggedIds.addAll((saved['flagged'] as List? ?? []).cast<String>());}
+  _ticker=Timer.periodic(const Duration(seconds:1),(timer){if(mounted)setState((){});if(_watch.isRunning&&timer.tick%10==0)_checkpoint();});
  }
 
- @override void dispose(){_ticker?.cancel();_watch.stop();super.dispose();}
+ @override void dispose(){_ticker?.cancel();_watch.stop();WidgetsBinding.instance.removeObserver(this);_checkpoint();super.dispose();}
 
  String get _clock {
-  final s=_watch.elapsed.inSeconds;
+  final s=_seconds;
   return '${(s~/3600).toString().padLeft(2,'0')}:${((s~/60)%60).toString().padLeft(2,'0')}:${(s%60).toString().padLeft(2,'0')}';
  }
 
@@ -69,6 +79,7 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
      _answeredIds.add(id);
      if(!correct)_incorrectIds.add(id);
     });
+    _checkpoint();
    },
    onReviewFlagChanged:(id,flagged){
     if(!mounted)return;
@@ -86,22 +97,23 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
  Future<void> _finish() async {
   if(_finished)return;
   _watch.stop();
-  final seconds=_watch.elapsed.inSeconds;
+  final seconds=_seconds;
   if(seconds<60){
+   await _checkpoint();
+   if (!mounted) return;
    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('学習時間が1分未満です。1分以上学習してから終了してください。')));
    return;
   }
   setState(()=>_finished=true);
   final reviewIds={..._incorrectIds,..._flaggedIds};
-  if(reviewIds.isNotEmpty){
-   await widget.controller.addQuest(
-    title:'${FeStudyScreen.reviewQuestPrefix}（対象 ${reviewIds.length}問）',
-    cadence:QuestCadence.oneTime,
-    reviewQuestionIds:reviewIds.toList()..sort(),
-    rewards:const [QuestReward(stat:StatType.intelligence,exp:10),
-      QuestReward(stat:StatType.discipline,exp:3)]);
+  try {
+   await widget.controller.completeQuest(widget.quest, activeSeconds:seconds, reviewIds:reviewIds.toList()..sort());
+  } catch (error) {
+   if (!mounted) return;
+   setState(()=>_finished=false);
+   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('保存失敗: $error')));
+   return;
   }
-  await widget.controller.completeQuest(widget.quest);
   if(mounted)Navigator.of(context).pop();
  }
 
@@ -114,14 +126,14 @@ class _FeStudyScreenState extends State<FeStudyScreen> {
    const SizedBox(height:20),
    Center(child:Text(_clock,style:const TextStyle(fontSize:44,fontWeight:FontWeight.bold))),
    const SizedBox(height:12),
-   Text(_watch.isRunning?'学習中':_watch.elapsed==Duration.zero?'開始待ち':'一時停止中',textAlign:TextAlign.center),
+   Text(_watch.isRunning?'学習中':_seconds==0?'開始待ち':'一時停止中',textAlign:TextAlign.center),
    const SizedBox(height:20),
    FilledButton.icon(onPressed:_finished||_openingQuestions?null:_openQuestions,
     icon:const Icon(Icons.play_arrow),
-    label:Text(_watch.elapsed==Duration.zero?'START / 問題を解く':'問題演習を開く')),
-   if(_watch.elapsed>Duration.zero)...[
+    label:Text(_seconds==0?'START / 問題を解く':'問題演習を開く')),
+   if(_seconds>0)...[
     const SizedBox(height:8),
-    TextButton.icon(onPressed:()=>setState((){_watch.isRunning?_watch.stop():_watch.start();}),
+    TextButton.icon(onPressed:(){setState((){_watch.isRunning?_watch.stop():_watch.start();});_checkpoint();},
      icon:Icon(_watch.isRunning?Icons.pause:Icons.play_arrow),
      label:Text(_watch.isRunning?'タイマーを一時停止':'タイマーを再開')),
    ],

@@ -3,10 +3,12 @@ import 'boss.dart';
 import 'quest.dart';
 import 'stat_type.dart';
 class AppStateData {
- AppStateData({required this.totalExp,required this.stats,required this.quests,required this.achievements,required this.activeDates,required this.boss,required this.completionCount,this.playerHp=100,this.maxPlayerHp=100,this.attackEnergy=0,this.gachaTickets=0,this.lastRecoveryDate='',this.lastKnownLevel=1});
+ AppStateData({required this.totalExp,required this.stats,required this.quests,required this.achievements,required this.activeDates,required this.boss,required this.completionCount,this.playerHp=100,this.maxPlayerHp=100,this.attackEnergy=0,this.gachaTickets=0,this.lastRecoveryDate='',this.lastKnownLevel=1, Map<String,dynamic>? sessions, List<Map<String,dynamic>>? sessionHistory}):sessions=sessions??{},sessionHistory=sessionHistory??[];
  int totalExp,completionCount;
  int playerHp,maxPlayerHp,attackEnergy,gachaTickets,lastKnownLevel;
  String lastRecoveryDate;
+ final Map<String,dynamic> sessions;
+ final List<Map<String,dynamic>> sessionHistory;
  final Map<StatType,int> stats;
  final List<Quest> quests;
  final List<Achievement> achievements;
@@ -25,11 +27,13 @@ class AppStateData {
   'achievements':achievements.map((e)=>e.toJson()).toList(),
   'activeDates':activeDates,'boss':boss.toJson(),
   'playerHp':playerHp,'maxPlayerHp':maxPlayerHp,'attackEnergy':attackEnergy,'gachaTickets':gachaTickets,
-  'lastRecoveryDate':lastRecoveryDate,'lastKnownLevel':lastKnownLevel};
+  'sessions':sessions,'sessionHistory':sessionHistory,'lastRecoveryDate':lastRecoveryDate,'lastKnownLevel':lastKnownLevel};
  factory AppStateData.fromJson(Map<String,dynamic> j) {
   final raw=j['stats'] as Map<String,dynamic>? ?? {};
   return AppStateData(totalExp:j['totalExp'] as int? ?? 0,
    completionCount:j['completionCount'] as int? ?? 0,
+   sessions:Map<String,dynamic>.from(j['sessions'] as Map? ?? {}),
+   sessionHistory:(j['sessionHistory'] as List? ?? []).map((e)=>Map<String,dynamic>.from(e as Map)).toList(),
    playerHp:j['playerHp'] as int? ?? 100,maxPlayerHp:j['maxPlayerHp'] as int? ?? 100,
    attackEnergy:j['attackEnergy'] as int? ?? 0,gachaTickets:j['gachaTickets'] as int? ?? 0,
    lastRecoveryDate:j['lastRecoveryDate'] as String? ?? '',lastKnownLevel:j['lastKnownLevel'] as int? ?? 1,

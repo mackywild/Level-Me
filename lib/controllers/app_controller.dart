@@ -36,8 +36,36 @@ class AppController extends ChangeNotifier {
  bool get ready=>_ready;
  Future<void> initialize() async{_state=await _store.load();_recoverForNewDay();_ready=true;await _persist();}
  Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime,List<String> reviewQuestionIds=const []}) => _transaction(() async {
-  if(title.trim().isEmpty||rewards.isEmpty||rewards.any((r)=>r.exp<=0))return;
+  if(title.trim().isEmpty||rewards.isEmpty||rewards.any((r)=>r.exp<=0))throw ArgumentError('Invalid quest');
+  if(reviewQuestionIds.isEmpty&&title.trim().startsWith('基本情報：見直し'))throw ArgumentError('Reserved title');
   _state.quests.insert(0,Quest(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title.trim(),rewards:rewards,createdAt:DateTime.now(),cadence:cadence,reviewQuestionIds:List.of(reviewQuestionIds)));
+  await _persist();
+ });
+ bool canManageQuest(Quest q)=>!q.id.startsWith('starter-')&&q.reviewQuestionIds.isEmpty&&!q.title.startsWith('基本情報：見直し');
+ Future<void> editQuest(String id,{required String title,required List<QuestReward> rewards,required QuestCadence cadence})=>_transaction(() async {
+  final index=_state.quests.indexWhere((q)=>q.id==id);
+  if(index<0)throw StateError('Quest not found');
+  final q=_state.quests[index];
+  if(!canManageQuest(q)||q.archived)throw StateError('Protected quest');
+  if(title.trim().isEmpty||title.startsWith('基本情報：見直し')||rewards.isEmpty||rewards.any((r)=>r.exp<1||r.exp>50)||rewards.map((r)=>r.stat).toSet().length!=rewards.length)throw ArgumentError('Invalid quest');
+  if((q.completedAt!=null||q.completionKeys.isNotEmpty)&&q.cadence!=cadence)throw StateError('Cannot change cadence after completion');
+  _state.quests[index]=Quest(id:q.id,title:title.trim(),rewards:List.of(rewards),createdAt:q.createdAt,completedAt:q.completedAt,cadence:cadence,completionKeys:q.completionKeys,reviewQuestionIds:q.reviewQuestionIds);
+  await _persist();
+ });
+ Future<void> archiveQuest(String id)=>_transaction(() async {
+  final index=_state.quests.indexWhere((q)=>q.id==id);
+  if(index<0)throw StateError('Quest not found');
+  final q=_state.quests[index];
+  if(!canManageQuest(q)||_state.sessions.containsKey(id))throw StateError('Protected or active quest');
+  _state.quests[index]=Quest.fromJson({...q.toJson(),'archived':true});
+  await _persist();
+ });
+ Future<void> restoreQuest(String id)=>_transaction(() async {
+  final index=_state.quests.indexWhere((q)=>q.id==id);
+  if(index<0)throw StateError('Quest not found');
+  final q=_state.quests[index];
+  if(!canManageQuest(q))throw StateError('Protected quest');
+  _state.quests[index]=Quest.fromJson({...q.toJson(),'archived':false});
   await _persist();
  });
  Future<void> refreshDay() => _transaction(() async {
@@ -50,6 +78,7 @@ class AppController extends ChangeNotifier {
   final index=_state.quests.indexWhere((q)=>q.id==quest.id);
   if(index<0)return;
   final current=_state.quests[index],now=DateTime.now();
+  if(current.archived)throw StateError('Archived quest');
   if((current.id=='starter-study'||current.id=='starter-workout'||current.reviewQuestionIds.isNotEmpty)&&activeSeconds==null)throw ArgumentError('Timed session required');
   if(current.isDoneAt(now)){
    if(activeSeconds!=null){

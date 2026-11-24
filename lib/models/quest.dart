@@ -16,7 +16,8 @@ class QuestReward {
 class Quest {
   const Quest({required this.id, required this.title, required this.rewards,
     required this.createdAt, this.completedAt, this.cadence = QuestCadence.oneTime,
-    this.completionKeys = const [], this.reviewQuestionIds = const []});
+    this.completionKeys = const [], this.reviewQuestionIds = const [], this.archived = false});
+  final bool archived;
   final String id;
   final String title;
   final List<QuestReward> rewards;
@@ -45,16 +46,17 @@ class Quest {
   Quest completed(DateTime now) => Quest(id: id, title: title, rewards: rewards,
     createdAt: createdAt, completedAt: cadence == QuestCadence.oneTime ? now : completedAt,
     cadence: cadence, completionKeys: cadence == QuestCadence.oneTime ? completionKeys :
-      [...completionKeys, periodKey(cadence, now)], reviewQuestionIds: reviewQuestionIds);
+      [...completionKeys, periodKey(cadence, now)], reviewQuestionIds: reviewQuestionIds, archived: archived);
 
   Map<String, dynamic> toJson() => {
     'id': id, 'title': title, 'rewards': rewards.map((e) => e.toJson()).toList(),
     'createdAt': createdAt.toIso8601String(), 'completedAt': completedAt?.toIso8601String(),
     'cadence': cadence.name, 'completionKeys': completionKeys,
-    'reviewQuestionIds': reviewQuestionIds,
+    'reviewQuestionIds': reviewQuestionIds, 'archived': archived,
   };
 
   factory Quest.fromJson(Map<String, dynamic> json) => Quest(
+    archived: json['archived'] as bool? ?? false,
     id: json['id'] as String, title: json['title'] as String,
     rewards: (json['rewards'] as List<dynamic>).map((e) => QuestReward.fromJson(e as Map<String, dynamic>)).toList(),
     createdAt: DateTime.parse(json['createdAt'] as String),

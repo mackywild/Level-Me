@@ -23,7 +23,7 @@ class _BossScreenState extends State<BossScreen> with SingleTickerProviderStateM
   if(!mounted)return;
   if(result==null){setState((){busy=false;event='体力か攻撃エネルギーが足りません。';});return;}
   setState(()=>event=result.defeated
-   ?'討伐成功！ ${result.damage}ダメージ。討伐報酬を獲得！'
+   ?'討伐成功！ ${result.damage}ダメージ。討伐報酬 80 G を獲得！'
    :'敵に${result.damage}ダメージ！ 反撃で${result.counterDamage}ダメージを受けた。');
   await Future<void>.delayed(const Duration(milliseconds:500));
   if(mounted)setState(()=>busy=false);
@@ -42,7 +42,7 @@ class _BossScreenState extends State<BossScreen> with SingleTickerProviderStateM
   final state=widget.controller.state,b=state.boss;
   final alive=state.playerHp>0;
   return ListView(padding:const EdgeInsets.fromLTRB(16,12,16,120),children:[
-   Text('ボス戦',style:Theme.of(context).textTheme.headlineSmall),
+   Text('旧ボス戦（レガシー）',style:Theme.of(context).textTheme.headlineSmall),
    const SizedBox(height:12),
    Panel(child:Column(children:[
     SizedBox(height:240,width:double.infinity,child:AnimatedBuilder(
@@ -76,7 +76,7 @@ class _BossScreenState extends State<BossScreen> with SingleTickerProviderStateM
    OutlinedButton.icon(onPressed:busy||state.gachaTickets<1?null:_draw,
     icon:const Icon(Icons.card_giftcard),label:Text('戦闘報酬ガチャ（残り${state.gachaTickets}回）')),
    const SizedBox(height:12),
-   const Text('タスク達成で攻撃エネルギーとガチャ券を獲得。筋トレで体力が回復し、最大体力も成長します。知力が高いほど魔法攻撃が強力になります。'),
+   const Text('旧ガチャ券は引き続き利用可能。旧ボス・ガチャから能力EXPは付与されません。タスク達成で攻撃エネルギーとガチャ券を獲得。筋トレで体力が回復し、最大体力も成長します。知力が高いほど魔法攻撃が強力になります。'),
   ]);
  }
 }

@@ -100,6 +100,7 @@ class _FeStudyScreenState extends State<FeStudyScreen> with WidgetsBindingObserv
   final seconds=_seconds;
   if(seconds<60){
    await _checkpoint();
+   if (!mounted) return;
    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('学習時間が1分未満です。1分以上学習してから終了してください。')));
    return;
   }

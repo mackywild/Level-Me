@@ -49,7 +49,7 @@ class _StartupGateState extends State<StartupGate> {
    if(snapshot.connectionState==ConnectionState.done && !snapshot.hasError){
     return LevelMeShell(controller:widget.controller);
    }
-   if(snapshot.hasError){
+   if(snapshot.connectionState==ConnectionState.done && snapshot.hasError){
     return Scaffold(body:SafeArea(child:Center(child:Padding(
      padding:const EdgeInsets.all(24),
      child:Column(mainAxisSize:MainAxisSize.min,children:[

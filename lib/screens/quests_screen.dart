@@ -3,6 +3,7 @@ import '../controllers/app_controller.dart';
 import '../models/quest.dart';
 import '../models/stat_type.dart';
 import 'fe_study_screen.dart';
+import 'workout_screen.dart';
 class QuestsScreen extends StatefulWidget{
  const QuestsScreen({super.key,required this.controller});
  final AppController controller;
@@ -23,6 +24,7 @@ class _QuestsScreenState extends State<QuestsScreen>{
    Expanded(child:ListView.builder(padding:const EdgeInsets.fromLTRB(16,8,16,120),itemCount:quests.length,itemBuilder:(context,i){
     final q=quests[i],done=q.isCompleted;
     final isStudyQuest=q.id=='starter-study';
+    final isWorkout=q.id=='starter-workout';
     final isReviewQuest=q.title.startsWith(FeStudyScreen.reviewQuestPrefix);
     final startsStudy=isStudyQuest||isReviewQuest;
     return Card(child:ListTile(
@@ -31,7 +33,7 @@ class _QuestsScreenState extends State<QuestsScreen>{
      subtitle:Text(isStudyQuest
       ?'${label(q.cadence)} | タイマー記録・問題演習つき'
       :'${label(q.cadence)} | ${q.rewards.map((r)=>'${r.stat.shortLabel} +${r.exp}').join(' / ')}'),
-     trailing:done
+     trailing:isWorkout?FilledButton(onPressed:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>WorkoutScreen(controller:widget.controller,quest:q))),child:Text(done?'追加運動':'筋トレする')):done
       ?isStudyQuest?OutlinedButton(
        onPressed:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>FeStudyScreen(
         controller:widget.controller,quest:q,

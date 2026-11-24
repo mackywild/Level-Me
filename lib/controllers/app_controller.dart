@@ -34,7 +34,19 @@ class AppController extends ChangeNotifier {
 
  AppStateData get state=>_state;
  bool get ready=>_ready;
- Future<void> initialize() async{_state=await _store.load();_recoverForNewDay();_ready=true;await _persist();}
+ Future<void> initialize() async {
+  _ready=false;
+  _state=await _store.load();
+  _recoverForNewDay();
+  await _store.save(_state);
+  _ready=true;
+  notifyListeners();
+ }
+ Future<bool> hasBackup()=>_store.hasBackup();
+ Future<void> restoreBackup() async {
+  await _store.restoreBackup();
+  await initialize();
+ }
  Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime,List<String> reviewQuestionIds=const []}) => _transaction(() async {
   if(title.trim().isEmpty||rewards.isEmpty||rewards.any((r)=>r.exp<=0))throw ArgumentError('Invalid quest');
   if(reviewQuestionIds.isEmpty&&title.trim().startsWith('基本情報：見直し'))throw ArgumentError('Reserved title');

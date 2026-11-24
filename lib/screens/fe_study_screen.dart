@@ -18,10 +18,11 @@ class FeStudyScreen extends StatefulWidget {
 class _FeStudyScreenState extends State<FeStudyScreen> with WidgetsBindingObserver {
  final Stopwatch _watch=Stopwatch();
  int _restoredSeconds=0;
+ late String _sessionId;
  int get _seconds=>_restoredSeconds+_watch.elapsed.inSeconds;
  Future<void> _checkpoint() async {
   if(_finished || (_seconds==0 && _answeredIds.isEmpty && _flaggedIds.isEmpty))return;
-  try {await widget.controller.saveSession(widget.quest.id,{'seconds':_seconds,'answered':_answeredIds.toList(),'incorrect':_incorrectIds.toList(),'flagged':_flaggedIds.toList()});} catch(error){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('途中記録の保存失敗: $error')));}
+  try {await widget.controller.saveSession(widget.quest.id,{'sessionId':_sessionId,'seconds':_seconds,'answered':_answeredIds.toList(),'incorrect':_incorrectIds.toList(),'flagged':_flaggedIds.toList()});} catch(error){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('途中記録の保存失敗: $error')));}
  }
  @override void didChangeAppLifecycleState(AppLifecycleState state){if(state!=AppLifecycleState.resumed){_watch.stop();_checkpoint();}if(mounted)setState((){});}
 
@@ -38,6 +39,7 @@ class _FeStudyScreenState extends State<FeStudyScreen> with WidgetsBindingObserv
   super.initState();
   WidgetsBinding.instance.addObserver(this);
   final saved=widget.controller.sessionFor(widget.quest.id);
+  _sessionId=saved?['sessionId'] as String? ?? 'study-${DateTime.now().microsecondsSinceEpoch}';
   if(saved!=null){_restoredSeconds=saved['seconds'] as int? ?? 0;_answeredIds.addAll((saved['answered'] as List? ?? []).cast<String>());_incorrectIds.addAll((saved['incorrect'] as List? ?? []).cast<String>());_flaggedIds.addAll((saved['flagged'] as List? ?? []).cast<String>());}
   _ticker=Timer.periodic(const Duration(seconds:1),(timer){if(mounted)setState((){});if(_watch.isRunning&&timer.tick%10==0)_checkpoint();});
  }
@@ -107,7 +109,7 @@ class _FeStudyScreenState extends State<FeStudyScreen> with WidgetsBindingObserv
   setState(()=>_finished=true);
   final reviewIds={..._incorrectIds,..._flaggedIds};
   try {
-   await widget.controller.completeQuest(widget.quest, activeSeconds:seconds, reviewIds:reviewIds.toList()..sort());
+   await widget.controller.completeQuest(widget.quest, activeSeconds:seconds, sessionId:_sessionId, reviewIds:reviewIds.toList()..sort());
   } catch (error) {
    if (!mounted) return;
    setState(()=>_finished=false);

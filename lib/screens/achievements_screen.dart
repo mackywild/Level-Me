@@ -19,7 +19,7 @@ class AchievementsScreen extends StatelessWidget{
       leading:Text(done?rule.icon:'🔒',style:const TextStyle(fontSize:28)),
       title:Text(rule.title),subtitle:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
        Text(rule.description),LinearProgressIndicator(value:value/rule.target,minHeight:4),
-       Text('$value / ${rule.target}  ·  ${rule.stat.shortLabel} +${rule.reward} EXP'),
+       Text('$value / ${rule.target}  ·  ${rule.reward==0?'称号のみ':'${rule.stat.shortLabel} +${rule.reward} EXP'}'),
       ]),trailing:done?const Icon(Icons.verified,color:Colors.amber):null));
     }),
     const SizedBox(height:16),

@@ -1,26 +1,38 @@
-/// Initial prologue slice. Stable IDs are independent of display names.
+import 'dart:convert';
+
 class WorldEncounter {
  const WorldEncounter(this.id,this.stage,this.title,this.enemy,this.hp,this.attack,this.defense,this.gold,
   {this.main=false,this.lifeDays=0,this.rank='F',this.timeResistant=false});
  final String id,title,enemy,rank;
  final int stage,hp,attack,defense,gold,lifeDays;
  final bool main,timeResistant;
+ factory WorldEncounter.fromJson(Map<String,dynamic> j)=>WorldEncounter(j['id'] as String,j['stage'] as int,j['title'] as String,j['enemy'] as String,j['hp'] as int,j['attack'] as int,j['defense'] as int,j['gold'] as int,main:j['main'] as bool,lifeDays:j['lifeDays'] as int,rank:j['rank'] as String,timeResistant:j['timeResistant'] as bool? ?? false);
 }
 class WorldCatalog {
- static const titles={1:'血の契約',2:'紅き瞳',3:'夜の捕食者'};
- static const encounters=[
-  WorldEncounter('p01_main',1,'血の契約','契約の試練',10,3,0,40,main:true),
-  WorldEncounter('p01_hunt',1,'通常討伐','契約の幻影',25,4,0,15),
-  WorldEncounter('p01_explore',1,'探索','時の残影',35,5,2,25),
-  WorldEncounter('p01_elite',1,'強敵討伐','覚醒の幻影',75,10,8,50,rank:'E'),
-  WorldEncounter('p02_main',2,'紅き瞳','地下格闘王バルド',15,4,0,60,main:true,rank:'E'),
-  WorldEncounter('p02_hunt',2,'通常討伐','格闘家',30,5,0,20,rank:'E'),
-  WorldEncounter('p02_explore',2,'探索','闘技場の挑戦者',40,6,2,30,rank:'E'),
-  WorldEncounter('p02_elite',2,'強敵討伐','闘技王の影',90,12,10,60,rank:'E'),
-  WorldEncounter('p03_main',3,'夜の捕食者','裏社会の王ギルバート',20,5,1,80,main:true,lifeDays:365,rank:'E'),
-  WorldEncounter('p03_hunt',3,'通常討伐','悪党',35,6,1,25,lifeDays:30,rank:'E'),
-  WorldEncounter('p03_explore',3,'探索','闇の眷属',50,8,4,40,rank:'E'),
-  WorldEncounter('p03_elite',3,'強敵討伐','黒幕の側近',110,15,12,80,lifeDays:90,rank:'D'),
- ];
+ static const assetPath='assets/master/world_encounters.json';
+ static List<WorldEncounter> _encounters=const [];
+ static Map<int,String> _titles=const {};
+ static List<WorldEncounter> get encounters=>_encounters;
+ static Map<int,String> get titles=>_titles;
+ static String mainId(int stage)=>'p${stage.toString().padLeft(2,'0')}_main';
+ static void loadJson(String raw){
+  final data=jsonDecode(raw);
+  if(data is! Map<String,dynamic>||data['version']!=1)throw const FormatException('Unsupported world master');
+  final entries=(data['encounters'] as List).map((e)=>WorldEncounter.fromJson(e as Map<String,dynamic>)).toList();
+  final ids=<String>{},titles=<int,String>{};
+  for(final e in entries){
+   if(!ids.add(e.id)||e.stage<1||e.hp<1||e.attack<0||e.defense<0||e.gold<0||e.lifeDays<0||e.title.isEmpty||e.enemy.isEmpty)throw const FormatException('Invalid encounter');
+   if(e.main){
+    if(e.id!=mainId(e.stage)||titles.containsKey(e.stage))throw const FormatException('Invalid main encounter ID');
+    titles[e.stage]=e.title;
+   }
+  }
+  if(titles.isEmpty||List.generate(titles.length,(i)=>i+1).any((i)=>!titles.containsKey(i))||entries.any((e)=>!titles.containsKey(e.stage)))throw const FormatException('Noncontiguous stage master');
+  for(final stage in titles.keys){
+   if(entries.where((e)=>e.stage==stage&&!e.main).length!=3)throw const FormatException('Expected three free quests per stage');
+  }
+  _encounters=List.unmodifiable(entries);
+  _titles=Map.unmodifiable(titles);
+ }
  static WorldEncounter byId(String id)=>encounters.firstWhere((e)=>e.id==id,orElse:()=>throw ArgumentError('Unknown encounter: $id'));
 }

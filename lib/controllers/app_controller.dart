@@ -9,10 +9,25 @@ import '../models/stat_type.dart';
 import '../services/level_calculator.dart';
 import '../services/local_store.dart';
 import '../services/portable_backup.dart';
+import '../world/world_engine.dart';
 class AppController extends ChangeNotifier {
  AppController(this._store,{PortableBackup? portableBackup}):_portableBackup=portableBackup;
  final PortableBackup? _portableBackup;
  final LocalStore _store;
+ final WorldEngine worldEngine=WorldEngine();
+ WorldStats get worldStats=>WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(_state.totalExp).level,fitness:LevelCalculator.statRankFromExp(_state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(_state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(_state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(_state.stats[StatType.creativity]??0));
+ int get _nowMs=>DateTime.now().millisecondsSinceEpoch;
+ Future<void> startWorldBattle(String id)=>_transaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  worldEngine.start(_state.world,worldStats,id,_nowMs);
+  await _persist();
+ });
+ Future<void> worldCommand(WorldCommand command,int battleId,int turn)=>_transaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  worldEngine.act(_state.world,command,battleId,turn,_nowMs);
+  worldEngine.refresh(_state.world,worldStats,_nowMs);
+  await _persist();
+ });
  AppStateData _state=AppStateData.initial();
  bool _ready=false;
  Future<void> _queue=Future<void>.value();
@@ -41,6 +56,7 @@ class AppController extends ChangeNotifier {
   await _portableBackup?.resumePendingRestore();
   _state=await _store.load();
   _recoverForNewDay();
+  worldEngine.refresh(_state.world,worldStats,_nowMs);
   await _store.save(_state);
   _ready=true;
   notifyListeners();
@@ -100,9 +116,11 @@ class AppController extends ChangeNotifier {
   await _persist();
  });
  Future<void> refreshDay() => _transaction(() async {
-  if (!_ready || _state.lastRecoveryDate == _dateKey(DateTime.now())) return;
-  _recoverForNewDay();
-  await _persist();
+  if (!_ready) return;
+  final newDay=_state.lastRecoveryDate != _dateKey(DateTime.now());
+  if(newDay)_recoverForNewDay();
+  final changed=worldEngine.refresh(_state.world,worldStats,_nowMs);
+  if(newDay||changed)await _persist();
  });
  Future<void> completeQuest(Quest quest, {int? activeSeconds, List<String> reviewIds = const []}) => _transaction(() async {
   if(activeSeconds!=null && activeSeconds<60)throw ArgumentError('Minimum session duration is 60 seconds');
@@ -141,6 +159,10 @@ class AppController extends ChangeNotifier {
   _markTodayActive();
   _checkAchievements();
   _healOnLevelUp(beforeLevel);
+  final study=current.id=='starter-study'||current.reviewQuestionIds.isNotEmpty;
+  final workout=current.id=='starter-workout';
+  final effort=activeSeconds==null?5:max(1,min(72,(15*activeSeconds/1500).floor()));
+  worldEngine.rewardEffort(_state.world,worldStats,_nowMs,physical:study?0:effort,magic:workout?0:effort,levelUp:LevelCalculator.fromTotalExp(_state.totalExp).level>beforeLevel);
   await _persist();
  });
  void _addReview(Quest current,DateTime now,List<String> ids){

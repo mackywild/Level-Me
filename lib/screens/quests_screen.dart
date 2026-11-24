@@ -62,9 +62,10 @@ class _QuestsScreenState extends State<QuestsScreen>{
    ListTile(leading:const Icon(Icons.archive),title:const Text('保管（一覧から削除）'),onTap:()=>Navigator.pop(ctx,'archive')),
   ])));
   if(!mounted)return;
-  if(action=='edit'){await showQuestForm(context,q);}
+  if(action=='edit'){await showQuestForm(context,q);return;}
   if(action=='archive'){
    final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(title:const Text('クエストを保管しますか？'),content:const Text('獲得済みEXPと達成履歴は保持されます。保管済み一覧から復元できます。'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('取消')),FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('保管'))]));
+   if(!mounted)return;
    if(confirmed==true)await _run(()=>widget.controller.archiveQuest(q.id));
   }
  }

@@ -2,9 +2,17 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      signed_release:
+        description: 'Create a fixed-key signed APK (main only)'
+        type: boolean
+        default: false
   push:
     branches: [main]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -46,8 +54,54 @@ jobs:
           APKSIGNER="$(find "$SDK/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
           test -n "$APKSIGNER"
           "$APKSIGNER" verify --print-certs build/app/outputs/flutter-apk/app-release.apk
+      - name: Smoke-test re-signing with disposable key
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          TMP="$(mktemp -d)"
+          trap 'rm -rf "$TMP"' EXIT
+          keytool -genkeypair -alias smoke -keyalg RSA -keysize 2048 -validity 2 -storetype PKCS12 -keystore "$TMP/smoke.p12" -storepass test-only-123 -keypass test-only-123 -dname "CN=CI smoke test" -noprompt
+          export ANDROID_KEYSTORE_BASE64="$(base64 -w0 "$TMP/smoke.p12")"
+          export ANDROID_KEYSTORE_PASSWORD=test-only-123 ANDROID_KEY_PASSWORD=test-only-123 ANDROID_KEY_ALIAS=smoke
+          export ANDROID_CERT_SHA256="$(keytool -exportcert -alias smoke -keystore "$TMP/smoke.p12" -storepass test-only-123 | sha256sum | cut -d' ' -f1)"
+          bash tool/sign_release_apk.sh build/app/outputs/flutter-apk/app-release.apk "$TMP/signed.apk"
+          export ANDROID_CERT_SHA256="$(printf '%064d' 0)"
+          if bash tool/sign_release_apk.sh build/app/outputs/flutter-apk/app-release.apk "$TMP/rejected.apk"; then
+            echo "Wrong certificate was accepted"; exit 1
+          fi
+          test ! -e "$TMP/rejected.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: level-me-release-apk
+          name: level-me-test-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  sign-release:
+    if: github.event_name == 'workflow_dispatch' && inputs.signed_release && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: android-release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: level-me-test-apk
+          path: input
+      - name: Sign and verify fixed release certificate
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_CERT_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
+        run: bash tool/sign_release_apk.sh input/app-release.apk release/level-me-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: level-me-signed-release-apk
+          path: release/level-me-release.apk
           if-no-files-found: error

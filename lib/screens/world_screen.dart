@@ -95,7 +95,7 @@ class _WorldScreenState extends State<WorldScreen>{
       Padding(padding:const EdgeInsets.only(bottom:8),child:ListTile(
        shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(10),side:BorderSide(color:stage==entry.key?crimson:const Color(0xff49303f))),
        selected:stage==entry.key,onTap:()=>setState(()=>selectedStage=entry.key),
-       leading:Icon(w.cleared.contains('p0${entry.key}_main')?Icons.check_circle:entry.key==1||w.cleared.contains('p0${entry.key-1}_main')?Icons.swords:Icons.lock,color:crimson),
+       leading:Icon(w.cleared.contains('p0${entry.key}_main')?Icons.check_circle:entry.key==1||w.cleared.contains('p0${entry.key-1}_main')?Icons.flash_on:Icons.lock,color:crimson),
        title:Text('STAGE 0${entry.key}'),subtitle:Text(entry.value),
        trailing:const Icon(Icons.chevron_right))),
      const Text('STAGE 04〜21 は後続アップデートで解放',style:TextStyle(color:Colors.white54,fontSize:12)),

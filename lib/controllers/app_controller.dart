@@ -50,10 +50,12 @@ class AppController extends ChangeNotifier {
   final index=_state.quests.indexWhere((q)=>q.id==quest.id);
   if(index<0)return;
   final current=_state.quests[index],now=DateTime.now();
+  if((current.id=='starter-study'||current.id=='starter-workout'||current.reviewQuestionIds.isNotEmpty)&&activeSeconds==null)throw ArgumentError('Timed session required');
   if(current.isDoneAt(now)){
    if(activeSeconds!=null){
     _state.sessionHistory.add({'questId':current.id,'seconds':activeSeconds,'finishedAt':now.toIso8601String(),'rewarded':false});
     _state.sessions.remove(current.id);
+    _addReview(current,now,reviewIds);
     await _persist();
    }
    return;
@@ -68,9 +70,7 @@ class AppController extends ChangeNotifier {
   final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
   final multiplier = activeSeconds == null ? 1 : (activeSeconds ~/ 60).clamp(1, 120);
   final rewards = activeSeconds == null ? current.rewards : current.rewards.map((r) => QuestReward(stat:r.stat, exp:max(1, (r.exp * multiplier / 25).round()))).toList();
-  if (reviewIds.isNotEmpty) {
-   _state.quests.insert(0, Quest(id:'review-${current.id}-${now.microsecondsSinceEpoch}', title:'基本情報：見直し（対象 ${reviewIds.length}問）', rewards:const [QuestReward(stat:StatType.intelligence,exp:10),QuestReward(stat:StatType.discipline,exp:3)], createdAt:now, reviewQuestionIds:reviewIds));
-  }
+  _addReview(current,now,reviewIds);
   _grantRewards(rewards);
   _state.attackEnergy=(_state.attackEnergy+rewards.fold<int>(0,(sum,r)=>sum+r.exp)).clamp(0,9999);
   _state.gachaTickets++;
@@ -78,12 +78,17 @@ class AppController extends ChangeNotifier {
    _state.maxPlayerHp+=2;
    _state.playerHp=(_state.playerHp+20).clamp(0,_state.maxPlayerHp);
   }
-  _healOnLevelUp(beforeLevel);
   _markTodayActive();
   _checkAchievements();
   _healOnLevelUp(beforeLevel);
   await _persist();
  });
+ void _addReview(Quest current,DateTime now,List<String> ids){
+  final unique=ids.toSet().toList()..sort();
+  if(unique.isEmpty)return;
+  if(_state.quests.any((q)=>!q.isDoneAt(now)&&q.reviewQuestionIds.length==unique.length&&q.reviewQuestionIds.toSet().containsAll(unique)))return;
+  _state.quests.insert(0,Quest(id:'review-${current.id}-${now.microsecondsSinceEpoch}',title:'基本情報：見直し（対象 ${unique.length}問）',rewards:const [QuestReward(stat:StatType.intelligence,exp:10),QuestReward(stat:StatType.discipline,exp:3)],createdAt:now,reviewQuestionIds:unique));
+ }
  Future<void> unlockAchievement({required String title,required String description,required StatType stat,required int exp}) => _transaction(() async{
   if(title.trim().isEmpty||exp<=0)return;
   final now=DateTime.now();
@@ -93,6 +98,7 @@ class AppController extends ChangeNotifier {
   _healOnLevelUp(beforeLevel);
   _markTodayActive();
   _checkAchievements();
+  _healOnLevelUp(beforeLevel);
   await _persist();
  });
  int get currentStreak{
@@ -174,6 +180,7 @@ class AppController extends ChangeNotifier {
   }else{
    final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
    _grantRewards([const QuestReward(stat:StatType.creativity,exp:10)]);
+   _checkAchievements();
    _healOnLevelUp(beforeLevel);
    reward='創造力経験値 +10';
   }

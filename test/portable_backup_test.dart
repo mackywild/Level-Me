@@ -3,11 +3,14 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/models/app_state.dart';
+import 'package:level_me/world/world_catalog.dart';
+import 'package:level_me/world/world_engine.dart';
 import 'package:level_me/services/fe_progress_store.dart';
 import 'package:level_me/services/local_store.dart';
 import 'package:level_me/services/portable_backup.dart';
 
 void main() {
+ setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
  late Directory dir;
  late LocalStore player;
  late FeProgressStore fe;
@@ -83,5 +86,28 @@ void main() {
   expect(await file(PortableBackup.journalName).exists(),false);
   await backup.resumePendingRestore();
   expect((await player.load()).totalExp,70);
+ });
+ test('v1 external backup is migrated to v2 without altering legacy file',() async {
+  final old=AppStateData.initial()..totalExp=120;
+  final raw=jsonEncode({'format':'level-me-backup','version':1,'files':{PortableBackup.legacyPlayerName:old.toJson()..remove('world'),PortableBackup.progressName:{'q':[true]},PortableBackup.flagsName:['q']}});
+  await backup.restore(raw);
+  expect((await player.load()).totalExp,120);
+  expect(await fe.loadFlags(),{'q'});
+  expect(jsonDecode(await backup.export())['version'],2);
+ });
+ test('portable backup roundtrip retains active world battle',() async {
+  final state=AppStateData.initial();
+  final engine=WorldEngine();
+  final stats=WorldStats.fromRanks(level:1,fitness:1,intelligence:1,discipline:1,creativity:1);
+  engine.start(state.world,stats,'p01_main',10000000);
+  await player.save(state);
+  final raw=await backup.export();
+  engine.act(state.world,WorldCommand.claw,1,1,10000000);
+  await player.save(state);
+  await backup.restore(raw);
+  final restored=await player.load();
+  expect(restored.world.battle!.encounterId,'p01_main');
+  expect(restored.world.battle!.turn,1);
+  expect(restored.world.gold,0);
  });
 }

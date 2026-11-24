@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'controllers/app_controller.dart';
 import 'screens/achievements_screen.dart';
@@ -60,7 +61,12 @@ class LevelMeShell extends StatefulWidget{
  final AppController controller;
  @override State<LevelMeShell> createState()=>_LevelMeShellState();
 }
-class _LevelMeShellState extends State<LevelMeShell>{
+class _LevelMeShellState extends State<LevelMeShell> with WidgetsBindingObserver {
+ Timer? _dayTimer;
+ @override void initState(){super.initState();WidgetsBinding.instance.addObserver(this);_dayTimer=Timer.periodic(const Duration(seconds:30),(_)=>_refresh());}
+ Future<void> _refresh() async {try {await widget.controller.refreshDay();} catch(error){debugPrint('Day refresh failed: $error');}}
+ @override void didChangeAppLifecycleState(AppLifecycleState state){if(state==AppLifecycleState.resumed){_refresh();}}
+ @override void dispose(){_dayTimer?.cancel();WidgetsBinding.instance.removeObserver(this);super.dispose();}
  int index=0;
  @override Widget build(BuildContext context)=>ListenableBuilder(listenable:widget.controller,builder:(context,_){
   final screens=[

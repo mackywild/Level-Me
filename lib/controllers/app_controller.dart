@@ -20,7 +20,12 @@ class AppController extends ChangeNotifier {
   _state.quests.insert(0,Quest(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title.trim(),rewards:rewards,createdAt:DateTime.now(),cadence:cadence,reviewQuestionIds:List.of(reviewQuestionIds)));
   await _persist();
  }
- Future<void> completeQuest(Quest quest) async{
+ Future<void> refreshDay() async {
+  if (_state.lastRecoveryDate == _dateKey(DateTime.now())) return;
+  _recoverForNewDay();
+  await _persist();
+ }
+ Future<void> completeQuest(Quest quest, {int? activeSeconds, List<String> reviewIds = const []}) async{
   final index=_state.quests.indexWhere((q)=>q.id==quest.id);
   if(index<0)return;
   final current=_state.quests[index],now=DateTime.now();
@@ -29,8 +34,13 @@ class AppController extends ChangeNotifier {
   _recoverForNewDay();
   _state.completionCount++;
   final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
-  _grantRewards(current.rewards);
-  _state.attackEnergy=(_state.attackEnergy+current.totalExp).clamp(0,9999);
+  final multiplier = activeSeconds == null ? 1 : (activeSeconds ~/ 60).clamp(1, 120);
+  final rewards = activeSeconds == null ? current.rewards : current.rewards.map((r) => QuestReward(stat:r.stat, exp:max(1, (r.exp * multiplier / 25).round()))).toList();
+  if (reviewIds.isNotEmpty) {
+   _state.quests.insert(0, Quest(id:'review-${current.id}-${now.microsecondsSinceEpoch}', title:'基本情報：見直し（対象 ${reviewIds.length}問）', rewards:const [QuestReward(stat:StatType.intelligence,exp:10),QuestReward(stat:StatType.discipline,exp:3)], createdAt:now, reviewQuestionIds:reviewIds));
+  }
+  _grantRewards(rewards);
+  _state.attackEnergy=(_state.attackEnergy+rewards.fold<int>(0,(sum,r)=>sum+r.exp)).clamp(0,9999);
   _state.gachaTickets++;
   if(current.rewards.any((r)=>r.stat==StatType.fitness)){
    _state.maxPlayerHp+=2;
@@ -39,6 +49,7 @@ class AppController extends ChangeNotifier {
   _healOnLevelUp(beforeLevel);
   _markTodayActive();
   _checkAchievements();
+  _healOnLevelUp(beforeLevel);
   await _persist();
  }
  Future<void> unlockAchievement({required String title,required String description,required StatType stat,required int exp}) async{
@@ -95,6 +106,7 @@ class AppController extends ChangeNotifier {
  Future<BattleResult?> attackBoss({bool magic=false}) async{
   _recoverForNewDay();
   if(_state.playerHp<=0||_state.attackEnergy<=0){await _persist();return null;}
+  final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
   final energy=min(_state.attackEnergy,magic?35:25);
   _state.attackEnergy-=energy;
   final power=_state.stats[magic?StatType.intelligence:StatType.fitness]??0;
@@ -109,6 +121,7 @@ class AppController extends ChangeNotifier {
    _state.playerHp=max(0,_state.playerHp-counterDamage);
   }
   _checkAchievements();
+  _healOnLevelUp(beforeLevel);
   await _persist();
   return BattleResult(damage:damage,counterDamage:counterDamage,defeated:defeated,playerKnockedOut:_state.playerHp==0);
  }

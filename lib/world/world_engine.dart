@@ -21,14 +21,15 @@ class WorldStats {
 }
 
 class WorldBattle {
- WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,List<String>? log}):log=log??[];
+ WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log}):log=log??[];
  final int id;
  final String encounterId;
  final WorldStats stats;
+ final int energyRemainder,hpRemainder;
  int enemyHp,turn,slowTurns;
  final List<String> log;
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'log':log};
- factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,log:List<String>.from(j['log'] as List));
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log};
+ factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List));
 }
 
 class WorldState {
@@ -44,7 +45,7 @@ class WorldState {
   if(j['version']!=1)throw const FormatException('Unsupported world save version');
   final w=WorldState(hp:j['hp'] as int,physical:j['physical'] as int,magic:j['magic'] as int,gold:j['gold'] as int,summonTickets:j['summonTickets'] as int,supplyTickets:j['supplyTickets'] as int,sequence:j['sequence'] as int,energyAt:j['energyAt'] as int,hpAt:j['hpAt'] as int,pendingPhysical:j['pendingPhysical'] as int? ?? 0,pendingMagic:j['pendingMagic'] as int? ?? 0,pendingLevelUp:j['pendingLevelUp'] as bool? ?? false,lifespan:BigInt.parse(j['lifespanDays'] as String),cleared:List<String>.from(j['cleared'] as List).toSet(),battle:j['battle']==null?null:WorldBattle.fromJson(j['battle'] as Map<String,dynamic>),lastResult:j['lastResult'] as String);
   if([w.hp,w.physical,w.magic,w.gold,w.summonTickets,w.supplyTickets,w.sequence,w.energyAt,w.hpAt,w.pendingPhysical,w.pendingMagic].any((v)=>v<0)||w.lifespan<BigInt.zero)throw const FormatException('Negative world resource');
-  if(w.battle!=null){final b=w.battle!;if(b.id!=w.sequence||b.turn<1||b.enemyHp<1||b.enemyHp>WorldCatalog.byId(b.encounterId).hp||b.stats.hp<1||b.stats.physicalMax<1||b.stats.magicMax<1||b.stats.defense<0||b.stats.physical<1||b.stats.magic<1||!b.stats.crit.isFinite||b.stats.crit<0||b.stats.crit>1||w.hp<1||w.hp>b.stats.hp||w.physical>b.stats.physicalMax||w.magic>b.stats.magicMax||b.slowTurns<0||b.slowTurns>2)throw const FormatException('Invalid active battle');}
+  if(w.battle!=null){final b=w.battle!;if(b.id!=w.sequence||b.turn<1||b.enemyHp<1||b.enemyHp>WorldCatalog.byId(b.encounterId).hp||b.stats.hp<1||b.stats.physicalMax<1||b.stats.magicMax<1||b.stats.defense<0||b.stats.physical<1||b.stats.magic<1||!b.stats.crit.isFinite||b.stats.crit<0||b.stats.crit>1||w.hp<1||w.hp>b.stats.hp||w.physical>b.stats.physicalMax||w.magic>b.stats.magicMax||b.slowTurns<0||b.slowTurns>2||b.energyRemainder<0||b.energyRemainder>=WorldEngine.energyInterval||b.hpRemainder<0||b.hpRemainder>=WorldEngine.hpInterval)throw const FormatException('Invalid active battle');}
   return w;
  }
 }
@@ -54,8 +55,8 @@ class WorldEngine {
  final Random _random;
  static const energyInterval=600000,hpInterval=1800000;
  bool isUnlocked(WorldState w,WorldEncounter e){
-  if(e.main)return !w.cleared.contains(e.id)&&(e.stage==1||w.cleared.contains('p0${e.stage-1}_main'));
-  return w.cleared.contains('p0${e.stage}_main');
+  if(e.main)return !w.cleared.contains(e.id)&&(e.stage==1||w.cleared.contains(WorldCatalog.mainId(e.stage-1)));
+  return w.cleared.contains(WorldCatalog.mainId(e.stage));
  }
  bool refresh(WorldState w,WorldStats s,int now){
   if(w.battle!=null)return false;
@@ -98,7 +99,7 @@ class WorldEngine {
   refresh(w,s,now);
   if(w.hp<=0)throw StateError('HP recovery required');
   w.sequence++;
-  w.battle=WorldBattle(id:w.sequence,encounterId:id,stats:s,enemyHp:e.hp,log:['${e.enemy} が現れた。']);
+  w.battle=WorldBattle(id:w.sequence,encounterId:id,stats:s,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
   w.lastResult='';
  }
  String? unavailable(WorldState w,WorldCommand command){
@@ -158,5 +159,5 @@ class WorldEngine {
   b.turn++;
   if(b.log.length>12)b.log.removeRange(0,b.log.length-12);
  }
- void _end(WorldState w,int now,String result){w.battle=null;w.energyAt=now;w.hpAt=now;w.lastResult=result;}
+ void _end(WorldState w,int now,String result){final b=w.battle!;w.battle=null;w.energyAt=max(1,now-b.energyRemainder);w.hpAt=max(1,now-b.hpRemainder);w.lastResult=result;}
 }

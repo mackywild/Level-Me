@@ -75,7 +75,7 @@ class PortableBackup {
   // Preserve all original bytes, even if corrupted, before committing import.
   final recovery=await dir.createTemp('level_me_before_import_');
   for(final name in [...names,legacyPlayerName]){
-   for(final suffix in ['', '.bak', '.tmp']){
+   for(final suffix in ['', '.bak', '.tmp', '.bak.tmp', LocalStore.initialSuffix, LocalStore.markerSuffix, '${LocalStore.markerSuffix}.tmp']){
     final file=_file(dir,'$name$suffix');
     if(await file.exists())await file.copy('${recovery.path}/$name$suffix');
    }
@@ -98,6 +98,8 @@ class PortableBackup {
    // A previous backup from another save must not silently undo this import.
    await _atomic(File('${file.path}.bak'),raw);
   }
+  final staged=_file(dir,'$playerName${LocalStore.initialSuffix}');
+  if(await staged.exists())await staged.delete();
   await journal.delete();
  }
 }

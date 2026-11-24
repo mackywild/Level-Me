@@ -41,7 +41,7 @@ class _StartupGateState extends State<StartupGate> {
    ),
   );
   if(!mounted||confirmed!=true)return;
-  setState(()=>_loading=widget.controller.restoreBackup());
+  setState(() { _loading=widget.controller.restoreBackup(); });
  }
  @override Widget build(BuildContext context)=>FutureBuilder<void>(
   future:_loading,

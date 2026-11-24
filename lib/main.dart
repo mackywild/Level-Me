@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'controllers/app_controller.dart';
 import 'screens/achievements_screen.dart';
 import 'screens/boss_screen.dart';
@@ -13,6 +14,7 @@ import 'screens/world_screen.dart';
 import 'services/local_store.dart';
 import 'services/portable_backup.dart';
 import 'theme/app_theme.dart';
+import 'world/world_catalog.dart';
 void main(){
  WidgetsFlutterBinding.ensureInitialized();
  final controller=AppController(LocalStore(),portableBackup:PortableBackup());
@@ -33,7 +35,11 @@ class _StartupGateState extends State<StartupGate> {
  bool _backupBusy=false;
  @override void initState(){super.initState();_start();}
  void _start(){
-  _loading=widget.controller.initialize();
+  _loading=_initialize();
+ }
+ Future<void> _initialize() async {
+  WorldCatalog.loadJson(await rootBundle.loadString(WorldCatalog.assetPath));
+  await widget.controller.initialize();
  }
  Future<void> _restore() async {
   final confirmed=await showDialog<bool>(

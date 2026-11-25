@@ -28,11 +28,12 @@ class SkillAcquisition {
 }
 
 class SkillDefinition {
- const SkillDefinition({required this.id,required this.name,required this.kind,this.execution,this.passiveBonus,this.acquisition=const SkillAcquisition()});
+ const SkillDefinition({required this.id,required this.name,required this.kind,this.execution,this.passiveBonus,this.lifeRewardBonus,this.acquisition=const SkillAcquisition()});
  final String id,name;
  final SkillKind kind;
  final ActiveSkillSpec? execution;
  final PassiveStatBonus? passiveBonus;
+ final LifeRewardBonus? lifeRewardBonus;
  final SkillAcquisition acquisition;
 }
 
@@ -105,6 +106,8 @@ class SkillCatalog {
     bonus.validate();
     if(def.kind!=SkillKind.passive)throw const FormatException('Invalid passive skill mapping');
    }
+   final reward=def.lifeRewardBonus;
+   if(reward!=null&&(def.kind!=SkillKind.passive||def.id!=reward.skillId||def.acquisition.clearedStage!=3))throw const FormatException('Invalid life reward skill mapping');
    def.acquisition.validate();
    _definitions[def.id]=def;
   }
@@ -158,9 +161,20 @@ class SkillCatalog {
   validateSaved(state);
   return List<ActiveSkillSpec>.unmodifiable([for(final id in state.active) ?find(id)?.execution]);
  }
+ List<LifeRewardBonus> rewardSnapshot(SkillState state){
+  validateSaved(state);
+  final bonuses=LifeRewardBonus.values.where((bonus)=>state.passive.any((id)=>find(id)?.lifeRewardBonus==bonus)).toList();
+  LifeRewardBonus.validate(bonuses);
+  return List.unmodifiable(bonuses);
+ }
  void validateBattle(WorldState world,SkillState state){
   final b=world.battle;
   if(b==null)return;
+  final rewards=rewardSnapshot(state);
+  if(rewards.length!=b.lifeRewardBonuses.length)throw const FormatException('Invalid battle life reward snapshot');
+  for(var i=0;i<rewards.length;i++){
+   if(rewards[i]!=b.lifeRewardBonuses[i])throw const FormatException('Invalid battle life reward snapshot');
+  }
   // 旧戦闘は空snapshotのまま継続可能。非空の場合は現在の装着定義との一致を必須とする。
   if(b.activeSkills.isEmpty)return;
   final expected=snapshot(state);

@@ -164,4 +164,34 @@ void main(){
   expect(c.ready,true);
   expect(loads,4);
  });
+ test('個別排出確率は現在の希少度確率を候補数で等分する',() async {
+  final dir=await Directory.systemTemp.createTemp('abyss-rates-');
+  addTearDown(()=>dir.delete(recursive:true));
+  final random=_CountingRandom();
+  final c=AppController(LocalStore(directory:dir),loadAbyssMaster:() async=>AbyssMaster.fromJson(jsonEncode(source()..['enabled']=true)),summonRandom:random);
+  addTearDown(c.dispose);
+  await c.initialize();
+  for(final stage in ['', 'p01_main','p12_main']){
+   if(stage.isNotEmpty)c.state.world.cleared.add(stage);
+   for(final pool in SummonPool.values){
+    final rates=c.summonRates(pool);
+    expect(rates.fold<double>(0,(sum,r)=>sum+r.percent),closeTo(100,0.0000001));
+    for(final rarity in EquipmentRarity.values){
+     final group=rates.where((r)=>r.entry.rarity==rarity).toList();
+     if(rarity.index>c.summonHighestUnlocked.index){
+      expect(group,isEmpty);
+     }else{
+      expect(group,isNotEmpty);
+      for(final rate in group){
+       expect(rate.candidateCount,group.length);
+       expect(rate.percent,closeTo(c.summonWeights[rarity.index]/100/group.length,0.0000001));
+      }
+     }
+    }
+   }
+  }
+  expect(random.calls,0);
+  expect(c.state.summon.sequence,0);
+  expect(c.state.inventory.equipment,isEmpty);
+ });
 }

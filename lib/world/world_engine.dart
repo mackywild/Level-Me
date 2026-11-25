@@ -384,7 +384,7 @@ class WorldEngine {
    w.gold+=gold;
    w.lifespan+=life;
    if(first){if(e.main){w.summonTickets+=3;}else{w.supplyTickets++;}}
-   _end(w,now,'勝利 — $gold G / 寿命 +${life}日${first?' / 初回報酬獲得':''}');
+   _end(w,now,'勝利 — $gold G / 寿命 +$life日${first?' / 初回報酬獲得':''}');
    return true;
   }
   return false;

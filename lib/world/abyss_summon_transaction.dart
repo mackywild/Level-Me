@@ -127,6 +127,13 @@ class SummonCatalog {
  List<SummonEntry> entries(SummonPool pool,EquipmentRarity rarity)=>List.unmodifiable(_entries[pool]?[rarity]??[]);
 }
 
+class SummonRate {
+ const SummonRate({required this.entry,required this.weight,required this.candidateCount});
+ final SummonEntry entry;
+ final int weight,candidateCount;
+ double get percent=>weight/100/candidateCount;
+}
+
 class SummonEngine {
  SummonEngine({required this.catalog,required this.equipmentCatalog,Random? random}):_random=random??Random();
  final SummonCatalog catalog;
@@ -134,6 +141,40 @@ class SummonEngine {
  final Random _random;
  static const _policy=SummonPolicy();
  EquipmentRarity highestUnlocked(WorldState world)=>world.cleared.contains('p12_main')?EquipmentRarity.ssr:world.cleared.contains('p01_main')?EquipmentRarity.sr:EquipmentRarity.r;
+
+ /// 通常抽選のみ。天井・10連保証による確率変化は含めない。
+ List<SummonRate> rates(WorldState world,SummonPool pool){
+  final highest=highestUnlocked(world);
+  final weights=_policy.effectiveWeights(highest);
+  final result=<SummonRate>[];
+  for(final rarity in EquipmentRarity.values.take(highest.index+1)){
+   final candidates=catalog.entries(pool,rarity);
+   // 不完全なプールの数値を有効な排出率として公開しない。
+   if(candidates.isEmpty)return const [];
+   for(final entry in candidates){
+    if(!_validEntry(pool,entry))return const [];
+    result.add(SummonRate(entry:entry,weight:weights[rarity.index],candidateCount:candidates.length));
+   }
+  }
+  return List.unmodifiable(result);
+ }
+ bool _validEntry(SummonPool pool,SummonEntry entry){
+  if(pool==SummonPool.supplies)return true;
+  final definition=equipmentCatalog.find(entry.masterId);
+  return definition!=null&&definition.rarity==entry.rarity&&(definition.slot==EquipmentSlot.relic)==(pool==SummonPool.relic);
+ }
+ /// 保留計画は現在の抽選プール全体で再抽選せず、記録済み候補だけを照合する。
+ /// 戦闘・券残高は実際の再開時に別途検証する。
+ void validatePending(WorldState world,SummonState state){
+  final pending=state.pending;
+  if(pending==null)return;
+  final highest=highestUnlocked(world);
+  for(final reward in pending.rewards){
+   if(reward.rarity.index>highest.index||!catalog.entries(pending.pool,reward.rarity).any((entry)=>entry.masterId==reward.masterId&&_validEntry(pending.pool,entry))){
+    throw StateError('Pending summon master mismatch');
+   }
+  }
+ }
 
  void validateRequest({required WorldState world,required SummonState state,required SummonPool pool,required int count,required int expectedSequence}){
   if(count!=1&&count!=10)throw ArgumentError('Invalid summon count');
@@ -144,24 +185,18 @@ class SummonEngine {
   final cost=SummonPolicy.costs[pool]!*count;
   final supplies=pool==SummonPool.supplies;
   if((supplies?world.supplyTickets:world.summonTickets)<cost)throw StateError('Insufficient tickets');
-  final highest=highestUnlocked(world);
-  // すべての排出可能レアリティを事前検証し、欠落時は抽選しない。
-  for(final rarity in EquipmentRarity.values.take(highest.index+1)){
-   final entries=catalog.entries(pool,rarity);
-   if(entries.isEmpty)throw StateError('Summon pool incomplete');
-   if(!supplies){
-    for(final entry in entries){
-     final definition=equipmentCatalog.find(entry.masterId);
-     if(definition==null||definition.rarity!=rarity||(definition.slot==EquipmentSlot.relic)!=(pool==SummonPool.relic))throw StateError('Summon equipment master mismatch');
-    }
-   }
-  }
   final pending=state.pending;
   if(pending!=null){
    if(pending.pool!=pool||pending.rewards.length!=count||pending.sequence!=sequence)throw StateError('Pending summon request mismatch');
-   for(final reward in pending.rewards){
-    if(reward.rarity.index>highest.index||!catalog.entries(pool,reward.rarity).any((e)=>e.masterId==reward.masterId))throw StateError('Pending summon master mismatch');
-   }
+   validatePending(world,state);
+   return;
+  }
+  final highest=highestUnlocked(world);
+  // 新規抽選だけは解放済みの全希少度・全候補を事前検証する。
+  for(final rarity in EquipmentRarity.values.take(highest.index+1)){
+   final entries=catalog.entries(pool,rarity);
+   if(entries.isEmpty)throw StateError('Summon pool incomplete');
+   if(entries.any((entry)=>!_validEntry(pool,entry)))throw StateError('Summon equipment master mismatch');
   }
  }
  SummonPlan prepare({required WorldState world,required SummonState state,required SummonPool pool,required int count,required int expectedSequence}){

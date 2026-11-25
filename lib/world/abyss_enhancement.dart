@@ -12,7 +12,7 @@ class EnhancementRecipe {
 class EnhancementPolicy {
  EnhancementPolicy(Iterable<EnhancementRecipe> recipes){
   for(final recipe in recipes){
-   if(!recipe.materialId.startsWith('item:')||recipe.materialId.length<=5||recipe.quantity<=0||recipe.gold<=0||_recipes.containsKey(recipe.rarity)){
+   if(!recipe.materialId.startsWith('item:')||recipe.materialId.length<=5||recipe.quantity<=0||recipe.quantity>1000000||recipe.gold<=0||recipe.gold>1000000||_recipes.containsKey(recipe.rarity)){
     throw const FormatException('Invalid enhancement recipe');
    }
    _recipes[recipe.rarity]=recipe;
@@ -23,7 +23,11 @@ class EnhancementPolicy {
  static final production=EnhancementPolicy(const []);
  EnhancementRecipe? recipe(EquipmentRarity rarity)=>_recipes[rarity];
 
- EquipmentInstance enhance({required WorldState world,required AbyssInventory inventory,required EquipmentCatalog catalog,required String id,required int expectedLevel}){
+ void validateMaterials(bool Function(EnhancementRecipe) valid){
+  if(_recipes.values.any((recipe)=>!valid(recipe)))throw const FormatException('Invalid enhancement material master');
+ }
+
+ EnhancementRecipe validate({required WorldState world,required AbyssInventory inventory,required EquipmentCatalog catalog,required String id,required int expectedLevel}){
   if(world.battle!=null)throw StateError('Enhancement unavailable in battle');
   final item=inventory.equipment[id];
   if(item==null)throw StateError('Equipment not owned');
@@ -34,6 +38,11 @@ class EnhancementPolicy {
   if(cost==null)throw StateError('Enhancement recipe unavailable');
   if(world.gold<cost.gold)throw StateError('Insufficient gold');
   if((inventory.stacks[cost.materialId]??0)<cost.quantity)throw StateError('Insufficient materials');
+  return cost;
+ }
+
+ EquipmentInstance enhance({required WorldState world,required AbyssInventory inventory,required EquipmentCatalog catalog,required String id,required int expectedLevel}){
+  final cost=validate(world:world,inventory:inventory,catalog:catalog,id:id,expectedLevel:expectedLevel);
   inventory.removeStack(cost.materialId,cost.quantity);
   world.gold-=cost.gold;
   return inventory.enhance(id,expectedLevel);

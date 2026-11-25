@@ -144,7 +144,7 @@ class WorldEngine {
   final unavailableReason=unavailable(w,command);
   if(unavailableReason!=null)throw StateError(unavailableReason);
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
-  final attackBonus=b._buffs.containsKey(BattleBuff.attack)?1.25:1.0;
+  final attackBonus=b._buffs.containsKey(BattleBuff.attack)?1+BattleBuff.attack.percent/100:1.0;
   if(command==WorldCommand.retreat){_end(w,now,'撤退 — 消費済み資源は返還されません');return;}
   var dealt=0;
   var skipEnemy=false;
@@ -223,8 +223,8 @@ class WorldEngine {
   final b=w.battle!;
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
   if(!skipEnemy){
-   final extra=(s.defense~/100)*40+(s.defense%100)*40~/100;
-   final defense=b._buffs.containsKey(BattleBuff.defense)?s.defense+min(extra,max(0,0x7fffffffffffff9b-s.defense)):s.defense;
+   final int extra=(s.defense~/100)*BattleBuff.defense.percent+(s.defense%100)*BattleBuff.defense.percent~/100;
+   final defense=b._buffs.containsKey(BattleBuff.defense)?s.defense+min<int>(extra,max<int>(0,0x7fffffffffffff9b-s.defense)):s.defense;
    final attack=damage(e.attack,defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
    w.hp=max(0,w.hp-attack);
    b.log.add('敵の反撃 — HP -$attack');
@@ -233,7 +233,7 @@ class WorldEngine {
   if(!castingStop&&b.stopCooldown>0)b.stopCooldown--;
   if(w.hp==0){_end(w,now,'敗北 — 回復後に再挑戦できます');return;}
   if(b._buffs.containsKey(BattleBuff.regeneration)&&newBuff!=BattleBuff.regeneration){
-   final amount=min(s.hp-w.hp,max(1,s.hp~/20));
+   final amount=min(s.hp-w.hp,max(1,(s.hp~/100)*BattleBuff.regeneration.percent+(s.hp%100)*BattleBuff.regeneration.percent~/100));
    w.hp+=amount;
    if(amount>0)b.log.add('継続回復 — HP +$amount');
   }

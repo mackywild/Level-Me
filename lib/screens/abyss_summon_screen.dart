@@ -18,7 +18,7 @@ class _AbyssSummonScreenState extends State<AbyssSummonScreen>{
   SummonPool.supplies=>'物資召喚',
  };
  Future<void> _summon(SummonPool pool,int count,int sequence) async {
-  if(_busy)return;
+  if(_busy||widget.controller.summonBusy)return;
   setState((){_busy=true;_error=null;});
   try {
    await widget.controller.summonWorldItems(pool,count,sequence);
@@ -48,19 +48,20 @@ class _AbyssSummonScreenState extends State<AbyssSummonScreen>{
     const SizedBox(height:12),
     Wrap(spacing:8,runSpacing:8,children:[
      for(final option in SummonPool.values)
-      ChoiceChip(label:Text(_label(option)),selected:pool==option,onSelected:_busy||pending!=null?null:(_)=>setState((){_pool=option;_error=null;})),
+      ChoiceChip(label:Text(_label(option)),selected:pool==option,onSelected:_busy||c.summonBusy||pending!=null?null:(_)=>setState((){_pool=option;_error=null;})),
     ]),
     const SizedBox(height:12),
-    Text('${_label(pool)} / 所持券 ${tickets}枚'),
+    Text('${_label(pool)} / 所持券 $tickets枚'),
     if(pending!=null)...[
      Text('保留中の召喚：${pending.rewards.length}回（取引 ${pending.sequence}）'),
+     Text('確定時の消費券：${cost*pending.rewards.length}枚'),
      const Text('同じ条件でのみ再開できます。未確定の排出結果は表示しません。'),
      _action(c,pool,pending.rewards.length,sequence,'保留中の召喚を再開'),
     ]else...[
-     _action(c,pool,1,sequence,'単発召喚（${cost}券）'),
+     _action(c,pool,1,sequence,'単発召喚（$cost券）'),
      _action(c,pool,10,sequence,'10連召喚（${cost*10}券）'),
     ],
-    if(_busy)const LinearProgressIndicator(),
+    if(_busy||c.summonBusy)const LinearProgressIndicator(),
     if(_error!=null)Text(_error!),
     const Divider(),
     Text('解放済み希少度：${highest.name.toUpperCase()}まで'),

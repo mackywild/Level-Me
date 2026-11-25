@@ -16,6 +16,7 @@ String _activeSkillDescription(AppController c,WorldState w,ActiveSkillSpec spec
   ActiveSkillEffect.foresight=>'次の反撃無効',
   ActiveSkillEffect.repairHp=>'HP ${spec.repairPercent}%回復',
   ActiveSkillEffect.timeCleanse=>'毒を浄化',
+  ActiveSkillEffect.crimsonAwakening=>'物攻 +30% / 3ターン',
   ActiveSkillEffect.rewindHp=>'前ターンHP復元（記録：${w.battle?.previousTurnHp??"なし"}）',
   ActiveSkillEffect.physical||ActiveSkillEffect.accelerationAttack=>'威力${spec.powerPercent}%${spec.hits==1?'':' × ${spec.hits}'}',
  };
@@ -154,7 +155,8 @@ class _WorldScreenState extends State<WorldScreen>{
       }),
     ]),
     panel([const Text('BUFF / 状態効果',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),
-     if(b.buffs.isEmpty)const Text('発動中のバフなし'),
+     if(b.awakeningTurns>0)Text('紅き覚醒：物攻 +30% / 残り ${b.awakeningTurns}ターン'),
+     if(b.buffs.isEmpty&&b.awakeningTurns==0)const Text('発動中のバフなし'),
      for(final entry in b.buffs.entries)
       Text(entry.key.isCharge?'${entry.key.label}：残り ${entry.value} 回（戦闘終了まで）':'${entry.key.label}：残り ${entry.value} ターン'),
      if(!c.buffItems.any((item)=>(c.state.inventory.stacks[item.id]??0)>0))const Text('所持バフアイテムなし'),

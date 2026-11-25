@@ -52,7 +52,7 @@ class BattleRandom {
 }
 
 /// 戦闘開始時に固定する、承認済み能動スキルの実行定義。
-enum ActiveSkillEffect { physical, foresight, accelerationAttack, repairHp, timeCleanse, rewindHp }
+enum ActiveSkillEffect { physical, foresight, accelerationAttack, repairHp, timeCleanse, rewindHp, crimsonAwakening }
 
 class ActiveSkillSpec {
  const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown,this.hits=1,this.effect=ActiveSkillEffect.physical,this.lifeCost=0});
@@ -77,6 +77,7 @@ class ActiveSkillSpec {
   ActiveSkillEffect.repairHp=>powerPercent==0&&physicalCost==0&&hits==1&&cooldown>=1&&repairPercent>0&&lifeCost==(switch(repairPercent){10=>7,25=>21,50=>180,100=>365,_=>0}),
   ActiveSkillEffect.timeCleanse=>id=='skill:time_cleanse'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==30&&cooldown>=1,
   ActiveSkillEffect.rewindHp=>id=='skill:rewind'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==90&&cooldown==8,
+  ActiveSkillEffect.crimsonAwakening=>id=='skill:crimson_awakening'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==30&&cooldown==5,
  };
  Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown,'hits':hits,'effect':effect.name,'lifeCost':lifeCost};
  factory ActiveSkillSpec.fromJson(Map<String,dynamic> j){
@@ -112,7 +113,7 @@ enum LifeRewardBonus {
 }
 
 class WorldBattle {
- WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses,List<ActiveSkillSpec> activeSkills=const [],Map<String,int>? skillCooldowns,int? rngState,({int startHp,int? previousHp})? rewindHistory,List<LifeRewardBonus> lifeRewardBonuses=const []}):lifeRewardBonuses=List.unmodifiable(lifeRewardBonuses),_rewindHistory=rewindHistory,log=log??[],_buffs=Map.of(buffs??{}),_statuses=Map.of(statuses??{}),activeSkills=List.unmodifiable(activeSkills),_skillCooldowns=Map.of(skillCooldowns??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
+ WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses,List<ActiveSkillSpec> activeSkills=const [],Map<String,int>? skillCooldowns,int? rngState,({int startHp,int? previousHp})? rewindHistory,List<LifeRewardBonus> lifeRewardBonuses=const [],int awakeningTurns=0}):_awakeningTurns=awakeningTurns,lifeRewardBonuses=List.unmodifiable(lifeRewardBonuses),_rewindHistory=rewindHistory,log=log??[],_buffs=Map.of(buffs??{}),_statuses=Map.of(statuses??{}),activeSkills=List.unmodifiable(activeSkills),_skillCooldowns=Map.of(skillCooldowns??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
  final int id;
  final String encounterId;
  final WorldStats stats;
@@ -121,6 +122,9 @@ class WorldBattle {
  final List<String> log;
  ({int startHp,int? previousHp})? _rewindHistory;
  int? get previousTurnHp=>_rewindHistory?.previousHp;
+ int _awakeningTurns;
+ int get awakeningTurns=>_awakeningTurns;
+ static const awakeningPercent=30,awakeningDuration=3;
  int _rngState;
  int get rngState=>_rngState;
  final Map<BattleBuff,int> _buffs;
@@ -131,8 +135,20 @@ class WorldBattle {
  Map<String,int> get skillCooldowns=>Map.unmodifiable(_skillCooldowns);
  Map<BattleStatus,int> get statuses=>Map.unmodifiable(_statuses);
  Map<BattleBuff,int> get buffs=>Map.unmodifiable(_buffs);
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),if(lifeRewardBonuses.isNotEmpty)'lifeRewardBonuses':lifeRewardBonuses.map((b)=>b.name).toList(),if(_rewindHistory case final history?)'rewindHistory':{'turn':turn,'startHp':history.startHp,'previousHp':history.previousHp},'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
- factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:_decodeActiveSkills(j),skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j));
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),if(activeSkills.any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening))'awakeningTurns':_awakeningTurns,if(lifeRewardBonuses.isNotEmpty)'lifeRewardBonuses':lifeRewardBonuses.map((b)=>b.name).toList(),if(_rewindHistory case final history?)'rewindHistory':{'turn':turn,'startHp':history.startHp,'previousHp':history.previousHp},'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
+ factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:_decodeActiveSkills(j),skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j),awakeningTurns:_decodeAwakeningTurns(j));
+ static int _decodeAwakeningTurns(Map<String,dynamic> j){
+  final equipped=_decodeActiveSkills(j).any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening);
+  if(!j.containsKey('awakeningTurns')){
+   if(equipped)throw const FormatException('Missing awakening state');
+   return 0;
+  }
+  final raw=j['awakeningTurns'];
+  if(!equipped||raw is! int||raw<0||raw>awakeningDuration)throw const FormatException('Invalid awakening state');
+  final cd=_decodeSkillCooldowns(j)['skill:crimson_awakening']??0;
+  if(raw!=max(0,cd-2)||(cd>0&&(j['turn'] is! int||(j['turn'] as int)<2)))throw const FormatException('Invalid awakening cooldown');
+  return raw;
+ }
  static List<LifeRewardBonus> _decodeLifeRewardBonuses(Map<String,dynamic> j){
   if(!j.containsKey('lifeRewardBonuses'))return const [];
   final raw=j['lifeRewardBonuses'];
@@ -235,7 +251,7 @@ class WorldState {
   if(j['version']!=1)throw const FormatException('Unsupported world save version');
   final w=WorldState(hp:j['hp'] as int,physical:j['physical'] as int,magic:j['magic'] as int,gold:j['gold'] as int,magicCrystals:j.containsKey('magicCrystals')?j['magicCrystals'] as int:0,shopSequence:j.containsKey('shopSequence')?j['shopSequence'] as int:0,itemUseSequence:j.containsKey('itemUseSequence')?j['itemUseSequence'] as int:0,summonTickets:j['summonTickets'] as int,supplyTickets:j['supplyTickets'] as int,sequence:j['sequence'] as int,energyAt:j['energyAt'] as int,hpAt:j['hpAt'] as int,pendingPhysical:j['pendingPhysical'] as int? ?? 0,pendingMagic:j['pendingMagic'] as int? ?? 0,pendingLevelUp:j['pendingLevelUp'] as bool? ?? false,lifespan:BigInt.parse(j['lifespanDays'] as String),cleared:List<String>.from(j['cleared'] as List).toSet(),battle:j['battle']==null?null:WorldBattle.fromJson(j['battle'] as Map<String,dynamic>),lastResult:j['lastResult'] as String);
   if([w.hp,w.physical,w.magic,w.gold,w.magicCrystals,w.shopSequence,w.itemUseSequence,w.summonTickets,w.supplyTickets,w.sequence,w.energyAt,w.hpAt,w.pendingPhysical,w.pendingMagic].any((v)=>v<0)||w.lifespan<BigInt.zero)throw const FormatException('Negative world resource');
-  if(w.battle!=null){final b=w.battle!;if((b.lifeRewardBonuses.isNotEmpty&&!w.cleared.contains(WorldCatalog.mainId(3)))||(b._rewindHistory!=null&&b._rewindHistory!.startHp!=w.hp)||b.id!=w.sequence||b.turn<1||b.enemyHp<1||b.enemyHp>WorldCatalog.byId(b.encounterId).hp||b.stats.hp<1||b.stats.physicalMax<1||b.stats.magicMax<1||b.stats.defense<0||b.stats.physical<1||b.stats.magic<1||!b.stats.crit.isFinite||b.stats.crit<0||b.stats.crit>1||w.hp<1||w.hp>b.stats.hp||w.physical>b.stats.physicalMax||w.magic>b.stats.magicMax||b.slowTurns<0||b.slowTurns>2||b.acceleratedClaws<0||b.acceleratedClaws>2||b.stopCooldown<0||b.stopCooldown>5||b.energyRemainder<0||b.energyRemainder>=WorldEngine.energyInterval||b.hpRemainder<0||b.hpRemainder>=WorldEngine.hpInterval)throw const FormatException('Invalid active battle');}
+  if(w.battle!=null){final b=w.battle!;if((b.awakeningTurns>0&&!w.cleared.contains(WorldCatalog.mainId(12)))||(b.lifeRewardBonuses.isNotEmpty&&!w.cleared.contains(WorldCatalog.mainId(3)))||(b._rewindHistory!=null&&b._rewindHistory!.startHp!=w.hp)||b.id!=w.sequence||b.turn<1||b.enemyHp<1||b.enemyHp>WorldCatalog.byId(b.encounterId).hp||b.stats.hp<1||b.stats.physicalMax<1||b.stats.magicMax<1||b.stats.defense<0||b.stats.physical<1||b.stats.magic<1||!b.stats.crit.isFinite||b.stats.crit<0||b.stats.crit>1||w.hp<1||w.hp>b.stats.hp||w.physical>b.stats.physicalMax||w.magic>b.stats.magicMax||b.slowTurns<0||b.slowTurns>2||b.acceleratedClaws<0||b.acceleratedClaws>2||b.stopCooldown<0||b.stopCooldown>5||b.energyRemainder<0||b.energyRemainder>=WorldEngine.energyInterval||b.hpRemainder<0||b.hpRemainder>=WorldEngine.hpInterval)throw const FormatException('Invalid active battle');}
   return w;
  }
 }
@@ -245,6 +261,12 @@ class WorldEngine {
  // 既存の固定乱数ユニット試験専用。本番Controllerは指定しない。
  final Random? _testRandom;
  final Random _seedRandom;
+ /// 覚醒は物理攻撃のみ。攻撃強化薬とは加算せず高い補正を採用する。
+ double _attackBonus(WorldBattle b,{required bool physical}){
+  final item=b._buffs.containsKey(BattleBuff.attack)?BattleBuff.attack.percent:0;
+  final awakening=physical&&b.awakeningTurns>0?WorldBattle.awakeningPercent:0;
+  return 1+max(item,awakening)/100;
+ }
  double _roll(WorldBattle battle)=>_testRandom?.nextDouble()??BattleRandom.next(battle);
  static const energyInterval=600000,hpInterval=1800000;
  bool isUnlocked(WorldState w,WorldEncounter e){
@@ -327,7 +349,7 @@ class WorldEngine {
   final unavailableReason=unavailable(w,command);
   if(unavailableReason!=null)throw StateError(unavailableReason);
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
-  final attackBonus=b._buffs.containsKey(BattleBuff.attack)?1+BattleBuff.attack.percent/100:1.0;
+  final attackBonus=_attackBonus(b,physical:command!=WorldCommand.magic);
   if(command==WorldCommand.retreat){_end(w,now,'撤退 — 消費済み資源は返還されません');return;}
   var dealt=0;
   var skipEnemy=false;
@@ -419,6 +441,10 @@ class WorldEngine {
    if(history.startHp!=w.hp||w.hp<=0||previous<1||previous>b.stats.hp||w.hp>b.stats.hp)return 'HP状態が不正です';
    if(previous<=w.hp)return '復元できるHPなし';
   }
+  if(spec.effect==ActiveSkillEffect.crimsonAwakening){
+   if(!w.cleared.contains(WorldCatalog.mainId(12)))return 'STAGE 12クリアが必要';
+   if(b.awakeningTurns>0)return '覚醒発動中';
+  }
   if(w.lifespan<BigInt.from(spec.lifeCost))return '寿命不足';
   if(w.physical<activeSkillCost(w,spec))return '物理エネルギー不足';
   return null;
@@ -432,6 +458,13 @@ class WorldEngine {
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
   w.physical-=activeSkillCost(w,spec);
   w.lifespan-=BigInt.from(spec.lifeCost);
+  if(spec.effect==ActiveSkillEffect.crimsonAwakening){
+   b._awakeningTurns=WorldBattle.awakeningDuration;
+   b._skillCooldowns[id]=spec.cooldown;
+   b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費 / 物攻 +${WorldBattle.awakeningPercent}%');
+   _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id);
+   return;
+  }
   if(spec.effect==ActiveSkillEffect.foresight){
    b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
    b._skillCooldowns[id]=spec.cooldown;
@@ -461,7 +494,7 @@ class WorldEngine {
    return;
   }
   if(spec.effect==ActiveSkillEffect.accelerationAttack)b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
-  final bonus=b._buffs.containsKey(BattleBuff.attack)?1+BattleBuff.attack.percent/100:1.0;
+  final bonus=_attackBonus(b,physical:true);
   final chance=b._buffs.containsKey(BattleBuff.critical)?min<double>(1.0,s.crit+BattleBuff.critical.percent/100):s.crit;
   // 各hitで独立に会心・乱数・防御・丸めを適用。撃破後は乱数を消費しない。
   for(var hit=0;hit<spec.hits&&b.enemyHp>0;hit++){
@@ -567,6 +600,7 @@ class WorldEngine {
    final remaining=b._buffs[kind]!-1;
    if(remaining==0){b._buffs.remove(kind);}else{b._buffs[kind]=remaining;}
   }
+  if(b._awakeningTurns>0&&castSkill!='skill:crimson_awakening')b._awakeningTurns--;
   for(final id in b._skillCooldowns.keys.toList()){
    if(id==castSkill)continue;
    final remaining=b._skillCooldowns[id]!-1;

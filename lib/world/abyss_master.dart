@@ -29,6 +29,7 @@ class AbyssMaster {
   for(final row in root['equipment'] as List){
    final j=row as Map<String,dynamic>;
    final def=EquipmentDefinition(id:j['id'] as String,name:j['name'] as String,slot:EquipmentSlot.values.byName(j['slot'] as String),rarity:EquipmentRarity.values.byName(j['rarity'] as String),physical:j['physical'] as int,magic:j['magic'] as int,defense:j['defense'] as int);
+   if(def.slot==EquipmentSlot.hands||def.rarity.index>EquipmentRarity.ssr.index)throw const FormatException('Equipment outside prologue scope');
    if(equipmentById.containsKey(def.id))throw const FormatException('Duplicate equipment master');
    equipmentById[def.id]=def;
    equipment.add(def);
@@ -38,6 +39,7 @@ class AbyssMaster {
    final j=row as Map<String,dynamic>;
    final def=SupplyDefinition(id:j['id'] as String,name:j['name'] as String,rarity:EquipmentRarity.values.byName(j['rarity'] as String),category:j['category'] as String);
    // 現段階で使用効果未実装のため、素材だけを許可する。
+   if(def.rarity.index>EquipmentRarity.ssr.index)throw const FormatException('Supply outside prologue scope');
    if(!def.id.startsWith('item:')||def.id.length<=5||def.name.trim().isEmpty||def.category!='material'||supplies.containsKey(def.id))throw const FormatException('Invalid supply master');
    supplies[def.id]=def;
   }
@@ -61,12 +63,10 @@ class AbyssMaster {
    entries.add(SummonEntry(pool:pool,masterId:id,rarity:rarity));
   }
   final validatedSummon=SummonCatalog(entries);
-  if(enabled){
-   // 序章で解放されるN〜SSRまでの各プールを必須とする。
-   for(final pool in SummonPool.values){
-    for(final rarity in EquipmentRarity.values.take(4)){
-     if(validatedSummon.entries(pool,rarity).isEmpty)throw const FormatException('Incomplete enabled summon pool');
-    }
+  // 無効状態の候補も含め、序章の全プール・希少度を検証する。
+  for(final pool in SummonPool.values){
+   for(final rarity in EquipmentRarity.values.take(4)){
+    if(validatedSummon.entries(pool,rarity).isEmpty)throw const FormatException('Incomplete prologue summon pool');
    }
   }
   return AbyssMaster._(enabled?validatedEquipment:EquipmentCatalog.production,enabled?validatedSummon:SummonCatalog.production,Map.unmodifiable(enabled?supplies:<String,SupplyDefinition>{}),enabled);

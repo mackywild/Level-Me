@@ -52,19 +52,30 @@ class BattleRandom {
 }
 
 /// 戦闘開始時に固定する、承認済み能動スキルの実行定義。
+enum ActiveSkillEffect { physical, foresight }
+
 class ActiveSkillSpec {
- const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown,this.hits=1});
+ const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown,this.hits=1,this.effect=ActiveSkillEffect.physical,this.lifeCost=0});
  final String id,name;
- final int powerPercent,physicalCost,cooldown,hits;
+ final int powerPercent,physicalCost,cooldown,hits,lifeCost;
+ final ActiveSkillEffect effect;
  void validate(){
-  if(!id.startsWith('skill:')||id.length<=6||name.trim().isEmpty||powerPercent<1||powerPercent>500||hits<1||hits>10||powerPercent*hits>500||physicalCost<1||physicalCost>100||cooldown<0||cooldown>20)throw const FormatException('Invalid active skill spec');
+  if(!id.startsWith('skill:')||id.length<=6||name.trim().isEmpty||cooldown<0||cooldown>20||!_validEffect)throw const FormatException('Invalid active skill spec');
  }
- Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown,'hits':hits};
+ bool get _validEffect=>switch(effect){
+  ActiveSkillEffect.physical=>powerPercent>=1&&powerPercent<=500&&hits>=1&&hits<=10&&powerPercent*hits<=500&&physicalCost>=1&&physicalCost<=100&&lifeCost==0,
+  ActiveSkillEffect.foresight=>powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==14&&cooldown>=1,
+ };
+ Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown,'hits':hits,'effect':effect.name,'lifeCost':lifeCost};
  factory ActiveSkillSpec.fromJson(Map<String,dynamic> j){
   if(j['id'] is! String||j['name'] is! String||j['powerPercent'] is! int||j['physicalCost'] is! int||j['cooldown'] is! int)throw const FormatException('Invalid active skill spec');
   final hits=j.containsKey('hits')?j['hits']:1;
   if(hits is! int)throw const FormatException('Invalid skill hit count');
-  final spec=ActiveSkillSpec(hits:hits,id:j['id'] as String,name:j['name'] as String,powerPercent:j['powerPercent'] as int,physicalCost:j['physicalCost'] as int,cooldown:j['cooldown'] as int);
+  final rawEffect=j.containsKey('effect')?j['effect']:'physical';
+  final lifeCost=j.containsKey('lifeCost')?j['lifeCost']:0;
+  final matches=ActiveSkillEffect.values.where((e)=>e.name==rawEffect);
+  if(matches.isEmpty||lifeCost is! int)throw const FormatException('Invalid active skill effect');
+  final spec=ActiveSkillSpec(effect:matches.single,lifeCost:lifeCost,hits:hits,id:j['id'] as String,name:j['name'] as String,powerPercent:j['powerPercent'] as int,physicalCost:j['physicalCost'] as int,cooldown:j['cooldown'] as int);
   spec.validate();
   return spec;
  }
@@ -319,7 +330,10 @@ class WorldEngine {
   if(matches.isEmpty)return '装着済みスキルではありません';
   if(b.turn==0x7fffffffffffffff)return 'ターン上限';
   if((b._skillCooldowns[id]??0)>0)return 'クールダウン中';
-  if(w.physical<activeSkillCost(w,matches.first))return '物理エネルギー不足';
+  final spec=matches.first;
+  if(spec.effect==ActiveSkillEffect.foresight&&!w.cleared.contains(WorldCatalog.mainId(9)))return 'STAGE 09クリアが必要';
+  if(w.lifespan<BigInt.from(spec.lifeCost))return '寿命不足';
+  if(w.physical<activeSkillCost(w,spec))return '物理エネルギー不足';
   return null;
  }
  void actActiveSkill(WorldState w,String id,int battleId,int expectedTurn,int now){
@@ -330,6 +344,13 @@ class WorldEngine {
   final spec=b.activeSkills.firstWhere((s)=>s.id==id);
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
   w.physical-=activeSkillCost(w,spec);
+  w.lifespan-=BigInt.from(spec.lifeCost);
+  if(spec.effect==ActiveSkillEffect.foresight){
+   b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
+   b._skillCooldowns[id]=spec.cooldown;
+   _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id,foresight:true);
+   return;
+  }
   final bonus=b._buffs.containsKey(BattleBuff.attack)?1+BattleBuff.attack.percent/100:1.0;
   final chance=b._buffs.containsKey(BattleBuff.critical)?min<double>(1.0,s.crit+BattleBuff.critical.percent/100):s.crit;
   // 各hitで独立に会心・乱数・防御・丸めを適用。撃破後は乱数を消費しない。
@@ -383,14 +404,16 @@ class WorldEngine {
   b.log.add('$name — 効果発動');
   _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,newBuff:kind);
  }
- void _finishTurn(WorldState w,int now,{required bool skipEnemy,required bool guarding,required bool castingStop,BattleBuff? newBuff,String? castSkill}){
+ void _finishTurn(WorldState w,int now,{required bool skipEnemy,required bool guarding,required bool castingStop,BattleBuff? newBuff,String? castSkill,bool foresight=false}){
   final b=w.battle!;
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
   if(!skipEnemy){
    final int extra=(s.defense~/100)*BattleBuff.defense.percent+(s.defense%100)*BattleBuff.defense.percent~/100;
    final defense=b._buffs.containsKey(BattleBuff.defense)?s.defense+min<int>(extra,max<int>(0,0x7fffffffffffff9b-s.defense)):s.defense;
    final attack=damage(e.attack,defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
-   if(b._buffs.containsKey(BattleBuff.evasion)&&_roll(b)<BattleBuff.evasion.percent/100){
+   if(foresight){
+    b.log.add('未来視 — 敵の反撃を無効化した。');
+   }else if(b._buffs.containsKey(BattleBuff.evasion)&&_roll(b)<BattleBuff.evasion.percent/100){
     b.log.add('敵の反撃を回避した。');
    }else{
     if(attack>=w.hp&&b._buffs.remove(BattleBuff.lethalProtection)!=null){

@@ -36,6 +36,7 @@ class AppController extends ChangeNotifier {
   _purificationCatalog.validateSavedStatuses(state.world);
   _skillCatalog.validateSaved(state.skills);
   _skillCatalog.validateBattle(state.world,state.skills);
+  _worldStatsFor(state);
  }
  EquipmentCatalog _equipmentCatalog;
  EquipmentCatalog get equipmentCatalog=>_equipmentCatalog;
@@ -249,6 +250,8 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   if(working.skills.revision!=expectedRevision)throw StateError('Stale skill revision');
   change(working.world,working.skills,id);
+  // 保存前に変更後の補正値も検証し、計算不能な構成を確定しない。
+  _worldStatsFor(working);
   await _store.save(working);
   _state=working;
  });
@@ -365,14 +368,15 @@ class AppController extends ChangeNotifier {
  final PortableBackup? _portableBackup;
  final LocalStore _store;
  final WorldEngine worldEngine=WorldEngine();
- WorldStats get worldStats=>equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(_state.totalExp).level,fitness:LevelCalculator.statRankFromExp(_state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(_state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(_state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(_state.stats[StatType.creativity]??0)),_state.inventory,scaling:enhancementScaling);
+ WorldStats get worldStats=>_worldStatsFor(_state);
+ WorldStats _worldStatsFor(AppStateData state)=>_skillCatalog.applyPassive(equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(state.totalExp).level,fitness:LevelCalculator.statRankFromExp(state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(state.stats[StatType.creativity]??0)),state.inventory,scaling:enhancementScaling),state.skills);
  final int Function() _clockMs;
  static int _systemClockMs()=>DateTime.now().millisecondsSinceEpoch;
  int get _nowMs=>_clockMs();
  Future<void> startWorldBattle(String id)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
-  worldEngine.start(working.world,worldStats,id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills));
+  worldEngine.start(working.world,_worldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills));
   await _store.save(working);
   _state=working;
   notifyListeners();

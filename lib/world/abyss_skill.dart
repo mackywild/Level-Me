@@ -2,11 +2,21 @@ import 'world_engine.dart';
 
 enum SkillKind { active, passive }
 
+/// 試験用の固定加算補正。HP・エネルギー上限・会心率は変更しない。
+class PassiveStatBonus {
+ const PassiveStatBonus({this.physical=0,this.magic=0,this.defense=0});
+ final int physical,magic,defense;
+ void validate(){
+  if([physical,magic,defense].any((v)=>v<0||v>1000000))throw const FormatException('Invalid passive stat bonus');
+ }
+}
+
 class SkillDefinition {
- const SkillDefinition({required this.id,required this.name,required this.kind,this.execution});
+ const SkillDefinition({required this.id,required this.name,required this.kind,this.execution,this.passiveBonus});
  final String id,name;
  final SkillKind kind;
  final ActiveSkillSpec? execution;
+ final PassiveStatBonus? passiveBonus;
 }
 
 class SkillState {
@@ -59,6 +69,11 @@ class SkillCatalog {
     spec.validate();
     if(def.kind!=SkillKind.active||spec.id!=def.id||spec.name!=def.name)throw const FormatException('Invalid skill execution mapping');
    }
+   final bonus=def.passiveBonus;
+   if(bonus!=null){
+    bonus.validate();
+    if(def.kind!=SkillKind.passive)throw const FormatException('Invalid passive skill mapping');
+   }
    _definitions[def.id]=def;
   }
  }
@@ -71,6 +86,23 @@ class SkillCatalog {
   for(final kind in SkillKind.values){
    if(state._slots(kind).any((id)=>find(id)?.kind!=kind))throw const FormatException('Invalid skill kind');
   }
+ }
+ /// 装備補正後に固定値を加算する。装着順に依存せず、戦闘開始時のstatsに反映する。
+ WorldStats applyPassive(WorldStats base,SkillState state){
+  validateSaved(state);
+  var physical=base.physical,magic=base.magic,defense=base.defense;
+  int add(int value,int bonus){
+   if(value<0||value>0x7fffffffffffffff-bonus)throw StateError('Passive stat overflow');
+   return value+bonus;
+  }
+  for(final id in state.passive){
+   final bonus=find(id)?.passiveBonus;
+   if(bonus==null)continue;
+   physical=add(physical,bonus.physical);
+   magic=add(magic,bonus.magic);
+   defense=add(defense,bonus.defense);
+  }
+  return WorldStats(hp:base.hp,physical:physical,magic:magic,defense:defense,physicalMax:base.physicalMax,magicMax:base.magicMax,crit:base.crit);
  }
  List<ActiveSkillSpec> snapshot(SkillState state){
   validateSaved(state);

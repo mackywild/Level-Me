@@ -81,7 +81,7 @@ class _WorldScreenState extends State<WorldScreen>{
   final c=widget.controller,w=c.state.world,b=w.battle,s=b?.stats??c.worldStats;
   final generation=c.restoreGeneration;
   final stage=selectedStage??WorldCatalog.titles.keys.firstWhere((i)=>!w.cleared.contains(WorldCatalog.mainId(i)),orElse:()=>WorldCatalog.titles.keys.last);
-  final enemy=b==null?null:WorldCatalog.byId(b.encounterId);
+  final enemy=b?.encounter;
   return ListView(padding:const EdgeInsets.fromLTRB(16,16,16,32),children:[
    Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(
     gradient:const LinearGradient(colors:[Color(0xff401525),Color(0xff16111f)]),borderRadius:BorderRadius.circular(20),border:Border.all(color:crimson.withValues(alpha:0.45))),

@@ -34,8 +34,8 @@ void main(){
   loadExtendedWorldCatalog(16);
   catalog=SkillCatalog(const [def]);
  });
- WorldState start(WorldEngine engine,{int hp=100,int life=90,bool unlocked=true,bool equipped=true}){
-  final w=WorldState(hp:hp,lifespan:BigInt.from(life),cleared:{if(unlocked)'p16_main'},hpAt:now,energyAt:now,gold:12,magicCrystals:3,summonTickets:2,supplyTickets:1,itemUseSequence:4);
+ WorldState start(WorldEngine engine,{int hp=100,int life=90,bool equipped=true}){
+  final w=WorldState(hp:hp,lifespan:BigInt.from(life),cleared:{'p16_main'},hpAt:now,energyAt:now,gold:12,magicCrystals:3,summonTickets:2,supplyTickets:1,itemUseSequence:4);
   engine.start(w,stats,'p01_main',now,activeSkills:equipped?[spec]:const []);
   return w;
  }

@@ -37,6 +37,7 @@ class AppStateData {
   'playerHp':playerHp,'maxPlayerHp':maxPlayerHp,'attackEnergy':attackEnergy,'gachaTickets':gachaTickets,
   'world':world.toJson(),'inventory':inventory.toJson(),'summon':summon.toJson(),'skills':skills.toJson(),'sessions':sessions,'sessionHistory':sessionHistory,'lastRecoveryDate':lastRecoveryDate,'lastKnownLevel':lastKnownLevel};
  factory AppStateData.fromJson(Map<String,dynamic> j) {
+  if(j.containsKey('skills')&&j['skills'] is! Map<String,dynamic>)throw const FormatException('Invalid skills');
   final raw=j['stats'] as Map<String,dynamic>? ?? {};
   return AppStateData(totalExp:j['totalExp'] as int? ?? 0,
    world:j.containsKey('world')?WorldState.fromJson(j['world'] as Map<String,dynamic>):null,

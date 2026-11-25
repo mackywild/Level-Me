@@ -472,6 +472,14 @@
       "category": "recovery",
       "target": "magic",
       "percent": 50
+    },
+    {
+      "id": "item:recovery_all",
+      "name": "全回復薬",
+      "rarity": "ssr",
+      "category": "recovery",
+      "target": "all",
+      "percent": 100
     }
   ],
   "buffEnabled": false,

@@ -9,6 +9,18 @@ class EquipmentDefinition {
  final int physical,magic,defense;
 }
 
+/// 未承認の性能補正は明示的に注入した場合だけ適用する。
+class EnhancementScaling {
+ const EnhancementScaling.disabled():percentPerLevel=0;
+ const EnhancementScaling.proposed():percentPerLevel=5;
+ final int percentPerLevel;
+ int apply(int base,int level){
+  if(level<0||level>20)throw RangeError.range(level,0,20);
+  // 個々の装備補正を整数で切り捨てる暫定案。プレイヤー基本値には掛けない。
+  return base*(100+percentPerLevel*level)~/100;
+ }
+}
+
 class EquipmentCatalog {
  EquipmentCatalog(Iterable<EquipmentDefinition> definitions){
   for(final item in definitions){
@@ -28,14 +40,14 @@ class EquipmentCatalog {
  void validateLoadout(AbyssInventory inventory){
   for(final id in inventory.equipped.values){require(inventory.equipment[id]!);}
  }
- WorldStats apply(WorldStats base,AbyssInventory inventory){
+ WorldStats apply(WorldStats base,AbyssInventory inventory,{EnhancementScaling scaling=const EnhancementScaling.disabled()}){
   var physical=base.physical,magic=base.magic,defense=base.defense;
   for(final id in inventory.equipped.values){
    final item=inventory.equipment[id]!;
    final definition=require(item);
-   physical+=definition.physical;
-   magic+=definition.magic;
-   defense+=definition.defense;
+   physical+=scaling.apply(definition.physical,item.enhancement);
+   magic+=scaling.apply(definition.magic,item.enhancement);
+   defense+=scaling.apply(definition.defense,item.enhancement);
   }
   return WorldStats(hp:base.hp,physical:physical,magic:magic,defense:defense,physicalMax:base.physicalMax,magicMax:base.magicMax,crit:base.crit);
  }

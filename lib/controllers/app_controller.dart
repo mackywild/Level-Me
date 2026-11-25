@@ -241,17 +241,18 @@ class AppController extends ChangeNotifier {
  });
  final SkillCatalog _skillCatalog;
  List<SkillDefinition> get skillDefinitions=>_skillCatalog.definitions;
- Future<void> _changeSkill(String id,int expectedGeneration,void Function(WorldState,SkillState,String) change)=>_inventoryTransaction(() async {
+ Future<void> _changeSkill(String id,int expectedGeneration,int expectedRevision,void Function(WorldState,SkillState,String) change)=>_inventoryTransaction(() async {
   if(!_ready)throw StateError('Player not ready');
   if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  if(working.skills.revision!=expectedRevision)throw StateError('Stale skill revision');
   change(working.world,working.skills,id);
   await _store.save(working);
   _state=working;
  });
- Future<void> learnWorldSkill(String id,{required int expectedGeneration})=>_changeSkill(id,expectedGeneration,_skillCatalog.learn);
- Future<void> equipWorldSkill(String id,{required int expectedGeneration})=>_changeSkill(id,expectedGeneration,_skillCatalog.equip);
- Future<void> unequipWorldSkill(String id,{required int expectedGeneration})=>_changeSkill(id,expectedGeneration,_skillCatalog.unequip);
+ Future<void> learnWorldSkill(String id,{required int expectedGeneration,required int expectedRevision})=>_changeSkill(id,expectedGeneration,expectedRevision,_skillCatalog.learn);
+ Future<void> equipWorldSkill(String id,{required int expectedGeneration,required int expectedRevision})=>_changeSkill(id,expectedGeneration,expectedRevision,_skillCatalog.equip);
+ Future<void> unequipWorldSkill(String id,{required int expectedGeneration,required int expectedRevision})=>_changeSkill(id,expectedGeneration,expectedRevision,_skillCatalog.unequip);
  final ShopCatalog _shopCatalog;
  List<ShopOffer> get shopOffers=>_shopCatalog.offers;
  int _restoreGeneration=0;

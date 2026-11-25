@@ -1,0 +1,402 @@
+{
+  "version": 1,
+  "enabled": false,
+  "equipment": [
+    {
+      "id": "equipment:cloth_cap",
+      "name": "布の頭巾",
+      "slot": "head",
+      "rarity": "n",
+      "physical": 0,
+      "magic": 0,
+      "defense": 1
+    },
+    {
+      "id": "equipment:leather_vest",
+      "name": "革の胴衣",
+      "slot": "body",
+      "rarity": "n",
+      "physical": 0,
+      "magic": 0,
+      "defense": 2
+    },
+    {
+      "id": "equipment:cloth_wrap",
+      "name": "布の手甲",
+      "slot": "arms",
+      "rarity": "n",
+      "physical": 1,
+      "magic": 0,
+      "defense": 0
+    },
+    {
+      "id": "equipment:leather_boots",
+      "name": "革の靴",
+      "slot": "legs",
+      "rarity": "n",
+      "physical": 0,
+      "magic": 0,
+      "defense": 1
+    },
+    {
+      "id": "equipment:iron_ring",
+      "name": "鉄の指輪",
+      "slot": "ring",
+      "rarity": "n",
+      "physical": 0,
+      "magic": 1,
+      "defense": 0
+    },
+    {
+      "id": "equipment:simple_pendant",
+      "name": "素朴な首飾り",
+      "slot": "necklace",
+      "rarity": "n",
+      "physical": 0,
+      "magic": 1,
+      "defense": 0
+    },
+    {
+      "id": "equipment:iron_helm",
+      "name": "鉄の兜",
+      "slot": "head",
+      "rarity": "r",
+      "physical": 0,
+      "magic": 0,
+      "defense": 3
+    },
+    {
+      "id": "equipment:reinforced_vest",
+      "name": "補強革の胴衣",
+      "slot": "body",
+      "rarity": "r",
+      "physical": 0,
+      "magic": 0,
+      "defense": 4
+    },
+    {
+      "id": "equipment:iron_bracer",
+      "name": "鉄の腕甲",
+      "slot": "arms",
+      "rarity": "r",
+      "physical": 3,
+      "magic": 0,
+      "defense": 1
+    },
+    {
+      "id": "equipment:reinforced_boots",
+      "name": "補強革の靴",
+      "slot": "legs",
+      "rarity": "r",
+      "physical": 0,
+      "magic": 0,
+      "defense": 3
+    },
+    {
+      "id": "equipment:crystal_ring",
+      "name": "晶石の指輪",
+      "slot": "ring",
+      "rarity": "r",
+      "physical": 0,
+      "magic": 3,
+      "defense": 0
+    },
+    {
+      "id": "equipment:iron_pendant",
+      "name": "鉄の首飾り",
+      "slot": "necklace",
+      "rarity": "r",
+      "physical": 1,
+      "magic": 2,
+      "defense": 0
+    },
+    {
+      "id": "equipment:beast_bracer",
+      "name": "獣牙の腕甲",
+      "slot": "arms",
+      "rarity": "sr",
+      "physical": 5,
+      "magic": 0,
+      "defense": 2
+    },
+    {
+      "id": "equipment:ancient_ring",
+      "name": "古代石の指輪",
+      "slot": "ring",
+      "rarity": "sr",
+      "physical": 0,
+      "magic": 5,
+      "defense": 1
+    },
+    {
+      "id": "equipment:alloy_vest",
+      "name": "合金の胴衣",
+      "slot": "body",
+      "rarity": "sr",
+      "physical": 0,
+      "magic": 0,
+      "defense": 6
+    },
+    {
+      "id": "equipment:beast_boots",
+      "name": "獣革の靴",
+      "slot": "legs",
+      "rarity": "sr",
+      "physical": 1,
+      "magic": 0,
+      "defense": 4
+    },
+    {
+      "id": "equipment:ancient_helm",
+      "name": "太古の兜",
+      "slot": "head",
+      "rarity": "ssr",
+      "physical": 0,
+      "magic": 2,
+      "defense": 7
+    },
+    {
+      "id": "equipment:ancient_pendant",
+      "name": "太古の首飾り",
+      "slot": "necklace",
+      "rarity": "ssr",
+      "physical": 2,
+      "magic": 8,
+      "defense": 0
+    },
+    {
+      "id": "equipment:underworld_vest",
+      "name": "冥府鉄の胴衣",
+      "slot": "body",
+      "rarity": "ssr",
+      "physical": 0,
+      "magic": 0,
+      "defense": 10
+    },
+    {
+      "id": "equipment:beast_king_bracer",
+      "name": "獣王の腕甲",
+      "slot": "arms",
+      "rarity": "ssr",
+      "physical": 8,
+      "magic": 0,
+      "defense": 3
+    },
+    {
+      "id": "equipment:fragment",
+      "name": "魔石の欠片",
+      "slot": "relic",
+      "rarity": "n",
+      "physical": 0,
+      "magic": 1,
+      "defense": 0
+    },
+    {
+      "id": "equipment:iron_charm",
+      "name": "鉄の護符",
+      "slot": "relic",
+      "rarity": "r",
+      "physical": 1,
+      "magic": 1,
+      "defense": 1
+    },
+    {
+      "id": "equipment:ancient_charm",
+      "name": "古代の護符",
+      "slot": "relic",
+      "rarity": "sr",
+      "physical": 2,
+      "magic": 3,
+      "defense": 2
+    },
+    {
+      "id": "equipment:spirit_charm",
+      "name": "霊晶の護符",
+      "slot": "relic",
+      "rarity": "ssr",
+      "physical": 3,
+      "magic": 5,
+      "defense": 3
+    }
+  ],
+  "supplies": [
+    {
+      "id": "item:iron",
+      "name": "鉄",
+      "rarity": "n",
+      "category": "material"
+    },
+    {
+      "id": "item:leather",
+      "name": "革",
+      "rarity": "n",
+      "category": "material"
+    },
+    {
+      "id": "item:alloy",
+      "name": "合金",
+      "rarity": "r",
+      "category": "material"
+    },
+    {
+      "id": "item:fang",
+      "name": "牙",
+      "rarity": "r",
+      "category": "material"
+    },
+    {
+      "id": "item:ancient_stone",
+      "name": "古代魔石",
+      "rarity": "sr",
+      "category": "material"
+    },
+    {
+      "id": "item:sea_crystal",
+      "name": "海晶",
+      "rarity": "sr",
+      "category": "material"
+    },
+    {
+      "id": "item:spirit_crystal",
+      "name": "霊晶",
+      "rarity": "ssr",
+      "category": "material"
+    },
+    {
+      "id": "item:underworld_iron",
+      "name": "冥府鉄",
+      "rarity": "ssr",
+      "category": "material"
+    }
+  ],
+  "summon": [
+    {
+      "pool": "equipment",
+      "masterId": "equipment:cloth_cap"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:leather_vest"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:cloth_wrap"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:leather_boots"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:iron_ring"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:simple_pendant"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:iron_helm"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:reinforced_vest"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:iron_bracer"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:reinforced_boots"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:crystal_ring"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:iron_pendant"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:beast_bracer"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:ancient_ring"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:alloy_vest"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:beast_boots"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:ancient_helm"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:ancient_pendant"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:underworld_vest"
+    },
+    {
+      "pool": "equipment",
+      "masterId": "equipment:beast_king_bracer"
+    },
+    {
+      "pool": "relic",
+      "masterId": "equipment:fragment"
+    },
+    {
+      "pool": "relic",
+      "masterId": "equipment:iron_charm"
+    },
+    {
+      "pool": "relic",
+      "masterId": "equipment:ancient_charm"
+    },
+    {
+      "pool": "relic",
+      "masterId": "equipment:spirit_charm"
+    },
+    {
+      "pool": "supplies",
+      "masterId": "item:iron"
+    },
+    {
+      "pool": "supplies",
+      "masterId": "item:leather"
+    },
+    {
+      "pool": "supplies",
+      "masterId": "item:alloy"
+    },
+    {
+      "pool": "supplies",
+      "masterId": "item:fang"
+    },
+    {
+      "pool": "supplies",
+      "masterId": "item:ancient_stone"
+    },
+    {
+      "pool": "supplies",
+      "masterId": "item:sea_crystal"
+    },
+    {
+      "pool": "supplies",
+      "masterId": "item:spirit_crystal"
+    },
+    {
+      "pool": "supplies",
+      "masterId": "item:underworld_iron"
+    }
+  ]
+}

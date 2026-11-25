@@ -19,7 +19,7 @@ String _activeSkillDescription(AppController c,WorldState w,ActiveSkillSpec spec
   ActiveSkillEffect.stopAttack=>'威力${spec.powerPercent}% / 時間停止（耐性あり）',
   ActiveSkillEffect.crimsonAwakening=>'物攻 +30% / 3ターン',
   ActiveSkillEffect.rewindHp=>'前ターンHP復元（記録：${w.battle?.previousTurnHp??"なし"}）',
-  ActiveSkillEffect.physical||ActiveSkillEffect.accelerationAttack=>'威力${spec.powerPercent}%${spec.hits==1?'':' × ${spec.hits}'}',
+  ActiveSkillEffect.physical||ActiveSkillEffect.accelerationAttack||ActiveSkillEffect.ultimateAttack=>'威力${spec.powerPercent}%${spec.hits==1?'':' × ${spec.hits}'}',
  };
  return '$cost / $effect';
 }

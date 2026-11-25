@@ -109,6 +109,7 @@ class SkillCatalog {
    final reward=def.lifeRewardBonus;
    if(reward!=null&&(def.kind!=SkillKind.passive||def.id!=reward.skillId||def.acquisition.clearedStage!=3))throw const FormatException('Invalid life reward skill mapping');
    if(spec?.usesStopCooldown==true&&def.acquisition.clearedStage!=12)throw const FormatException('Invalid stop skill acquisition');
+   if(spec?.effect==ActiveSkillEffect.ultimateAttack&&def.acquisition.clearedStage!=18)throw const FormatException('Invalid ultimate skill acquisition');
    def.acquisition.validate();
    _definitions[def.id]=def;
   }

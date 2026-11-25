@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/models/app_state.dart';
@@ -11,6 +12,26 @@ import 'package:level_me/world/world_engine.dart';
 import 'package:level_me/services/fe_progress_store.dart';
 import 'package:level_me/services/local_store.dart';
 import 'package:level_me/services/portable_backup.dart';
+
+import 'package:level_me/world/abyss_summon.dart';
+import 'package:level_me/world/abyss_summon_transaction.dart';
+
+class _ChangingRandom implements Random {
+ _ChangingRandom(this.offset);
+ final int offset;
+ int calls=0;
+ @override int nextInt(int max)=>(offset+calls++*173)%max;
+ @override double nextDouble()=>0.5;
+ @override bool nextBool()=>false;
+}
+class _FailCommitStore extends LocalStore {
+ _FailCommitStore(Directory directory):super(directory:directory);
+ bool failCommit=false;
+ @override Future<void> save(AppStateData state) async {
+  if(failCommit&&state.summon.sequence>0&&state.summon.pending==null)throw StateError('simulated commit failure');
+  await super.save(state);
+ }
+}
 
 void main() {
  setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
@@ -269,5 +290,61 @@ void main() {
   expect(await file(PortableBackup.journalName).readAsString(),journal);
   expect(await file(PortableBackup.playerName).readAsString(),original);
   expect(await file('${PortableBackup.playerName}.bak').readAsString(),badPlayer);
+ });
+ test('durable summon plan survives failed commit and restart with different RNG',() async {
+  final defs=[for(final rarity in EquipmentRarity.values.take(4))EquipmentDefinition(id:'equipment:ring_${rarity.name}',name:'Ring',slot:EquipmentSlot.ring,rarity:rarity)];
+  final catalog=EquipmentCatalog(defs);
+  final pool=SummonCatalog([
+   for(final def in defs)SummonEntry(pool:SummonPool.equipment,masterId:def.id,rarity:def.rarity),
+   for(final rarity in EquipmentRarity.values.take(4))SummonEntry(pool:SummonPool.supplies,masterId:'item:test_${rarity.name}',rarity:rarity),
+  ]);
+  final failing=_FailCommitStore(dir);
+  final random=_ChangingRandom(0);
+  final c=AppController(failing,equipmentCatalog:catalog,summonCatalog:pool,summonRandom:random);
+  addTearDown(c.dispose);
+  await c.initialize();
+  c.state.world.cleared.addAll(['p01_main','p12_main']);
+  c.state.world.summonTickets=20;
+  c.state.world.supplyTickets=2;
+  await failing.save(c.state);
+  failing.failCommit=true;
+  await expectLater(c.summonWorldItems(SummonPool.equipment,10,0),throwsStateError);
+  final pending=c.state.summon.pending!;
+  expect(random.calls,20);
+  expect(c.state.world.summonTickets,20);
+  expect(c.state.inventory.equipment,isEmpty);
+  expect(c.state.summon.sequence,0);
+  expect((await player.load()).summon.pending!.toJson(),pending.toJson());
+  final otherRandom=_ChangingRandom(9000);
+  final restarted=AppController(player,portableBackup:backup,equipmentCatalog:catalog,summonCatalog:pool,summonRandom:otherRandom);
+  addTearDown(restarted.dispose);
+  await restarted.initialize();
+  final before=jsonEncode(restarted.state.toJson());
+  await expectLater(restarted.summonWorldItems(SummonPool.supplies,1,0),throwsStateError);
+  await expectLater(restarted.summonWorldItems(SummonPool.equipment,1,0),throwsStateError);
+  expect(jsonEncode(restarted.state.toJson()),before);
+  expect(otherRandom.calls,0);
+  final receipt=await restarted.summonWorldItems(SummonPool.equipment,10,0);
+  expect(receipt.rewards.map((r)=>r.masterId),pending.rewards.map((r)=>r.masterId));
+  expect(otherRandom.calls,0);
+  expect(restarted.state.world.summonTickets,10);
+  expect(restarted.state.inventory.equipment.length,10);
+  expect(restarted.state.summon.pending,isNull);
+  await expectLater(restarted.summonWorldItems(SummonPool.equipment,10,0),throwsStateError);
+  await restarted.summonWorldItems(SummonPool.supplies,1,1);
+  final saved=await player.load();
+  final exported=await restarted.exportPortableBackup();
+  await restarted.summonWorldItems(SummonPool.equipment,1,2);
+  await restarted.importPortableBackup(exported);
+  expect(restarted.state.summon.toJson(),saved.summon.toJson());
+  expect(restarted.state.inventory.toJson(),saved.inventory.toJson());
+  expect(restarted.state.world.summonTickets,saved.world.summonTickets);
+  expect(restarted.state.world.supplyTickets,saved.world.supplyTickets);
+  final primary=await file(PortableBackup.playerName).readAsString();
+  final invalid=jsonDecode(exported) as Map<String,dynamic>;
+  ((invalid['files'] as Map)[PortableBackup.playerName]['summon'] as Map)['sequence']=999;
+  await expectLater(restarted.importPortableBackup(jsonEncode(invalid)),throwsFormatException);
+  expect(await file(PortableBackup.playerName).readAsString(),primary);
+  expect(restarted.ready,true);
  });
 }

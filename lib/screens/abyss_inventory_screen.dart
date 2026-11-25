@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import '../world/abyss_inventory.dart';
+import '../world/abyss_dismantle.dart';
 
 class AbyssInventoryScreen extends StatefulWidget {
  const AbyssInventoryScreen({super.key,required this.controller});
@@ -14,6 +15,10 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
  EquipmentRarity? _rarity;
  String? _message;
  bool _confirming=false;
+ String _rewardText(DismantleRecipe recipe)=>[
+  if(recipe.quantity>0)'${widget.controller.summonRewardName(recipe.materialId)} × ${recipe.quantity}',
+  if(recipe.magicCrystals>0)'魔晶石 × ${recipe.magicCrystals}',
+ ].join(' / ');
  Future<void> _favorite(EquipmentInstance item) async {
   if(widget.controller.inventoryBusy||_confirming)return;
   try {
@@ -33,7 +38,7 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
   try {
    final confirmed=await showDialog<bool>(context:context,builder:(dialogContext)=>AlertDialog(
     title:const Text('装備を分解しますか？'),
-    content:Text('$name +${item.enhancement} / ${item.id}\n獲得：${c.summonRewardName(recipe.materialId)} × ${recipe.quantity}\n分解すると装備を失います。この操作は取り消せません。'),
+    content:Text('$name +${item.enhancement} / ${item.id}\n獲得：${_rewardText(recipe)}\n分解すると装備を失います。この操作は取り消せません。'),
     actions:[
      TextButton(onPressed:()=>Navigator.pop(dialogContext,false),child:const Text('キャンセル')),
      FilledButton(onPressed:()=>Navigator.pop(dialogContext,true),child:const Text('分解を確定')),
@@ -41,7 +46,7 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
    ));
    if(!mounted||confirmed!=true)return;
    final reward=await c.dismantleWorldItem(item.id,item.enhancement);
-   if(mounted)setState(()=>_message='分解完了：${c.summonRewardName(reward.materialId)} × ${reward.quantity}');
+   if(mounted)setState(()=>_message='分解完了：${_rewardText(reward)}');
   }catch(_){
    if(mounted)setState(()=>_message='分解できませんでした。装備・保護状態を確認してください。');
   }finally{
@@ -89,7 +94,7 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
       if(item.favorite)const Text('お気に入り保護中'),
       if(item.enhancement>0)const Text('強化済み保護中'),
       if(c.dismantleRecipe(item.rarity) case final recipe?)
-       Text('分解報酬：${c.summonRewardName(recipe.materialId)} × ${recipe.quantity}'),
+       Text('分解報酬：${_rewardText(recipe)}'),
       if(c.dismantleUnavailable(item.id,item.enhancement) case final reason?)Text(reason),
       Wrap(spacing:8,children:[
        OutlinedButton(onPressed:locked?null:()=>_favorite(item),child:Text(item.favorite?'お気に入り解除':'お気に入り登録')),

@@ -53,16 +53,18 @@ class BattleRandom {
 
 /// 戦闘開始時に固定する、承認済み能動スキルの実行定義。
 class ActiveSkillSpec {
- const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown});
+ const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown,this.hits=1});
  final String id,name;
- final int powerPercent,physicalCost,cooldown;
+ final int powerPercent,physicalCost,cooldown,hits;
  void validate(){
-  if(!id.startsWith('skill:')||id.length<=6||name.trim().isEmpty||powerPercent<1||powerPercent>500||physicalCost<1||physicalCost>100||cooldown<0||cooldown>20)throw const FormatException('Invalid active skill spec');
+  if(!id.startsWith('skill:')||id.length<=6||name.trim().isEmpty||powerPercent<1||powerPercent>500||hits<1||hits>10||powerPercent*hits>500||physicalCost<1||physicalCost>100||cooldown<0||cooldown>20)throw const FormatException('Invalid active skill spec');
  }
- Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown};
+ Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown,'hits':hits};
  factory ActiveSkillSpec.fromJson(Map<String,dynamic> j){
   if(j['id'] is! String||j['name'] is! String||j['powerPercent'] is! int||j['physicalCost'] is! int||j['cooldown'] is! int)throw const FormatException('Invalid active skill spec');
-  final spec=ActiveSkillSpec(id:j['id'] as String,name:j['name'] as String,powerPercent:j['powerPercent'] as int,physicalCost:j['physicalCost'] as int,cooldown:j['cooldown'] as int);
+  final hits=j.containsKey('hits')?j['hits']:1;
+  if(hits is! int)throw const FormatException('Invalid skill hit count');
+  final spec=ActiveSkillSpec(hits:hits,id:j['id'] as String,name:j['name'] as String,powerPercent:j['powerPercent'] as int,physicalCost:j['physicalCost'] as int,cooldown:j['cooldown'] as int);
   spec.validate();
   return spec;
  }
@@ -330,11 +332,15 @@ class WorldEngine {
   w.physical-=activeSkillCost(w,spec);
   final bonus=b._buffs.containsKey(BattleBuff.attack)?1+BattleBuff.attack.percent/100:1.0;
   final chance=b._buffs.containsKey(BattleBuff.critical)?min<double>(1.0,s.crit+BattleBuff.critical.percent/100):s.crit;
-  final critical=_roll(b)<chance?1.5:1.0;
-  final variance=0.95+_roll(b)*0.10;
-  final dealt=damage(s.physical,e.defense,spec.powerPercent/100*bonus,critical:critical,variance:variance);
-  b.enemyHp=max(0,b.enemyHp-dealt);
-  b.log.add('${spec.name} — ${critical>1?'会心！ ':''}$dealt ダメージ');
+  // 各hitで独立に会心・乱数・防御・丸めを適用。撃破後は乱数を消費しない。
+  for(var hit=0;hit<spec.hits&&b.enemyHp>0;hit++){
+   final critical=_roll(b)<chance?1.5:1.0;
+   final variance=0.95+_roll(b)*0.10;
+   final dealt=damage(s.physical,e.defense,spec.powerPercent/100*bonus,critical:critical,variance:variance);
+   b.enemyHp=max(0,b.enemyHp-dealt);
+   final label=spec.hits==1?spec.name:'${spec.name} ${hit+1}/${spec.hits}';
+   b.log.add('$label — ${critical>1?'会心！ ':''}$dealt ダメージ');
+  }
   if(spec.cooldown>0)b._skillCooldowns[id]=spec.cooldown;
   if(_victory(w,now))return;
   _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id);

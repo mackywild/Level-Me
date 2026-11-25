@@ -113,7 +113,7 @@ class _WorldScreenState extends State<WorldScreen>{
        return OutlinedButton(
         key:ValueKey('active-skill-${spec.id}'),
         onPressed:busy||c.inventoryBusy||reason!=null?null:()=>run(()=>c.useBattleActiveSkill(spec.id,battleId,turn,expectedGeneration:generation)),
-        child:Text('${spec.name} / 物理 ${c.worldEngine.activeSkillCost(w,spec)} / 威力${spec.powerPercent}% / CD ${b.skillCooldowns[spec.id]??0}${reason==null?'':' / $reason'}'),
+        child:Text('${spec.name} / 物理 ${c.worldEngine.activeSkillCost(w,spec)} / 威力${spec.powerPercent}%${spec.hits==1?'':' × ${spec.hits}'} / CD ${b.skillCooldowns[spec.id]??0}${reason==null?'':' / $reason'}'),
        );
       }),
     ]),

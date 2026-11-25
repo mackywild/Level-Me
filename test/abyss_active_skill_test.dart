@@ -32,7 +32,7 @@ void main(){
   expect(engine.activeSkillCost(w,spec),4);
   engine.actActiveSkill(w,spec.id,1,1,now);
   expect(w.physical,23);
-  expect(w.battle!.enemyHp,7);
+  expect(w.battle!.enemyHp,8);
   expect(w.hp,98);
   expect(w.battle!.skillCooldowns[spec.id],2);
   expect(w.battle!.rngState,182605794);

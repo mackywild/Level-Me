@@ -120,11 +120,11 @@ void main(){
   final engine=WorldEngine(),w=world(),s=loadout(w);
   engine.start(w,stats,'p03_hunt',now,activeSkills:catalog.snapshot(s),lifeRewardBonuses:catalog.rewardSnapshot(s));
   final raw=w.battle!.toJson();
-  final missingActive=WorldState.fromJson({...w.toJson(),'battle':{...raw,'activeSkills':[]}});
+  final missingActive=WorldState.fromJson({...w.toJson(),'battle':{...raw,'activeSkills':[],'activeRuleSnapshots':[]}});
   expect(()=>catalog.validateBattle(missingActive,s),throwsFormatException);
   final missingRewards=WorldState.fromJson({...w.toJson(),'battle':{...raw,'lifeRewardBonuses':[],'lifeRewardPercent':100}});
   expect(()=>catalog.validateBattle(missingRewards,s),throwsFormatException);
-  final both=WorldState.fromJson({...w.toJson(),'battle':{...raw,'activeSkills':[],'lifeRewardBonuses':[],'lifeRewardPercent':100}});
+  final both=WorldState.fromJson({...w.toJson(),'battle':{...raw,'activeSkills':[],'activeRuleSnapshots':[],'lifeRewardBonuses':[],'lifeRewardPercent':100}});
   expect(()=>catalog.validateBattle(both,s),throwsFormatException);
   catalog.validateBattle(WorldState.fromJson(w.toJson()),s);
  });

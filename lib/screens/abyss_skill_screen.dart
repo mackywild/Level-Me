@@ -1,0 +1,82 @@
+import 'package:flutter/material.dart';
+import '../controllers/app_controller.dart';
+import '../world/abyss_skill.dart';
+
+class AbyssSkillScreen extends StatefulWidget {
+ const AbyssSkillScreen({super.key,required this.controller});
+ final AppController controller;
+ @override State<AbyssSkillScreen> createState()=>_AbyssSkillScreenState();
+}
+class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
+ SkillKind _kind=SkillKind.active;
+ bool _confirming=false;
+ String? _message;
+ Future<void> _change(SkillDefinition def,String action,int revision,int generation) async{
+  if(_confirming)return;
+  final c=widget.controller;
+  setState(()=>_confirming=true);
+  try{
+   final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+    title:Text('${def.name}を$actionしますか？'),
+    content:const Text('スキル構成の変更を保存します。'),
+    actions:[
+     TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('キャンセル')),
+     FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('確定')),
+    ],
+   ));
+   if(!mounted||confirmed!=true)return;
+   switch(action){
+    case '習得':await c.learnWorldSkill(def.id,expectedGeneration:generation,expectedRevision:revision);break;
+    case '装着':await c.equipWorldSkill(def.id,expectedGeneration:generation,expectedRevision:revision);break;
+    case '解除':await c.unequipWorldSkill(def.id,expectedGeneration:generation,expectedRevision:revision);break;
+   }
+   if(mounted)setState(()=>_message='$actionしました');
+  }catch(_){
+   if(mounted)setState(()=>_message='変更できませんでした。現在のスキル構成を確認してください。');
+  }finally{
+   if(mounted)setState(()=>_confirming=false);
+  }
+ }
+ String _label(SkillKind kind)=>kind==SkillKind.active?'能動':'パッシブ';
+ @override Widget build(BuildContext context)=>Scaffold(
+  appBar:AppBar(title:const Text('スキル管理')),
+  body:ListenableBuilder(listenable:widget.controller,builder:(context,child){
+   final c=widget.controller;
+   if(!c.ready)return const Center(child:Text('初期化中'));
+   final state=c.state.skills;
+   final revision=state.revision,generation=c.restoreGeneration;
+   final defs=c.skillDefinitions;
+   final names={for(final def in defs)def.id:def.name};
+   final locked=_confirming||c.inventoryBusy||c.state.world.battle!=null;
+   return ListView(padding:const EdgeInsets.all(16),children:[
+    const Text('ABYSS SKILL',style:TextStyle(fontSize:24,fontWeight:FontWeight.bold,color:Color(0xffd5b36e))),
+    for(final kind in SkillKind.values)...[
+     Text('${_label(kind)}スキル：${(kind==SkillKind.active?state.active:state.passive).length} / ${SkillState.limit(kind)}'),
+     for(var i=0;i<SkillState.limit(kind);i++)
+      ListTile(dense:true,leading:const Icon(Icons.auto_awesome),title:Text('枠 ${i+1}：${i<(kind==SkillKind.active?state.active:state.passive).length?names[(kind==SkillKind.active?state.active:state.passive)[i]]??'不明':'空き枠'}')),
+    ],
+    if(c.state.world.battle!=null)const Text('戦闘中は変更できません'),
+    if(c.inventoryBusy)const LinearProgressIndicator(),
+    if(_message!=null)Text(_message!),
+    if(defs.isEmpty)const Text('公開済みスキルなし')
+    else...[
+     Wrap(spacing:8,children:[
+      for(final kind in SkillKind.values)ChoiceChip(label:Text(_label(kind)),selected:_kind==kind,onSelected:(_)=>setState(()=>_kind=kind)),
+     ]),
+     for(final def in defs.where((d)=>d.kind==_kind))
+      Builder(builder:(context){
+       final learned=state.learned.containsKey(def.id);
+       final slots=def.kind==SkillKind.active?state.active:state.passive;
+       final equipped=slots.contains(def.id);
+       final action=equipped?'解除':learned?'装着':'習得';
+       final full=learned&&!equipped&&slots.length>=SkillState.limit(def.kind);
+       return Card(child:ListTile(
+        title:Text(def.name),subtitle:Text(equipped?'装着中':learned?'習得済み':'未習得'),
+        trailing:OutlinedButton(key:ValueKey('skill-${def.id}'),onPressed:locked||full?null:()=>_change(def,action,revision,generation),child:Text(full?'枠満杯':action)),
+       ));
+      }),
+    ],
+   ]);
+  }),
+ );
+}

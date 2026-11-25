@@ -10,6 +10,9 @@ class SkillDefinition {
 
 class SkillState {
  static const activeLimit=6,passiveLimit=3;
+ int _revision=0;
+ int get revision=>_revision;
+ void _checkRevision(){if(_revision==0x7fffffffffffffff)throw StateError('Skill revision overflow');}
  final Map<String,int> _learned={};
  final List<String> _active=[],_passive=[];
  Map<String,int> get learned=>Map.unmodifiable(_learned);
@@ -18,15 +21,18 @@ class SkillState {
  List<String> _slots(SkillKind kind)=>kind==SkillKind.active?_active:_passive;
  static int limit(SkillKind kind)=>kind==SkillKind.active?activeLimit:passiveLimit;
  static bool validId(String id)=>id.startsWith('skill:')&&id.length>6&&id.trim()==id;
- Map<String,dynamic> toJson()=>{'version':1,'learned':Map<String,int>.of(_learned),'active':List<String>.of(_active),'passive':List<String>.of(_passive)};
+ Map<String,dynamic> toJson()=>{'version':1,'revision':_revision,'learned':Map<String,int>.of(_learned),'active':List<String>.of(_active),'passive':List<String>.of(_passive)};
  factory SkillState.fromJson(Map<String,dynamic> j){
   if(j['version'] is! int||j['version']!=1)throw const FormatException('Invalid skill version');
   final state=SkillState();
+  final revision=j.containsKey('revision')?j['revision']:0;
+  if(revision is! int||revision<0)throw const FormatException('Invalid skill revision');
+  state._revision=revision;
   final learned=j['learned'];
   if(learned is! Map<String,dynamic>)throw const FormatException('Invalid learned skills');
   for(final entry in learned.entries){
    final count=entry.value;
-   if(!validId(entry.key)||count is! int||count<0)throw const FormatException('Invalid skill record');
+   if(!validId(entry.key)||count is! int||count!=0)throw const FormatException('Invalid skill record');
    state._learned[entry.key]=count;
   }
   final seen=<String>{};
@@ -70,17 +76,24 @@ class SkillCatalog {
  void learn(WorldState world,SkillState state,String id){
   _require(world,id);
   if(state._learned.containsKey(id))throw StateError('Skill already learned');
+  state._checkRevision();
   state._learned[id]=0;
+  state._revision++;
  }
  void equip(WorldState world,SkillState state,String id){
   final def=_require(world,id);
   if(!state._learned.containsKey(id))throw StateError('Skill not learned');
   final slots=state._slots(def.kind);
   if(slots.contains(id)||slots.length>=SkillState.limit(def.kind))throw StateError('Skill slot unavailable');
+  state._checkRevision();
   slots.add(id);
+  state._revision++;
  }
  void unequip(WorldState world,SkillState state,String id){
   final def=_require(world,id);
-  if(!state._slots(def.kind).remove(id))throw StateError('Skill not equipped');
+  if(!state._slots(def.kind).contains(id))throw StateError('Skill not equipped');
+  state._checkRevision();
+  state._slots(def.kind).remove(id);
+  state._revision++;
  }
 }

@@ -565,5 +565,260 @@
       "rarity": "sr",
       "category": "purification"
     }
+  ],
+  "skillEnabled": false,
+  "skills": [
+    {
+      "id": "skill:claw",
+      "name": "紅爪",
+      "kind": "active",
+      "family": "physical"
+    },
+    {
+      "id": "skill:swift_fist",
+      "name": "瞬拳",
+      "kind": "active",
+      "family": "physical"
+    },
+    {
+      "id": "skill:double_claw",
+      "name": "双爪",
+      "kind": "active",
+      "family": "physical"
+    },
+    {
+      "id": "skill:heavy_claw",
+      "name": "連爪",
+      "kind": "active",
+      "family": "physical"
+    },
+    {
+      "id": "skill:armor_break",
+      "name": "破甲撃",
+      "kind": "active",
+      "family": "physical"
+    },
+    {
+      "id": "skill:shock",
+      "name": "震撃",
+      "kind": "active",
+      "family": "physical"
+    },
+    {
+      "id": "skill:flurry",
+      "name": "乱舞",
+      "kind": "active",
+      "family": "physical"
+    },
+    {
+      "id": "skill:crimson_flurry",
+      "name": "紅蓮乱舞",
+      "kind": "active",
+      "family": "physical"
+    },
+    {
+      "id": "skill:slow",
+      "name": "時間遅延",
+      "kind": "active",
+      "family": "time"
+    },
+    {
+      "id": "skill:time_bind",
+      "name": "時縛",
+      "kind": "active",
+      "family": "time"
+    },
+    {
+      "id": "skill:stop",
+      "name": "時間停止",
+      "kind": "active",
+      "family": "time"
+    },
+    {
+      "id": "skill:time_seal",
+      "name": "時間封鎖",
+      "kind": "active",
+      "family": "time"
+    },
+    {
+      "id": "skill:foresight",
+      "name": "未来視",
+      "kind": "active",
+      "family": "time"
+    },
+    {
+      "id": "skill:time_break",
+      "name": "時間断絶",
+      "kind": "active",
+      "family": "time"
+    },
+    {
+      "id": "skill:still_field",
+      "name": "静止領域",
+      "kind": "active",
+      "family": "time"
+    },
+    {
+      "id": "skill:eternal_bind",
+      "name": "永劫拘束",
+      "kind": "active",
+      "family": "time"
+    },
+    {
+      "id": "skill:accelerate",
+      "name": "時間加速",
+      "kind": "active",
+      "family": "acceleration"
+    },
+    {
+      "id": "skill:flash_step",
+      "name": "瞬動",
+      "kind": "active",
+      "family": "acceleration"
+    },
+    {
+      "id": "skill:speed_claw",
+      "name": "時速爪",
+      "kind": "active",
+      "family": "acceleration"
+    },
+    {
+      "id": "skill:afterimage",
+      "name": "残像",
+      "kind": "active",
+      "family": "acceleration"
+    },
+    {
+      "id": "skill:overdrive",
+      "name": "超加速",
+      "kind": "active",
+      "family": "acceleration"
+    },
+    {
+      "id": "skill:gale_claws",
+      "name": "疾風乱爪",
+      "kind": "active",
+      "family": "acceleration"
+    },
+    {
+      "id": "skill:godspeed_field",
+      "name": "神速領域",
+      "kind": "active",
+      "family": "acceleration"
+    },
+    {
+      "id": "skill:wound_repair",
+      "name": "傷時修復",
+      "kind": "active",
+      "family": "repair"
+    },
+    {
+      "id": "skill:body_repair",
+      "name": "肉体修復",
+      "kind": "active",
+      "family": "repair"
+    },
+    {
+      "id": "skill:time_cleanse",
+      "name": "時の浄化",
+      "kind": "active",
+      "family": "repair"
+    },
+    {
+      "id": "skill:rewind",
+      "name": "時間逆行",
+      "kind": "active",
+      "family": "repair"
+    },
+    {
+      "id": "skill:life_rewind",
+      "name": "生命逆行",
+      "kind": "active",
+      "family": "repair"
+    },
+    {
+      "id": "skill:full_repair",
+      "name": "完全修復",
+      "kind": "active",
+      "family": "repair"
+    },
+    {
+      "id": "skill:gluttony",
+      "name": "悪食",
+      "kind": "passive",
+      "family": "predation"
+    },
+    {
+      "id": "skill:time_absorption",
+      "name": "時の吸収",
+      "kind": "passive",
+      "family": "predation"
+    },
+    {
+      "id": "skill:predator_instinct",
+      "name": "捕食本能",
+      "kind": "passive",
+      "family": "predation"
+    },
+    {
+      "id": "skill:time_storage",
+      "name": "時間貯蔵",
+      "kind": "passive",
+      "family": "predation"
+    },
+    {
+      "id": "skill:predator_pressure",
+      "name": "捕食者の威圧",
+      "kind": "passive",
+      "family": "predation"
+    },
+    {
+      "id": "skill:abyss_appetite",
+      "name": "深淵の食欲",
+      "kind": "passive",
+      "family": "predation"
+    },
+    {
+      "id": "skill:crimson_awakening",
+      "name": "紅き覚醒",
+      "kind": "active",
+      "family": "awakening"
+    },
+    {
+      "id": "skill:still_claw",
+      "name": "静止爪撃",
+      "kind": "active",
+      "family": "awakening"
+    },
+    {
+      "id": "skill:chrono_combo",
+      "name": "超時連撃",
+      "kind": "active",
+      "family": "awakening"
+    },
+    {
+      "id": "skill:red_eye",
+      "name": "紅眼解放",
+      "kind": "active",
+      "family": "awakening"
+    },
+    {
+      "id": "skill:spacetime_break",
+      "name": "時空断裂",
+      "kind": "active",
+      "family": "awakening"
+    },
+    {
+      "id": "skill:time_end",
+      "name": "時の終焉",
+      "kind": "active",
+      "family": "awakening"
+    },
+    {
+      "id": "skill:world_collapse",
+      "name": "時界崩壊",
+      "kind": "active",
+      "family": "awakening"
+    }
   ]
 }

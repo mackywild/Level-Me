@@ -124,7 +124,7 @@ void main(){
   expect(()=>WorldState.fromJson({...w.toJson(),'cleared':['p01_main','p02_main']}),throwsFormatException);
   final old=world();
   engine.start(old,stats,'p03_hunt',now);
-  final oldRaw=old.battle!.toJson()..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses');
+  final oldRaw=old.battle!.toJson()..remove('encounterSnapshot')..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses');
   catalog.validateBattle(WorldState.fromJson({...old.toJson(),'battle':oldRaw}),SkillState());
   final locked=WorldState();
   final before=jsonEncode(locked.toJson());

@@ -6,6 +6,24 @@ class WorldEncounter {
  final String id,title,enemy,rank;
  final int stage,hp,attack,defense,gold,lifeDays,regenerationPercent;
  final bool main,timeResistant;
+ /// 戦闘開始時の遭遇定義。マスターの省略可能項目も明示保存する。
+ Map<String,dynamic> toBattleJson()=>{'id':id,'stage':stage,'title':title,'enemy':enemy,'hp':hp,'attack':attack,'defense':defense,'gold':gold,'main':main,'lifeDays':lifeDays,'rank':rank,'timeResistant':timeResistant,'regenerationPercent':regenerationPercent};
+ factory WorldEncounter.fromBattleJson(Map<String,dynamic> j,String expectedId){
+  for(final key in const ['id','title','enemy','rank']){
+   final value=j[key];
+   if(value is! String||(key!='rank'&&value.isEmpty))throw FormatException('Invalid encounter snapshot string: $key');
+  }
+  for(final key in const ['stage','hp','attack','defense','gold','lifeDays','regenerationPercent']){
+   if(j[key] is! int)throw FormatException('Invalid encounter snapshot integer: $key');
+  }
+  if(j['main'] is! bool||j['timeResistant'] is! bool)throw const FormatException('Invalid encounter snapshot flags');
+  final e=WorldEncounter.fromJson(j);
+  if(e.id!=expectedId||e.stage<1||e.hp<1||e.attack<0||e.defense<0||e.gold<0||e.lifeDays<0)throw const FormatException('Invalid encounter snapshot values');
+  // 進行IDの消滅・ステージ移動・初回券種別変更は自動移行しない。
+  final matches=WorldCatalog.encounters.where((current)=>current.id==expectedId);
+  if(matches.isEmpty||matches.single.stage!=e.stage||matches.single.main!=e.main)throw const FormatException('Incompatible encounter identity');
+  return e;
+ }
  factory WorldEncounter.fromJson(Map<String,dynamic> j){
   final regeneration=j.containsKey('regenerationPercent')?j['regenerationPercent']:0;
   if(regeneration is! int||regeneration<0||regeneration>100)throw const FormatException('Invalid enemy regeneration');

@@ -186,6 +186,7 @@ class AppController extends ChangeNotifier {
   }on StateError catch(error){
    return switch(error.message){
     'Buff already active'=>'効果発動中',
+    'Enemy has no regeneration'=>'敵に再生能力がありません',
     'Insufficient items'=>'所持数不足',
     _=>'使用できません',
    };

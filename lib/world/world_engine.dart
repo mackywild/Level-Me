@@ -1,12 +1,12 @@
 import 'dart:math';
 import 'world_catalog.dart';
 
-enum BattleBuff { attack, defense, regeneration, critical, evasion, energyDiscount, lethalProtection }
+enum BattleBuff { attack, defense, regeneration, critical, evasion, energyDiscount, lethalProtection, regenerationSuppression }
 
 extension BattleBuffRules on BattleBuff {
- int get percent=>switch(this){BattleBuff.attack=>25,BattleBuff.defense=>40,BattleBuff.regeneration=>5,BattleBuff.critical=>25,BattleBuff.evasion=>20,BattleBuff.energyDiscount=>30,BattleBuff.lethalProtection=>100};
+ int get percent=>switch(this){BattleBuff.attack=>25,BattleBuff.defense=>40,BattleBuff.regeneration=>5,BattleBuff.critical=>25,BattleBuff.evasion=>20,BattleBuff.energyDiscount=>30,BattleBuff.lethalProtection=>100,BattleBuff.regenerationSuppression=>50};
  int get duration=>switch(this){BattleBuff.regeneration=>5,BattleBuff.evasion=>2,BattleBuff.lethalProtection=>1,_=>3};
- String get label=>switch(this){BattleBuff.attack=>'攻撃強化',BattleBuff.defense=>'防御強化',BattleBuff.regeneration=>'継続回復',BattleBuff.critical=>'会心率上昇',BattleBuff.evasion=>'回避率上昇',BattleBuff.energyDiscount=>'エネルギー消費軽減',BattleBuff.lethalProtection=>'致死耐性'};
+ String get label=>switch(this){BattleBuff.attack=>'攻撃強化',BattleBuff.defense=>'防御強化',BattleBuff.regeneration=>'継続回復',BattleBuff.critical=>'会心率上昇',BattleBuff.evasion=>'回避率上昇',BattleBuff.energyDiscount=>'エネルギー消費軽減',BattleBuff.lethalProtection=>'致死耐性',BattleBuff.regenerationSuppression=>'敵再生抑制'};
  bool get isCharge=>this==BattleBuff.lethalProtection;
  String get description=>isCharge?'致死ダメージ1回をHP1で耐える（戦闘終了まで）':'$label $percent% / $durationターン';
 }
@@ -249,6 +249,7 @@ class WorldEngine {
   final b=w.battle;
   if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
   if(b._buffs.containsKey(kind))throw StateError('Buff already active');
+  if(kind==BattleBuff.regenerationSuppression&&WorldCatalog.byId(b.encounterId).regenerationPercent==0)throw StateError('Enemy has no regeneration');
   if(b.turn==0x7fffffffffffffff)throw StateError('Battle turn overflow');
  }
  void finishBuffTurn(WorldState w,BattleBuff kind,int battleId,int expectedTurn,int now,String name){
@@ -286,6 +287,16 @@ class WorldEngine {
    final amount=min(s.hp-w.hp,max(1,(s.hp~/100)*BattleBuff.regeneration.percent+(s.hp%100)*BattleBuff.regeneration.percent~/100));
    w.hp+=amount;
    if(amount>0)b.log.add('継続回復 — HP +$amount');
+  }
+  if(!skipEnemy&&e.regenerationPercent>0&&b.enemyHp>0&&b.enemyHp<e.hp){
+   final base=max<int>(1,(e.hp~/100)*e.regenerationPercent+(e.hp%100)*e.regenerationPercent~/100);
+   final effective=b._buffs.containsKey(BattleBuff.regenerationSuppression)
+    ?(base~/100)*(100-BattleBuff.regenerationSuppression.percent)+(base%100)*(100-BattleBuff.regenerationSuppression.percent)~/100
+    :base;
+   final healed=min<int>(e.hp-b.enemyHp,effective);
+   b.enemyHp+=healed;
+   if(healed>0)b.log.add('敵の再生 — HP +$healed');
+   if(b._buffs.containsKey(BattleBuff.regenerationSuppression))b.log.add('敵再生抑制 — 回復量50%軽減');
   }
   for(final kind in b._buffs.keys.toList()){
    if(kind==newBuff||kind.isCharge)continue;

@@ -87,6 +87,7 @@ class _WorldScreenState extends State<WorldScreen>{
      const SizedBox(height:8),Center(child:Icon(Icons.security,size:76,color:crimson.withValues(alpha:0.85))),
      Center(child:Text(enemy.enemy,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:21))),
      meter('ENEMY HP',b.enemyHp,enemy.hp,Colors.deepPurpleAccent),
+     if(enemy.regenerationPercent>0)Text('敵再生：最大HPの ${enemy.regenerationPercent}% / 行動終了時'),
      if(b.acceleratedClaws>0)Text('自己加速：紅爪 残り ${b.acceleratedClaws} 回'),
      if(b.stopCooldown>0)Text('停止系共通：CD ${b.stopCooldown}'),
      if(b.slowTurns>0)Text('時間遅延：残り ${b.slowTurns} ターン'),

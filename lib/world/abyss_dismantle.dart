@@ -27,8 +27,6 @@ class DismantlePolicy {
   if(world.battle!=null)throw StateError('Dismantle unavailable in battle');
   final item=inventory.requireDismantleable(id,expectedLevel);
   catalog.require(item);
-  // 強化済み装備の還元条件は未決定。現段階では保護する。
-  if(item.enhancement!=0)throw StateError('Enhanced equipment protected');
   final reward=recipe(item.rarity);
   if(reward==null)throw StateError('Dismantle recipe unavailable');
   final current=inventory.stacks[reward.materialId]??0;

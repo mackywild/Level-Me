@@ -29,7 +29,7 @@ void main(){
   final engine=WorldEngine(),w=world();
   engine.start(w,stats,'p03_hunt',now);
   final raw=w.battle!.toJson();
-  expect(raw['executionVersion'],2);
+  expect(raw['executionVersion'],3);
   expect(raw['activeSkills'],isEmpty);
   expect(raw['skillCooldowns'],isEmpty);
   expect(raw['lifeRewardBonuses'],isEmpty);
@@ -45,7 +45,7 @@ void main(){
   for(final key in ['executionVersion','activeSkills','skillCooldowns','lifeRewardBonuses','lifeRewardPercent']){
    expect(()=>WorldBattle.fromJson({...raw}..remove(key)),throwsFormatException,reason:key);
   }
-  for(final bad in [null,0,3,1.0,'1']){
+  for(final bad in [null,0,4,1.0,'1']){
    expect(()=>WorldBattle.fromJson({...raw,'executionVersion':bad}),throwsFormatException);
   }
   for(final bad in [null,100,129,131,130.0,'130']){
@@ -58,7 +58,7 @@ void main(){
   expect(()=>WorldBattle.fromJson({...raw,'skillCooldowns':null}),throwsFormatException);
   expect(()=>WorldBattle.fromJson({...raw,'activeSkills':null}),throwsFormatException);
  });
- test('RV-130: v2の全非条件付き項目の欠落・null・誤型を拒否する',(){
+ test('RV-130: v3の全非条件付き項目の欠落・null・誤型を拒否する',(){
   final engine=WorldEngine(),w=world(),s=loadout(w);
   engine.start(w,stats,'p03_hunt',now,activeSkills:catalog.snapshot(s),lifeRewardBonuses:catalog.rewardSnapshot(s));
   final raw=w.battle!.toJson();
@@ -93,7 +93,7 @@ void main(){
    expect(()=>WorldBattle.fromJson({...raw,'stats':{...baseStats,'crit':crit}}),throwsFormatException);
   }
  });
- test('RV-130: v2の進行中状態を維持し、旧形式だけ補完を許容する',(){
+ test('RV-130: v3の進行中状態を維持し、旧形式だけ補完を許容する',(){
   final w=world(),engine=WorldEngine();
   engine.start(w,stats,'p03_hunt',now);
   final raw=w.battle!.toJson();
@@ -101,7 +101,7 @@ void main(){
    'slowTurns':1,'energyRemainder':123,'hpRemainder':456,'buffs':{'attack':2},'statuses':{'poison':1}};
   final restored=WorldState.fromJson({...w.toJson(),'battle':progressed});
   expect(restored.battle!.toJson(),progressed);
-  final legacy={...progressed}..remove('encounterSnapshot')..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses')
+  final legacy={...progressed}..remove('activeRuleSnapshots')..remove('encounterSnapshot')..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses')
    ..remove('rngVersion')..remove('rngState')..remove('buffs')..remove('statuses')
    ..remove('acceleratedClaws')..remove('stopCooldown')..remove('energyRemainder')..remove('hpRemainder');
   final old=WorldState.fromJson({...w.toJson(),'battle':legacy}).battle!;
@@ -120,11 +120,11 @@ void main(){
   final engine=WorldEngine(),w=world(),s=loadout(w);
   engine.start(w,stats,'p03_hunt',now,activeSkills:catalog.snapshot(s),lifeRewardBonuses:catalog.rewardSnapshot(s));
   final raw=w.battle!.toJson();
-  final missingActive=WorldState.fromJson({...w.toJson(),'battle':{...raw,'activeSkills':[]}});
+  final missingActive=WorldState.fromJson({...w.toJson(),'battle':{...raw,'activeSkills':[],'activeRuleSnapshots':[]}});
   expect(()=>catalog.validateBattle(missingActive,s),throwsFormatException);
   final missingRewards=WorldState.fromJson({...w.toJson(),'battle':{...raw,'lifeRewardBonuses':[],'lifeRewardPercent':100}});
   expect(()=>catalog.validateBattle(missingRewards,s),throwsFormatException);
-  final both=WorldState.fromJson({...w.toJson(),'battle':{...raw,'activeSkills':[],'lifeRewardBonuses':[],'lifeRewardPercent':100}});
+  final both=WorldState.fromJson({...w.toJson(),'battle':{...raw,'activeSkills':[],'activeRuleSnapshots':[],'lifeRewardBonuses':[],'lifeRewardPercent':100}});
   expect(()=>catalog.validateBattle(both,s),throwsFormatException);
   catalog.validateBattle(WorldState.fromJson(w.toJson()),s);
  });
@@ -149,7 +149,7 @@ void main(){
   engine.start(w,stats,'p03_hunt',now,activeSkills:catalog.snapshot(s),lifeRewardBonuses:catalog.rewardSnapshot(s));
   final restored=WorldState.fromJson(jsonDecode(jsonEncode(w.toJson())) as Map<String,dynamic>);
   expect(restored.battle!.lifeRewardPercent,130);
-  expect(restored.battle!.executionVersion,2);
+  expect(restored.battle!.executionVersion,3);
   final id=restored.battle!.id;
   engine.actActiveSkill(restored,spec.id,id,1,now);
   expect(restored.battle,isNull);
@@ -158,7 +158,7 @@ void main(){
   expect(restored.supplyTickets,1);
  });
  test('実ファイル：版付きsnapshotの再起動・能動勝利・報酬/熟練度保存',() async{
-  final dir=await Directory.systemTemp.createTemp('battle-execution-v2-');
+  final dir=await Directory.systemTemp.createTemp('battle-execution-v3-');
   addTearDown(()=>dir.delete(recursive:true));
   final store=LocalStore(directory:dir);
   final c=AppController(store,skillCatalog:catalog,clockMs:()=>now);
@@ -175,7 +175,7 @@ void main(){
   await c.startWorldBattle('p03_hunt');
   final id=c.state.world.battle!.id;
   final raw=c.state.world.battle!.toJson();
-  expect(raw['executionVersion'],2);
+  expect(raw['executionVersion'],3);
   expect(raw['lifeRewardPercent'],130);
   final restored=AppController(LocalStore(directory:dir),skillCatalog:catalog,clockMs:()=>now);
   addTearDown(restored.dispose);

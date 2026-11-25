@@ -212,7 +212,9 @@ class SkillCatalog {
   final rule=def.acquisition;
   if(playerLevel<rule.playerLevel)return 'プレイヤーLv.${rule.playerLevel}が必要';
   if(rule.clearedStage>0&&!world.cleared.contains(WorldCatalog.mainId(rule.clearedStage)))return 'STAGE ${rule.clearedStage}クリアが必要';
-  if(def.execution?.usesStopCooldown==true&&id=='skill:chrono_combo'&&!world.cleared.contains(WorldCatalog.mainId(6)))return 'STAGE 06クリアが必要';
+  for(final stage in def.execution?.rules.requiredStages??const <int>[]){
+   if(!world.cleared.contains(WorldCatalog.mainId(stage)))return 'STAGE ${stage.toString().padLeft(2,'0')}クリアが必要';
+  }
   final parent=rule.prerequisiteId;
   if(parent!=null){
    final count=state._learned[parent];

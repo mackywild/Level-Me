@@ -21,7 +21,7 @@ void main(){
   WorldCatalog.loadJson(jsonEncode(root));
  }
  WorldState world()=>WorldState(cleared:{'p01_main','p02_main','p03_main','p12_main'},hpAt:now,energyAt:now,lifespan:BigInt.from(100));
- test('v2は敵定義を完全保存し変更後もHP・名称・反撃・報酬が固定',(){
+ test('新形式は敵定義を完全保存し変更後もHP・名称・反撃・報酬が固定',(){
   final engine=WorldEngine(),w=world();
   engine.start(w,stats,'p03_hunt',now,lifeRewardBonuses:[LifeRewardBonus.timeAbsorption,LifeRewardBonus.predatorInstinct]);
   final raw=jsonEncode(w.toJson());
@@ -30,7 +30,7 @@ void main(){
   expect(w.battle!.encounter.toBattleJson(),frozen);
   final restored=WorldState.fromJson(jsonDecode(raw) as Map<String,dynamic>);
   final b=restored.battle!;
-  expect(b.executionVersion,2);
+  expect(b.executionVersion,3);
   expect(b.encounter.toBattleJson(),frozen);
   expect(b.enemyHp,35);
   expect(b.encounter.hp,35);
@@ -84,7 +84,7 @@ void main(){
   ]){
    expect(()=>WorldBattle.fromJson({...raw,'encounterSnapshot':invalid}),throwsFormatException);
   }
-  expect(()=>WorldBattle.fromJson({...raw}..remove('encounterSnapshot')),throwsFormatException);
+  expect(()=>WorldBattle.fromJson({...raw}..remove('activeRuleSnapshots')..remove('encounterSnapshot')),throwsFormatException);
   expect(()=>WorldBattle.fromJson({...raw,'encounterSnapshot':null}),throwsFormatException);
   expect(()=>WorldBattle.fromJson({...raw,'executionVersion':1}),throwsFormatException);
   expect(()=>WorldState.fromJson({...w.toJson(),'battle':{...raw,'enemyHp':36}}),throwsFormatException);
@@ -92,7 +92,7 @@ void main(){
  test('v1と版番号なしは従来のmaster参照で継続しv2へ昇格しない',(){
   final engine=WorldEngine(),w=world();
   engine.start(w,stats,'p03_hunt',now);
-  final v1=w.battle!.toJson()..remove('encounterSnapshot');
+  final v1=w.battle!.toJson()..remove('activeRuleSnapshots')..remove('encounterSnapshot');
   v1['executionVersion']=1;
   final legacy={...v1}..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses');
   change('p03_hunt',{'hp':50,'gold':80,'lifeDays':90});

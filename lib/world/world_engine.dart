@@ -54,6 +54,45 @@ class BattleRandom {
 /// 戦闘開始時に固定する、承認済み能動スキルの実行定義。
 enum ActiveSkillEffect { physical, foresight, accelerationAttack, repairHp, timeCleanse, rewindHp, crimsonAwakening, stopAttack, ultimateAttack }
 
+/// 既存の能動効果を固定した規則v1。将来の性能変更は別版として追加する。
+class ActiveSkillRulesV1 {
+ const ActiveSkillRulesV1({this.requiredStages=const [],this.repairPercent=0,this.awakeningPercent=0,this.awakeningDuration=0,this.sharedStopCooldown=0});
+ static const version=1,crimsonPercent=30,crimsonDuration=3,stopCooldown=5;
+ final List<int> requiredStages;
+ final int repairPercent,awakeningPercent,awakeningDuration,sharedStopCooldown;
+ static ActiveSkillRulesV1 forSpec(ActiveSkillSpec spec)=>switch(spec.effect){
+  ActiveSkillEffect.physical=>const ActiveSkillRulesV1(),
+  ActiveSkillEffect.foresight=>const ActiveSkillRulesV1(requiredStages:[9]),
+  ActiveSkillEffect.accelerationAttack=>const ActiveSkillRulesV1(requiredStages:[6]),
+  ActiveSkillEffect.repairHp=>ActiveSkillRulesV1(requiredStages:const [3],repairPercent:switch(spec.id){
+   'skill:wound_repair'=>10,'skill:body_repair'=>25,'skill:life_rewind'=>50,'skill:full_repair'=>100,_=>0,
+  }),
+  ActiveSkillEffect.timeCleanse=>const ActiveSkillRulesV1(requiredStages:[3]),
+  ActiveSkillEffect.rewindHp=>const ActiveSkillRulesV1(requiredStages:[16]),
+  ActiveSkillEffect.crimsonAwakening=>const ActiveSkillRulesV1(requiredStages:[12],awakeningPercent:crimsonPercent,awakeningDuration:crimsonDuration),
+  ActiveSkillEffect.stopAttack=>ActiveSkillRulesV1(requiredStages:spec.id=='skill:chrono_combo'?const [12,6]:const [12],sharedStopCooldown:stopCooldown),
+  ActiveSkillEffect.ultimateAttack=>ActiveSkillRulesV1(requiredStages:switch(spec.id){
+   'skill:spacetime_break'=>const [18],'skill:world_collapse'=>const [21],_=>const <int>[],
+  }),
+ };
+ Map<String,dynamic> toJson(String id)=>{'id':id,'version':version,'requiredStages':requiredStages,'repairPercent':repairPercent,'awakeningPercent':awakeningPercent,'awakeningDuration':awakeningDuration,'sharedStopCooldown':sharedStopCooldown};
+ static void validateSnapshot(Object? raw,List<ActiveSkillSpec> specs){
+  if(raw is! List||raw.length!=specs.length)throw const FormatException('Invalid active rule snapshot count');
+  for(var i=0;i<specs.length;i++){
+   final row=raw[i],expected=forSpec(specs[i]).toJson(specs[i].id);
+   if(row is! Map<String,dynamic>||row.length!=expected.length||row['id']!=expected['id'])throw const FormatException('Invalid active rule snapshot');
+   for(final key in const ['version','repairPercent','awakeningPercent','awakeningDuration','sharedStopCooldown']){
+    if(row[key] is! int||row[key]!=expected[key])throw FormatException('Invalid active rule field: $key');
+   }
+   final stages=row['requiredStages'],required=forSpec(specs[i]).requiredStages;
+   if(stages is! List||stages.length!=required.length)throw const FormatException('Invalid active rule stages');
+   for(var j=0;j<required.length;j++){
+    if(stages[j] is! int||stages[j]!=required[j])throw const FormatException('Invalid active rule stage');
+   }
+  }
+ }
+}
+
 class ActiveSkillSpec {
  const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown,this.hits=1,this.effect=ActiveSkillEffect.physical,this.lifeCost=0});
  final String id,name;
@@ -62,21 +101,11 @@ class ActiveSkillSpec {
  void validate(){
   if(!id.startsWith('skill:')||id.length<=6||name.trim().isEmpty||cooldown<0||cooldown>20||!_validEffect)throw const FormatException('Invalid active skill spec');
  }
- /// 試験候補の回復割合。実行定義のIDと効果種別から固定する。
- int get repairPercent=>effect!=ActiveSkillEffect.repairHp?0:switch(id){
-  'skill:wound_repair'=>10,
-  'skill:body_repair'=>25,
-  'skill:life_rewind'=>50,
-  'skill:full_repair'=>100,
-  _=>0,
- };
- bool get usesStopCooldown=>effect==ActiveSkillEffect.stopAttack;
- /// 奥義個別の試験解放条件。一般物理の500%上限は変更しない。
- int get ultimateUnlockStage=>effect!=ActiveSkillEffect.ultimateAttack?0:switch(id){
-  'skill:spacetime_break'=>18,
-  'skill:world_collapse'=>21,
-  _=>0,
- };
+ ActiveSkillRulesV1 get rules=>ActiveSkillRulesV1.forSpec(this);
+ int get repairPercent=>rules.repairPercent;
+ bool get usesStopCooldown=>rules.sharedStopCooldown>0;
+ int get ultimateUnlockStage=>effect==ActiveSkillEffect.ultimateAttack&&rules.requiredStages.isNotEmpty?rules.requiredStages.single:0;
+ /// v1の定義許容範囲。旧版の意味を変更しない。
  bool get _validEffect=>switch(effect){
   ActiveSkillEffect.physical=>powerPercent>=1&&powerPercent<=500&&hits>=1&&hits<=10&&powerPercent*hits<=500&&physicalCost>=1&&physicalCost<=100&&lifeCost==0,
   ActiveSkillEffect.foresight=>powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==14&&cooldown>=1,
@@ -136,15 +165,16 @@ class WorldBattle {
  int? get previousTurnHp=>_rewindHistory?.previousHp;
  int _awakeningTurns;
  int get awakeningTurns=>_awakeningTurns;
- static const awakeningPercent=30,awakeningDuration=3;
+ static const awakeningPercent=ActiveSkillRulesV1.crimsonPercent,awakeningDuration=ActiveSkillRulesV1.crimsonDuration;
+ ActiveSkillRulesV1 get awakeningRules=>activeSkills.firstWhere((s)=>s.effect==ActiveSkillEffect.crimsonAwakening).rules;
  int _rngState;
  int get rngState=>_rngState;
  final Map<BattleBuff,int> _buffs;
  final Map<BattleStatus,int> _statuses;
  final List<ActiveSkillSpec> activeSkills;
  final List<LifeRewardBonus> lifeRewardBonuses;
- /// v1は敵master参照、v2は敵定義も固定。nullは版番号導入前。
- static const currentExecutionVersion=2;
+ /// v1は敵master参照、v2は敵定義固定、v3は能動規則v1も明示。nullは版番号導入前。
+ static const currentExecutionVersion=3;
  final WorldEncounter? _encounterSnapshot;
  WorldEncounter get encounter=>_encounterSnapshot??WorldCatalog.byId(encounterId);
  final int? executionVersion;
@@ -154,19 +184,22 @@ class WorldBattle {
  Map<String,int> get skillCooldowns=>Map.unmodifiable(_skillCooldowns);
  Map<BattleStatus,int> get statuses=>Map.unmodifiable(_statuses);
  Map<BattleBuff,int> get buffs=>Map.unmodifiable(_buffs);
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),if(executionVersion!=null)'executionVersion':executionVersion,if(executionVersion!=null)'lifeRewardPercent':lifeRewardPercent,if(executionVersion==2)'encounterSnapshot':_encounterSnapshot!.toBattleJson(),if(activeSkills.any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening))'awakeningTurns':_awakeningTurns,if(executionVersion!=null||lifeRewardBonuses.isNotEmpty)'lifeRewardBonuses':lifeRewardBonuses.map((b)=>b.name).toList(),if(_rewindHistory case final history?)'rewindHistory':{'turn':turn,'startHp':history.startHp,'previousHp':history.previousHp},'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),if(executionVersion!=null)'executionVersion':executionVersion,if(executionVersion!=null)'lifeRewardPercent':lifeRewardPercent,if((executionVersion??0)>=2)'encounterSnapshot':_encounterSnapshot!.toBattleJson(),if(executionVersion==3)'activeRuleSnapshots':activeSkills.map((s)=>s.rules.toJson(s.id)).toList(),if(activeSkills.any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening))'awakeningTurns':_awakeningTurns,if(executionVersion!=null||lifeRewardBonuses.isNotEmpty)'lifeRewardBonuses':lifeRewardBonuses.map((b)=>b.name).toList(),if(_rewindHistory case final history?)'rewindHistory':{'turn':turn,'startHp':history.startHp,'previousHp':history.previousHp},'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
  factory WorldBattle.fromJson(Map<String,dynamic> j){
   final version=_decodeExecutionVersion(j);
-  return WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:_decodeActiveSkills(j),skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j),awakeningTurns:_decodeAwakeningTurns(j),executionVersion:version,lifeRewardPercent:version!=null?j['lifeRewardPercent'] as int:null,encounterSnapshot:version==2?WorldEncounter.fromBattleJson(j['encounterSnapshot'] as Map<String,dynamic>,j['encounterId'] as String):null);
+  final specs=_decodeActiveSkills(j);
+  if(version==3)ActiveSkillRulesV1.validateSnapshot(j['activeRuleSnapshots'],specs);
+  return WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:specs,skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j),awakeningTurns:_decodeAwakeningTurns(j),executionVersion:version,lifeRewardPercent:version!=null?j['lifeRewardPercent'] as int:null,encounterSnapshot:(version??0)>=2?WorldEncounter.fromBattleJson(j['encounterSnapshot'] as Map<String,dynamic>,j['encounterId'] as String):null);
  }
  static int? _decodeExecutionVersion(Map<String,dynamic> j){
   if(!j.containsKey('executionVersion')){
-   if(j.containsKey('lifeRewardPercent')||j.containsKey('encounterSnapshot'))throw const FormatException('Missing execution version');
+   if(j.containsKey('lifeRewardPercent')||j.containsKey('encounterSnapshot')||j.containsKey('activeRuleSnapshots'))throw const FormatException('Missing execution version');
    return null;
   }
   final version=j['executionVersion'];
-  if(version is! int||(version!=1&&version!=currentExecutionVersion))throw const FormatException('Unsupported battle execution version');
-  if(version==2?j['encounterSnapshot'] is! Map<String,dynamic>:j.containsKey('encounterSnapshot'))throw const FormatException('Invalid encounter snapshot version');
+  if(version is! int||(version!=1&&version!=2&&version!=currentExecutionVersion))throw const FormatException('Unsupported battle execution version');
+  if(version>=2?j['encounterSnapshot'] is! Map<String,dynamic>:j.containsKey('encounterSnapshot'))throw const FormatException('Invalid encounter snapshot version');
+  if(version==3?j['activeRuleSnapshots'] is! List:j.containsKey('activeRuleSnapshots'))throw const FormatException('Invalid active rule snapshot version');
   // 版付き戦闘は全非条件付き出力項目が必須。
   for(final key in const ['id','enemyHp','turn','slowTurns','acceleratedClaws','stopCooldown','energyRemainder','hpRemainder','rngVersion','rngState','lifeRewardPercent']){
    if(j[key] is! int)throw FormatException('Invalid versioned battle integer: $key');
@@ -190,15 +223,16 @@ class WorldBattle {
   return version;
  }
  static int _decodeAwakeningTurns(Map<String,dynamic> j){
-  final equipped=_decodeActiveSkills(j).any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening);
+  final awakening=_decodeActiveSkills(j).where((s)=>s.effect==ActiveSkillEffect.crimsonAwakening);
+  final equipped=awakening.isNotEmpty;
   if(!j.containsKey('awakeningTurns')){
    if(equipped)throw const FormatException('Missing awakening state');
    return 0;
   }
   final raw=j['awakeningTurns'];
-  if(!equipped||raw is! int||raw<0||raw>awakeningDuration)throw const FormatException('Invalid awakening state');
+  if(!equipped||raw is! int||raw<0||raw>awakening.single.rules.awakeningDuration)throw const FormatException('Invalid awakening state');
   final cd=_decodeSkillCooldowns(j)['skill:crimson_awakening']??0;
-  if(raw!=max(0,cd-2)||(cd>0&&(j['turn'] is! int||(j['turn'] as int)<2)))throw const FormatException('Invalid awakening cooldown');
+  if(raw!=max(0,cd-(awakening.single.cooldown-awakening.single.rules.awakeningDuration))||(cd>0&&(j['turn'] is! int||(j['turn'] as int)<2)))throw const FormatException('Invalid awakening cooldown');
   return raw;
  }
  static List<LifeRewardBonus> _decodeLifeRewardBonuses(Map<String,dynamic> j){
@@ -317,7 +351,7 @@ class WorldEngine {
  /// 覚醒は物理攻撃のみ。攻撃強化薬とは加算せず高い補正を採用する。
  double _attackBonus(WorldBattle b,{required bool physical}){
   final item=b._buffs.containsKey(BattleBuff.attack)?BattleBuff.attack.percent:0;
-  final awakening=physical&&b.awakeningTurns>0?WorldBattle.awakeningPercent:0;
+  final awakening=physical&&b.awakeningTurns>0?b.awakeningRules.awakeningPercent:0;
   return 1+max(item,awakening)/100;
  }
  double _roll(WorldBattle battle)=>_testRandom?.nextDouble()??BattleRandom.next(battle);
@@ -395,8 +429,8 @@ class WorldEngine {
   };
  }
  /// 停止系コマンドと奥義で共有する停止CDと耐性判定。
- bool _applyStop(WorldBattle b,WorldEncounter e){
-  b.stopCooldown=5;
+ bool _applyStop(WorldBattle b,WorldEncounter e,{int cooldown=ActiveSkillRulesV1.stopCooldown}){
+  b.stopCooldown=cooldown;
   return !e.timeResistant;
  }
  int damage(int attack,int defense,double multiplier,{double critical=1,double variance=1})=>max(1,(attack*multiplier*100/(100.0+defense)*critical*variance).floor());
@@ -482,33 +516,32 @@ class WorldEngine {
   if(matches.isEmpty)return '装着済みスキルではありません';
   if(b.turn==0x7fffffffffffffff)return 'ターン上限';
   final spec=matches.first;
+  String? stageUnavailable(){
+   for(final stage in spec.rules.requiredStages){
+    if(!w.cleared.contains(WorldCatalog.mainId(stage)))return 'STAGE ${stage.toString().padLeft(2,'0')}クリアが必要';
+   }
+   return null;
+  }
   if(spec.usesStopCooldown){
-   if(!w.cleared.contains(WorldCatalog.mainId(12)))return 'STAGE 12クリアが必要';
-   if(spec.id=='skill:chrono_combo'&&!w.cleared.contains(WorldCatalog.mainId(6)))return 'STAGE 06クリアが必要';
+   final reason=stageUnavailable();
+   if(reason!=null)return reason;
   }
   if(activeSkillCooldown(b,spec)>0)return 'クールダウン中';
-  if(spec.effect==ActiveSkillEffect.foresight&&!w.cleared.contains(WorldCatalog.mainId(9)))return 'STAGE 09クリアが必要';
-  if(spec.effect==ActiveSkillEffect.accelerationAttack&&!w.cleared.contains(WorldCatalog.mainId(6)))return 'STAGE 06クリアが必要';
-  if((spec.effect==ActiveSkillEffect.repairHp||spec.effect==ActiveSkillEffect.timeCleanse)&&!w.cleared.contains(WorldCatalog.mainId(3)))return 'STAGE 03クリアが必要';
+  final stageReason=stageUnavailable();
+  if(stageReason!=null)return stageReason;
   if(spec.effect==ActiveSkillEffect.repairHp){
    if(w.hp<=0||w.hp>b.stats.hp||b.stats.hp<=0)return 'HP状態が不正です';
    if(w.hp==b.stats.hp)return 'HPは満タンです';
   }
   if(spec.effect==ActiveSkillEffect.timeCleanse&&!b._statuses.containsKey(BattleStatus.poison))return '解除可能な状態異常なし';
   if(spec.effect==ActiveSkillEffect.rewindHp){
-   if(!w.cleared.contains(WorldCatalog.mainId(16)))return 'STAGE 16クリアが必要';
    final history=b._rewindHistory,previous=b.previousTurnHp;
    if(b.turn<=1||history==null||previous==null)return '前ターンのHP記録なし';
    if(history.startHp!=w.hp||w.hp<=0||previous<1||previous>b.stats.hp||w.hp>b.stats.hp)return 'HP状態が不正です';
    if(previous<=w.hp)return '復元できるHPなし';
   }
   if(spec.effect==ActiveSkillEffect.crimsonAwakening){
-   if(!w.cleared.contains(WorldCatalog.mainId(12)))return 'STAGE 12クリアが必要';
    if(b.awakeningTurns>0)return '覚醒発動中';
-  }
-  if(spec.effect==ActiveSkillEffect.ultimateAttack){
-   final stage=spec.ultimateUnlockStage;
-   if(stage==0||!w.cleared.contains(WorldCatalog.mainId(stage)))return 'STAGE $stageクリアが必要';
   }
   if(w.lifespan<BigInt.from(spec.lifeCost))return '寿命不足';
   if(w.physical<activeSkillCost(w,spec))return '物理エネルギー不足';
@@ -524,9 +557,9 @@ class WorldEngine {
   w.physical-=activeSkillCost(w,spec);
   w.lifespan-=BigInt.from(spec.lifeCost);
   if(spec.effect==ActiveSkillEffect.crimsonAwakening){
-   b._awakeningTurns=WorldBattle.awakeningDuration;
+   b._awakeningTurns=spec.rules.awakeningDuration;
    b._skillCooldowns[id]=spec.cooldown;
-   b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費 / 物攻 +${WorldBattle.awakeningPercent}%');
+   b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費 / 物攻 +${spec.rules.awakeningPercent}%');
    _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id);
    return;
   }
@@ -559,7 +592,7 @@ class WorldEngine {
    return;
   }
   if(spec.effect==ActiveSkillEffect.accelerationAttack||spec.effect==ActiveSkillEffect.ultimateAttack||spec.usesStopCooldown)b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
-  final skipEnemy=spec.usesStopCooldown&&_applyStop(b,e);
+  final skipEnemy=spec.usesStopCooldown&&_applyStop(b,e,cooldown:spec.rules.sharedStopCooldown);
   if(spec.usesStopCooldown)b.log.add(skipEnemy?'時間停止 — 敵の行動停止':'時間停止は無効化された。');
   final bonus=_attackBonus(b,physical:true);
   final chance=b._buffs.containsKey(BattleBuff.critical)?min<double>(1.0,s.crit+BattleBuff.critical.percent/100):s.crit;

@@ -55,7 +55,7 @@ void main(){
  test('旧戦闘セーブと不正な効果を検証する',(){
   final s=AppStateData.initial();
   WorldEngine().start(s.world,stats,'p01_main',now);
-  final raw=s.world.battle!.toJson()..remove('encounterSnapshot')..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses')..remove('buffs');
+  final raw=s.world.battle!.toJson()..remove('activeRuleSnapshots')..remove('encounterSnapshot')..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses')..remove('buffs');
   expect(WorldBattle.fromJson(raw).buffs,isEmpty);
   for(final invalid in [null,{'attack':0},{'defense':4},{'unknown':1},{'regeneration':1.5}]){
    expect(()=>WorldBattle.fromJson({...raw,'buffs':invalid}),throwsFormatException);

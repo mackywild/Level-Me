@@ -43,7 +43,7 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
   final parentName=parent==null?null:widget.controller.skillDefinitions.firstWhere((d)=>d.id==parent).name;
   return [
    '必要プレイヤーLv.${rule.playerLevel}',
-   if(def.execution?.usesStopCooldown==true&&def.id=='skill:chrono_combo')'STAGE 06クリア',
+   for(final stage in def.execution?.rules.requiredStages??const <int>[])if(stage!=rule.clearedStage)'STAGE ${stage.toString().padLeft(2,'0')}クリア',
    if(rule.clearedStage>0)'STAGE ${rule.clearedStage}クリア',
    if(parentName!=null)'$parentName Lv.${rule.prerequisiteLevel}',
    '費用：${rule.gold} G / 魔晶石 ${rule.magicCrystals}',

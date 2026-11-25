@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'abyss_equipment.dart';
 import 'abyss_consumable.dart';
 import 'abyss_buff.dart';
+import 'abyss_purification.dart';
 import 'world_engine.dart';
 import 'abyss_inventory.dart';
 import 'abyss_summon.dart';
@@ -15,7 +16,7 @@ class SupplyDefinition {
 
 /// 承認済みマスターだけをゲームへ公開する。
 class AbyssMaster {
- AbyssMaster._(this.equipment,this.summon,this._supplies,this.enabled,this.recovery,this.buffs);
+ AbyssMaster._(this.equipment,this.summon,this._supplies,this.enabled,this.recovery,this.buffs,this.purification);
  static const assetPath='assets/master/abyss_master.json';
  final EquipmentCatalog equipment;
  final SummonCatalog summon;
@@ -23,6 +24,7 @@ class AbyssMaster {
  final bool enabled;
  final ConsumableCatalog recovery;
  final BuffCatalog buffs;
+ final PurificationCatalog purification;
  SupplyDefinition? supply(String id)=>_supplies[id];
  factory AbyssMaster.fromJson(String raw){
   final root=jsonDecode(raw) as Map<String,dynamic>;
@@ -76,6 +78,17 @@ class AbyssMaster {
    buffItems.add(BuffItem(id:id,name:j['name'] as String,kind:kind));
   }
   BuffCatalog(buffItems);
+  final purificationItems=<PurificationItem>[];
+  final purificationIds=<String>{};
+  if(root.containsKey('purificationEnabled')&&root['purificationEnabled']!=false)throw const FormatException('Purification activation not approved');
+  for(final row in (root.containsKey('purification')?root['purification'] as List:const [])){
+   final j=row as Map<String,dynamic>;
+   final id=j['id'] as String;
+   final rarity=EquipmentRarity.values.where((r)=>r.name==j['rarity']);
+   if(j['category']!='purification'||supplies.containsKey(id)||recoveryIds.contains(id)||buffIds.contains(id)||!purificationIds.add(id)||rarity.isEmpty||rarity.first.index>EquipmentRarity.ssr.index)throw const FormatException('Invalid purification master');
+   purificationItems.add(PurificationItem(id:id,name:j['name'] as String));
+  }
+  PurificationCatalog(purificationItems);
   final entries=<SummonEntry>[];
   final seen=<String>{};
   for(final row in root['summon'] as List){
@@ -102,6 +115,6 @@ class AbyssMaster {
     if(validatedSummon.entries(pool,rarity).isEmpty)throw const FormatException('Incomplete prologue summon pool');
    }
   }
-  return AbyssMaster._(enabled?validatedEquipment:EquipmentCatalog.production,enabled?validatedSummon:SummonCatalog.production,Map.unmodifiable(enabled?supplies:<String,SupplyDefinition>{}),enabled,ConsumableCatalog.production,BuffCatalog.production);
+  return AbyssMaster._(enabled?validatedEquipment:EquipmentCatalog.production,enabled?validatedSummon:SummonCatalog.production,Map.unmodifiable(enabled?supplies:<String,SupplyDefinition>{}),enabled,ConsumableCatalog.production,BuffCatalog.production,PurificationCatalog.production);
  }
 }

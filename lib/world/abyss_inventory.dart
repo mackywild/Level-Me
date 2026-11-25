@@ -18,6 +18,14 @@ class AbyssInventory {
  final Map<String,int> _stacks={};
  final Map<String,EquipmentInstance> _equipment={};
  final Set<String> _discovered={};
+ final Map<EquipmentSlot,String> _equipped={};
+ Map<EquipmentSlot,String> get equipped=>Map.unmodifiable(_equipped);
+ void equip(String id){
+  final item=_equipment[id];
+  if(item==null)throw StateError('Equipment not owned');
+  _equipped[item.slot]=id;
+ }
+ void unequip(EquipmentSlot slot){_equipped.remove(slot);}
  int _sequence=0;
  Map<String,int> get stacks=>Map.unmodifiable(_stacks);
  Map<String,EquipmentInstance> get equipment=>Map.unmodifiable(_equipment);
@@ -48,7 +56,7 @@ class AbyssInventory {
   _discovered.add(masterId);
   return item;
  }
- Map<String,dynamic> toJson()=>{'version':1,'sequence':_sequence,'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort()};
+ Map<String,dynamic> toJson()=>{'version':1,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort()};
  factory AbyssInventory.fromJson(Map<String,dynamic> j){
   if(j['version']!=1)throw const FormatException('Unsupported inventory version');
   final inventory=AbyssInventory();
@@ -72,6 +80,13 @@ class AbyssInventory {
    inventory._discovered.add(id);
   }
   if(!inventory._discovered.containsAll(inventory._stacks.keys)||!inventory._discovered.containsAll(inventory._equipment.values.map((e)=>e.masterId)))throw const FormatException('Missing discovery record');
+  final equipped=j.containsKey('equipped')?j['equipped'] as Map<String,dynamic>:<String,dynamic>{};
+  for(final entry in equipped.entries){
+   final slot=EquipmentSlot.values.byName(entry.key);
+   final id=entry.value as String;
+   if(inventory._equipment[id]?.slot!=slot)throw const FormatException('Invalid equipped reference');
+   inventory._equipped[slot]=id;
+  }
   return inventory;
  }
 }

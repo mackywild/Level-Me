@@ -27,6 +27,8 @@ void main(){
    expect(invalid.validate,throwsFormatException,reason:id);
    expect(()=>ActiveSkillSpec.fromJson(invalid.toJson()),throwsFormatException);
    expect(()=>SkillCatalog([SkillDefinition(id:id,name:'不正',kind:SkillKind.passive)]),throwsFormatException);
+   expect(()=>SkillCatalog([SkillDefinition(id:id,name:'不正',kind:SkillKind.active)]),throwsFormatException);
+   expect(()=>SkillCatalog([SkillDefinition(id:id,name:'不正',kind:SkillKind.active,execution:invalid)]),throwsFormatException);
   }
   const invalid=ActiveSkillSpec(id:'skill:fake',name:'不正未来視',powerPercent:0,physicalCost:0,cooldown:5,effect:ActiveSkillEffect.foresight,lifeCost:14);
   expect(invalid.validate,throwsFormatException);

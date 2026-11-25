@@ -167,7 +167,7 @@ class SkillCatalog {
   if(expected.length!=b.activeSkills.length)throw const FormatException('Invalid battle skill loadout');
   for(var i=0;i<expected.length;i++){
    final a=expected[i],saved=b.activeSkills[i];
-   if(a.id!=saved.id||a.name!=saved.name||a.powerPercent!=saved.powerPercent||a.physicalCost!=saved.physicalCost||a.cooldown!=saved.cooldown)throw const FormatException('Invalid battle skill snapshot');
+   if(a.id!=saved.id||a.name!=saved.name||a.powerPercent!=saved.powerPercent||a.physicalCost!=saved.physicalCost||a.cooldown!=saved.cooldown||a.hits!=saved.hits)throw const FormatException('Invalid battle skill snapshot');
   }
  }
  /// 実行と成長を同じ作業用状態で処理する。失敗時は呼出元が作業状態を破棄する。

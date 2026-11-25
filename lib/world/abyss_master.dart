@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'abyss_equipment.dart';
 import 'abyss_compendium.dart';
+import 'abyss_skill.dart';
 import 'abyss_consumable.dart';
 import 'abyss_buff.dart';
 import 'abyss_purification.dart';
@@ -17,7 +18,7 @@ class SupplyDefinition {
 
 /// 承認済みマスターだけをゲームへ公開する。
 class AbyssMaster {
- AbyssMaster._(this.equipment,this.summon,this._supplies,this.enabled,this.recovery,this.buffs,this.purification,this.compendium);
+ AbyssMaster._(this.equipment,this.summon,this._supplies,this.enabled,this.recovery,this.buffs,this.purification,this.compendium,this.skills);
  static const assetPath='assets/master/abyss_master.json';
  final EquipmentCatalog equipment;
  final SummonCatalog summon;
@@ -27,6 +28,7 @@ class AbyssMaster {
  final BuffCatalog buffs;
  final PurificationCatalog purification;
  final CompendiumCatalog compendium;
+ final SkillCatalog skills;
  SupplyDefinition? supply(String id)=>_supplies[id];
  factory AbyssMaster.fromJson(String raw){
   final root=jsonDecode(raw) as Map<String,dynamic>;
@@ -91,6 +93,18 @@ class AbyssMaster {
    purificationItems.add(PurificationItem(id:id,name:j['name'] as String));
   }
   PurificationCatalog(purificationItems);
+  if(root.containsKey('skillEnabled')&&root['skillEnabled']!=false)throw const FormatException('Skill activation not approved');
+  final skillRows=root.containsKey('skills')?root['skills']:const [];
+  if(skillRows is! List)throw const FormatException('Invalid skill candidates');
+  final skillCandidates=<SkillDefinition>[];
+  const families={'physical','time','acceleration','repair','predation','awakening'};
+  for(final row in skillRows){
+   if(row is! Map<String,dynamic>||row['id'] is! String||row['name'] is! String||!families.contains(row['family']))throw const FormatException('Invalid skill candidate');
+   final kind=row['family']=='predation'?SkillKind.passive:SkillKind.active;
+   if(row['kind']!=kind.name)throw const FormatException('Invalid skill candidate kind');
+   skillCandidates.add(SkillDefinition(id:row['id'] as String,name:row['name'] as String,kind:kind));
+  }
+  SkillCatalog(skillCandidates);
   final entries=<SummonEntry>[];
   final seen=<String>{};
   for(final row in root['summon'] as List){
@@ -121,6 +135,6 @@ class AbyssMaster {
    for(final def in equipment)CompendiumDefinition(id:def.id,name:def.name,category:CompendiumCategory.equipment,rarity:def.rarity,description:'${def.slot.name} / 物攻 +${def.physical} / 魔攻 +${def.magic} / 防御 +${def.defense}'),
    for(final def in supplies.values)CompendiumDefinition(id:def.id,name:def.name,category:CompendiumCategory.material,rarity:def.rarity,description:'素材'),
   ]):CompendiumCatalog.production;
-  return AbyssMaster._(enabled?validatedEquipment:EquipmentCatalog.production,enabled?validatedSummon:SummonCatalog.production,Map.unmodifiable(enabled?supplies:<String,SupplyDefinition>{}),enabled,ConsumableCatalog.production,BuffCatalog.production,PurificationCatalog.production,compendium);
+  return AbyssMaster._(enabled?validatedEquipment:EquipmentCatalog.production,enabled?validatedSummon:SummonCatalog.production,Map.unmodifiable(enabled?supplies:<String,SupplyDefinition>{}),enabled,ConsumableCatalog.production,BuffCatalog.production,PurificationCatalog.production,compendium,SkillCatalog.production);
  }
 }

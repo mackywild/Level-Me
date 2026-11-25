@@ -372,6 +372,15 @@ class WorldEngine {
  }
  double _roll(WorldBattle battle)=>_testRandom?.nextDouble()??BattleRandom.next(battle);
  static const energyInterval=600000,hpInterval=1800000;
+ /// 加算・積を計算する前に残容量と比較する。上限超過の既存値も回復時に正規化。
+ static int _cappedGain(int current,int maximum,int amount,{int times=1}){
+  if(current<0||maximum<0||amount<0||times<0)throw StateError('Invalid recovery operands');
+  if(current>=maximum)return maximum;
+  final room=maximum-current;
+  if(amount==0||times==0)return current;
+  if(times>room~/amount)return maximum;
+  return current+amount*times;
+ }
  bool isUnlocked(WorldState w,WorldEncounter e){
   if(e.main)return !w.cleared.contains(e.id)&&(e.stage==1||w.cleared.contains(WorldCatalog.mainId(e.stage-1)));
   return w.cleared.contains(WorldCatalog.mainId(e.stage));
@@ -384,30 +393,31 @@ class WorldEngine {
   if(w.hpAt==0){w.hpAt=now;w.hp=s.hp;}
   if(now<w.hpAt)w.hpAt=now;
   final ticks=(now-w.energyAt)~/energyInterval,heals=(now-w.hpAt)~/hpInterval;
-  w.physical=min(s.physicalMax,w.physical+ticks);
-  w.magic=min(s.magicMax,w.magic+ticks);
-  w.hp=min(s.hp,w.hp+heals*max(1,(s.hp*0.05).floor()));
+  w.physical=_cappedGain(w.physical,s.physicalMax,ticks);
+  w.magic=_cappedGain(w.magic,s.magicMax,ticks);
+  w.hp=_cappedGain(w.hp,s.hp,max(1,s.hp~/20),times:heals);
   w.energyAt+=ticks*energyInterval;
   w.hpAt+=heals*hpInterval;
   final pending=w.pendingPhysical>0||w.pendingMagic>0||w.pendingLevelUp;
   if(pending){
-   w.physical=w.pendingLevelUp?s.physicalMax:min(s.physicalMax,w.physical+w.pendingPhysical);
-   w.magic=w.pendingLevelUp?s.magicMax:min(s.magicMax,w.magic+w.pendingMagic);
+   w.physical=w.pendingLevelUp?s.physicalMax:_cappedGain(w.physical,s.physicalMax,w.pendingPhysical);
+   w.magic=w.pendingLevelUp?s.magicMax:_cappedGain(w.magic,s.magicMax,w.pendingMagic);
    if(w.pendingLevelUp)w.hp=s.hp;
    w.pendingPhysical=0;w.pendingMagic=0;w.pendingLevelUp=false;
   }
   return pending||before!=[w.hp,w.physical,w.magic,w.energyAt,w.hpAt].join(',');
  }
  void rewardEffort(WorldState w,WorldStats s,int now,{required int physical,required int magic,required bool levelUp}){
+  if(physical<0||magic<0)throw StateError('Invalid effort reward');
   if(w.battle!=null){
-   w.pendingPhysical=min(s.physicalMax,w.pendingPhysical+physical);
-   w.pendingMagic=min(s.magicMax,w.pendingMagic+magic);
+   w.pendingPhysical=_cappedGain(w.pendingPhysical,s.physicalMax,physical);
+   w.pendingMagic=_cappedGain(w.pendingMagic,s.magicMax,magic);
    w.pendingLevelUp=w.pendingLevelUp||levelUp;
    return;
   }
   refresh(w,s,now);
-  w.physical=levelUp?s.physicalMax:min(s.physicalMax,w.physical+physical);
-  w.magic=levelUp?s.magicMax:min(s.magicMax,w.magic+magic);
+  w.physical=levelUp?s.physicalMax:_cappedGain(w.physical,s.physicalMax,physical);
+  w.magic=levelUp?s.magicMax:_cappedGain(w.magic,s.magicMax,magic);
   if(levelUp)w.hp=s.hp;
  }
  void start(WorldState w,WorldStats s,String id,int now,{List<ActiveSkillSpec> activeSkills=const [],List<LifeRewardBonus> lifeRewardBonuses=const []}){
@@ -451,11 +461,11 @@ class WorldEngine {
  }
  bool _canDamage(WorldCommand command)=>switch(command){
   WorldCommand.claw||WorldCommand.heavyClaw||WorldCommand.magic||WorldCommand.compositeClaw=>true,
-  _=>false,
+  WorldCommand.guard||WorldCommand.slow||WorldCommand.retreat||WorldCommand.accelerate||WorldCommand.stopTime=>false,
  };
  bool _activeCanDamage(ActiveSkillSpec spec)=>switch(spec.effect){
   ActiveSkillEffect.physical||ActiveSkillEffect.accelerationAttack||ActiveSkillEffect.stopAttack||ActiveSkillEffect.ultimateAttack=>true,
-  _=>false,
+  ActiveSkillEffect.foresight||ActiveSkillEffect.repairHp||ActiveSkillEffect.timeCleanse||ActiveSkillEffect.rewindHp||ActiveSkillEffect.crimsonAwakening=>false,
  };
  String? unavailable(WorldState w,WorldCommand command){
   final b=w.battle;
@@ -479,7 +489,14 @@ class WorldEngine {
   b.stopCooldown=cooldown;
   return !e.timeResistant;
  }
- int damage(int attack,int defense,double multiplier,{double critical=1,double variance=1})=>max(1,(attack*multiplier*100/(100.0+defense)*critical*variance).floor());
+ /// 通常の浮動小数演算順・最小1を維持し、整数変換境界を明示する。
+ int damage(int attack,int defense,double multiplier,{double critical=1,double variance=1}){
+  if(attack<0||defense<0||[multiplier,critical,variance].any((v)=>!v.isFinite||v<0))throw StateError('Invalid damage operands');
+  final value=attack*multiplier*100/(100.0+defense)*critical*variance;
+  if(!value.isFinite)throw StateError('Nonfinite damage');
+  if(value>=maxRewardResource.toDouble())return maxRewardResource;
+  return max(1,value.floor());
+ }
  void act(WorldState w,WorldCommand command,int battleId,int expectedTurn,int now){
   final b=w.battle;
   if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
@@ -699,7 +716,7 @@ class WorldEngine {
   final e=b.encounter,s=b.stats;
   if(!skipEnemy){
    final int extra=(s.defense~/100)*BattleBuff.defense.percent+(s.defense%100)*BattleBuff.defense.percent~/100;
-   final defense=b._buffs.containsKey(BattleBuff.defense)?s.defense+min<int>(extra,max<int>(0,0x7fffffffffffff9b-s.defense)):s.defense;
+   final defense=b._buffs.containsKey(BattleBuff.defense)?_cappedGain(s.defense,maxRewardResource,extra):s.defense;
    final attack=damage(e.attack,defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
    if(foresight){
     b.log.add('未来視 — 敵の反撃を無効化した。');

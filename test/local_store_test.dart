@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/models/app_state.dart';
 import 'package:level_me/services/local_store.dart';
+import 'package:level_me/world/abyss_inventory.dart';
 
 void main() {
  late Directory directory;
@@ -158,5 +159,39 @@ void main() {
   await store.save(state);
   expect(await primary.exists(),true);
   expect(await staged.exists(),false);
+ });
+ test('inventory persists through real save load and backup generations',() async {
+  final state=AppStateData.initial()..totalExp=500..gachaTickets=4;
+  state.world.gold=123;
+  state.world.summonTickets=3;
+  state.world.supplyTickets=2;
+  state.world.lifespan=BigInt.from(365);
+  final inventory=state.inventory;
+  inventory.addStack('test_material',5);
+  inventory.addStack('test_consumed',1);
+  inventory.removeStack('test_consumed',1);
+  final first=inventory.addEquipment('test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  final second=inventory.addEquipment('test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  final expected=jsonEncode(inventory.toJson());
+  await store.save(state);
+  final restarted=LocalStore(directory:directory);
+  final loaded=await restarted.load();
+  expect(jsonEncode(loaded.inventory.toJson()),expected);
+  expect(loaded.totalExp,500);
+  expect(loaded.gachaTickets,4);
+  expect(loaded.world.gold,123);
+  expect(loaded.world.summonTickets,3);
+  expect(loaded.world.supplyTickets,2);
+  expect(loaded.world.lifespan,BigInt.from(365));
+  expect(loaded.inventory.discovered,contains('test_consumed'));
+  expect(loaded.inventory.stacks.containsKey('test_consumed'),false);
+  final third=loaded.inventory.addEquipment('test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  expect(third.id,isNot(first.id));
+  expect(third.id,isNot(second.id));
+  expect(third.id,'eq_3');
+  await restarted.save(loaded);
+  expect((await restarted.load()).inventory.equipment.length,3);
+  await restarted.restoreBackup();
+  expect(jsonEncode((await restarted.load()).inventory.toJson()),expected);
  });
 }

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/models/app_state.dart';
 import 'package:level_me/world/world_catalog.dart';
+import 'package:level_me/world/abyss_inventory.dart';
 import 'package:level_me/world/world_engine.dart';
 import 'package:level_me/services/fe_progress_store.dart';
 import 'package:level_me/services/local_store.dart';
@@ -109,5 +110,84 @@ void main() {
   expect(restored.world.battle!.encounterId,'p01_main');
   expect(restored.world.battle!.turn,1);
   expect(restored.world.gold,0);
+ });
+ test('portable inventory restores stacks, equipment, discovery, sequence and currencies',() async {
+  final state=AppStateData.initial()..totalExp=500..gachaTickets=4;
+  state.world.gold=123;
+  state.world.summonTickets=3;
+  state.world.supplyTickets=2;
+  state.world.lifespan=BigInt.from(365);
+  state.inventory.addStack('test_material',5);
+  state.inventory.addStack('test_consumed',1);
+  state.inventory.removeStack('test_consumed',1);
+  state.inventory.addEquipment('test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  state.inventory.addEquipment('test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  final expected=jsonEncode(state.inventory.toJson());
+  await player.save(state);
+  await fe.record('q',true);
+  await fe.setFlag('q',true);
+  final raw=await backup.export();
+  state.inventory.removeStack('test_material',5);
+  state.inventory.addEquipment('test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  state.world.gold=999;
+  await player.save(state);
+  await fe.record('q',false);
+  await fe.setFlag('q',false);
+  await backup.restore(raw);
+  final restored=await LocalStore(directory:dir).load();
+  expect(jsonEncode(restored.inventory.toJson()),expected);
+  expect(restored.inventory.stacks['test_material'],5);
+  expect(restored.inventory.equipment.length,2);
+  expect(restored.inventory.discovered,contains('test_consumed'));
+  expect(restored.inventory.stacks.containsKey('test_consumed'),false);
+  expect(restored.totalExp,500);
+  expect(restored.gachaTickets,4);
+  expect(restored.world.gold,123);
+  expect(restored.world.summonTickets,3);
+  expect(restored.world.supplyTickets,2);
+  expect(restored.world.lifespan,BigInt.from(365));
+  expect(await fe.load(),{'q':[true]});
+  expect(await fe.loadFlags(),{'q'});
+  expect(restored.inventory.addEquipment('test_ring',EquipmentSlot.ring,EquipmentRarity.r).id,'eq_3');
+  await player.save(restored);
+  expect((await player.load()).inventory.equipment.length,3);
+ });
+ test('invalid inventory import leaves all existing files and recovery state unchanged',() async {
+  final state=AppStateData.initial()..totalExp=100;
+  state.inventory.addStack('test_material',5);
+  state.inventory.addEquipment('test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  await player.save(state);
+  state.world.gold=123;
+  await player.save(state);
+  await fe.record('q',true);
+  await fe.record('q',false);
+  await fe.setFlag('q',true);
+  final raw=await backup.export();
+  final before=<String,String>{};
+  for(final name in PortableBackup.names){
+   for(final suffix in ['', '.bak']){
+    final f=file('$name$suffix');
+    if(await f.exists())before['$name$suffix']=await f.readAsString();
+   }
+  }
+  final entries=(await dir.list().map((e)=>e.path).toList())..sort();
+  for(final invalidVersion in [true,false]){
+   final envelope=jsonDecode(raw) as Map<String,dynamic>;
+   final files=envelope['files'] as Map<String,dynamic>;
+   final imported=files[PortableBackup.playerName] as Map<String,dynamic>;
+   imported['totalExp']=999;
+   final inventory=imported['inventory'] as Map<String,dynamic>;
+   if(invalidVersion){inventory['version']=999;}else{(inventory['stacks'] as Map)['test_material']=0;}
+   await expectLater(backup.restore(jsonEncode(envelope)),throwsFormatException);
+   for(final entry in before.entries){
+    expect(await file(entry.key).readAsString(),entry.value);
+   }
+   expect((await dir.list().map((e)=>e.path).toList())..sort(),entries);
+   expect(await file(PortableBackup.journalName).exists(),false);
+  }
+  final restored=await player.load();
+  expect(restored.totalExp,100);
+  expect(restored.world.gold,123);
+  expect(restored.inventory.stacks['test_material'],5);
  });
 }

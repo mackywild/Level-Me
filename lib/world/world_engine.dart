@@ -52,7 +52,7 @@ class BattleRandom {
 }
 
 /// 戦闘開始時に固定する、承認済み能動スキルの実行定義。
-enum ActiveSkillEffect { physical, foresight }
+enum ActiveSkillEffect { physical, foresight, accelerationAttack }
 
 class ActiveSkillSpec {
  const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown,this.hits=1,this.effect=ActiveSkillEffect.physical,this.lifeCost=0});
@@ -65,6 +65,7 @@ class ActiveSkillSpec {
  bool get _validEffect=>switch(effect){
   ActiveSkillEffect.physical=>powerPercent>=1&&powerPercent<=500&&hits>=1&&hits<=10&&powerPercent*hits<=500&&physicalCost>=1&&physicalCost<=100&&lifeCost==0,
   ActiveSkillEffect.foresight=>powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==14&&cooldown>=1,
+  ActiveSkillEffect.accelerationAttack=>physicalCost==0&&cooldown>=1&&((id=='skill:speed_claw'&&powerPercent==250&&hits==1&&lifeCost==10)||(id=='skill:gale_claws'&&powerPercent==50&&hits==8&&lifeCost==45)),
  };
  Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown,'hits':hits,'effect':effect.name,'lifeCost':lifeCost};
  factory ActiveSkillSpec.fromJson(Map<String,dynamic> j){
@@ -332,6 +333,7 @@ class WorldEngine {
   if((b._skillCooldowns[id]??0)>0)return 'クールダウン中';
   final spec=matches.first;
   if(spec.effect==ActiveSkillEffect.foresight&&!w.cleared.contains(WorldCatalog.mainId(9)))return 'STAGE 09クリアが必要';
+  if(spec.effect==ActiveSkillEffect.accelerationAttack&&!w.cleared.contains(WorldCatalog.mainId(6)))return 'STAGE 06クリアが必要';
   if(w.lifespan<BigInt.from(spec.lifeCost))return '寿命不足';
   if(w.physical<activeSkillCost(w,spec))return '物理エネルギー不足';
   return null;
@@ -351,6 +353,7 @@ class WorldEngine {
    _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id,foresight:true);
    return;
   }
+  if(spec.effect==ActiveSkillEffect.accelerationAttack)b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
   final bonus=b._buffs.containsKey(BattleBuff.attack)?1+BattleBuff.attack.percent/100:1.0;
   final chance=b._buffs.containsKey(BattleBuff.critical)?min<double>(1.0,s.crit+BattleBuff.critical.percent/100):s.crit;
   // 各hitで独立に会心・乱数・防御・丸めを適用。撃破後は乱数を消費しない。

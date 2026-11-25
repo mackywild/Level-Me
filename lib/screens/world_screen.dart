@@ -16,6 +16,7 @@ String _activeSkillDescription(AppController c,WorldState w,ActiveSkillSpec spec
   ActiveSkillEffect.foresight=>'次の反撃無効',
   ActiveSkillEffect.repairHp=>'HP ${spec.repairPercent}%回復',
   ActiveSkillEffect.timeCleanse=>'毒を浄化',
+  ActiveSkillEffect.stopAttack=>'威力${spec.powerPercent}% / 時間停止（耐性あり）',
   ActiveSkillEffect.crimsonAwakening=>'物攻 +30% / 3ターン',
   ActiveSkillEffect.rewindHp=>'前ターンHP復元（記録：${w.battle?.previousTurnHp??"なし"}）',
   ActiveSkillEffect.physical||ActiveSkillEffect.accelerationAttack=>'威力${spec.powerPercent}%${spec.hits==1?'':' × ${spec.hits}'}',
@@ -126,7 +127,7 @@ class _WorldScreenState extends State<WorldScreen>{
        return OutlinedButton(
         key:ValueKey('active-skill-${spec.id}'),
         onPressed:busy||c.inventoryBusy||reason!=null?null:()=>run(()=>c.useBattleActiveSkill(spec.id,battleId,turn,expectedGeneration:generation)),
-        child:Text('${spec.name} / ${_activeSkillDescription(c,w,spec)} / CD ${b.skillCooldowns[spec.id]??0}${reason==null?'':' / $reason'}'),
+        child:Text('${spec.name} / ${_activeSkillDescription(c,w,spec)} / ${spec.usesStopCooldown?'共有CD':'CD'} ${c.worldEngine.activeSkillCooldown(b,spec)}${reason==null?'':' / $reason'}'),
        );
       }),
     ]),

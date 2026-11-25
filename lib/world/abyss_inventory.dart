@@ -14,6 +14,7 @@ class EquipmentInstance {
 }
 
 class AbyssInventory {
+ AbyssInventory();
  final Map<String,int> _stacks={};
  final Map<String,EquipmentInstance> _equipment={};
  final Set<String> _discovered={};

@@ -14,6 +14,7 @@ import 'services/local_store.dart';
 import 'services/portable_backup.dart';
 import 'theme/app_theme.dart';
 import 'world/world_catalog.dart';
+import 'world/abyss_master.dart';
 void main(){
  WidgetsFlutterBinding.ensureInitialized();
  final controller=AppController(LocalStore(),portableBackup:PortableBackup());
@@ -38,6 +39,7 @@ class _StartupGateState extends State<StartupGate> {
  }
  Future<void> _initialize() async {
   WorldCatalog.loadJson(await rootBundle.loadString(WorldCatalog.assetPath));
+  widget.controller.configureAbyssMaster(AbyssMaster.fromJson(await rootBundle.loadString(AbyssMaster.assetPath)));
   await widget.controller.initialize();
  }
  Future<void> _restore() async {

@@ -249,8 +249,8 @@ class _WorldScreenState extends State<WorldScreen>{
       Text('HP ${e.hp}   報酬 ${e.gold} G${e.lifeDays>0?' / 寿命 +${e.lifeDays}日':''}'),
       const SizedBox(height:10),
       SizedBox(width:double.infinity,child:FilledButton(
-       onPressed:busy||w.hp==0||!c.worldEngine.isUnlocked(w,e)?null:()=>run(()=>c.startWorldBattle(e.id)),
-       child:Text(e.main&&w.cleared.contains(e.id)?'クリア済み':!c.worldEngine.isUnlocked(w,e)?'未解放':w.hp==0?'HP回復待ち':'戦闘開始'))),
+       onPressed:busy||w.hp==0||!c.worldEngine.isUnlocked(w,e)||c.worldEngine.victoryRewardUnavailable(w,e)!=null?null:()=>run(()=>c.startWorldBattle(e.id)),
+       child:Text(e.main&&w.cleared.contains(e.id)?'クリア済み':!c.worldEngine.isUnlocked(w,e)?'未解放':w.hp==0?'HP回復待ち':c.worldEngine.victoryRewardUnavailable(w,e)??'戦闘開始'))),
      ]),
    ],
   ]);

@@ -17,7 +17,7 @@ import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy}):_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,this.enhancementScaling=const EnhancementScaling.disabled()}):_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -42,6 +42,10 @@ class AppController extends ChangeNotifier {
  bool get hasAbyssMaster=>_abyssMaster!=null;
  void configureAbyssMaster(AbyssMaster master){
   if(_ready||_summonBusy||_abyssMaster!=null)throw StateError('Cannot replace master while active');
+  _enhancementPolicy.validateMaterials((recipe){
+   final material=master.supply(recipe.materialId);
+   return material!=null&&material.category=='material'&&material.rarity==recipe.rarity;
+  });
   _abyssMaster=master;
   _equipmentCatalog=master.equipment;
   _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment,random:_summonRandom);
@@ -97,6 +101,24 @@ class AppController extends ChangeNotifier {
   }
  }
  final EnhancementPolicy _enhancementPolicy;
+ final EnhancementScaling enhancementScaling;
+ EnhancementRecipe? enhancementRecipe(EquipmentRarity rarity)=>_enhancementPolicy.recipe(rarity);
+ String? enhancementUnavailable(String id,int expectedLevel){
+  if(!_ready)return '初期化中';
+  try {
+   _enhancementPolicy.validate(world:_state.world,inventory:_state.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel);
+   return null;
+  } on StateError catch(error){
+   return switch(error.message){
+    'Enhancement unavailable in battle'=>'戦闘中は強化できません',
+    'Enhancement limit reached'=>'最大強化済み',
+    'Enhancement recipe unavailable'=>'強化レシピ未承認',
+    'Insufficient gold'=>'G不足',
+    'Insufficient materials'=>'素材不足',
+    _=>'強化できません',
+   };
+  }
+ }
  Future<EquipmentInstance> enhanceWorldItem(String id,int expectedLevel)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
@@ -109,7 +131,7 @@ class AppController extends ChangeNotifier {
  final PortableBackup? _portableBackup;
  final LocalStore _store;
  final WorldEngine worldEngine=WorldEngine();
- WorldStats get worldStats=>equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(_state.totalExp).level,fitness:LevelCalculator.statRankFromExp(_state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(_state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(_state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(_state.stats[StatType.creativity]??0)),_state.inventory);
+ WorldStats get worldStats=>equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(_state.totalExp).level,fitness:LevelCalculator.statRankFromExp(_state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(_state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(_state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(_state.stats[StatType.creativity]??0)),_state.inventory,scaling:enhancementScaling);
  int get _nowMs=>DateTime.now().millisecondsSinceEpoch;
  Future<void> startWorldBattle(String id)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');

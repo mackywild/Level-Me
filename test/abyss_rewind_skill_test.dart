@@ -34,8 +34,8 @@ void main(){
   loadExtendedWorldCatalog(16);
   catalog=SkillCatalog(const [def]);
  });
- WorldState start(WorldEngine engine,{int hp=100,int life=90,bool unlocked=true,bool equipped=true}){
-  final w=WorldState(hp:hp,lifespan:BigInt.from(life),cleared:{if(unlocked)'p16_main'},hpAt:now,energyAt:now,gold:12,magicCrystals:3,summonTickets:2,supplyTickets:1,itemUseSequence:4);
+ WorldState start(WorldEngine engine,{int hp=100,int life=90,bool equipped=true}){
+  final w=WorldState(hp:hp,lifespan:BigInt.from(life),cleared:{'p16_main'},hpAt:now,energyAt:now,gold:12,magicCrystals:3,summonTickets:2,supplyTickets:1,itemUseSequence:4);
   engine.start(w,stats,'p01_main',now,activeSkills:equipped?[spec]:const []);
   return w;
  }
@@ -117,7 +117,12 @@ void main(){
  });
  test('未解放・寿命不足・古いturnは履歴と資産を変更しない',(){
   final engine=WorldEngine();
-  for(final w in [start(engine,unlocked:false),start(engine,life:89)]){
+  final locked=WorldState(lifespan:BigInt.from(90),hpAt:now,energyAt:now);
+  final lockedBefore=jsonEncode(locked.toJson());
+  expect(()=>engine.start(locked,stats,'p01_main',now,activeSkills:[spec]),throwsStateError);
+  expect(jsonEncode(locked.toJson()),lockedBefore);
+  final tampered=start(engine)..cleared.remove('p16_main');
+  for(final w in [tampered,start(engine,life:89)]){
    final b=w.battle!;
    engine.act(w,WorldCommand.guard,b.id,1,now);
    final before=jsonEncode(w.toJson());

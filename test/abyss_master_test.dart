@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/world/abyss_inventory.dart';
 import 'package:level_me/world/abyss_master.dart';
 import 'package:level_me/world/abyss_summon.dart';
+import 'package:level_me/world/world_engine.dart';
 
 class _CountingRandom implements Random {
  int calls=0;
@@ -90,6 +91,34 @@ void main(){
   expect(await rootBundle.loadString(AbyssMaster.assetPath),isNotEmpty);
   final master=await loadProductionMasters();
   expect(master.enabled,false);
+  expect(master.skills.definitions,isEmpty);
+  final raw=source();
+  expect(raw['skillEnabled'],false);
+  final rows=(raw['skills'] as List).cast<Map<String,dynamic>>();
+  expect(rows.length,42);
+  expect(rows.map((row)=>row['id']).toSet().length,42);
+  expect(rows.map((row)=>row['id']),containsAll(ActiveSkillSpec.reservedEffects.keys));
+  expect(rows.every((row)=>!row.containsKey('execution')),true);
+  expect(AbyssMaster.fromJson(jsonEncode(raw..['enabled']=true)).skills.definitions,isEmpty);
+ });
+ test('RV-142: 非公開候補もID・名前・重複・family・kind・予約IDを検証する',(){
+  void reject(void Function(List<Map<String,dynamic>>) change){
+   final raw=source();
+   change((raw['skills'] as List).cast<Map<String,dynamic>>());
+   expect(()=>AbyssMaster.fromJson(jsonEncode(raw)),throwsFormatException);
+  }
+  for(final bad in [
+   {'id':'bad'},{'id':'skill:'},{'id':'skill:test '},{'id':1},
+   {'name':'  '},{'name':null},{'family':'unknown'},{'kind':'passive'},
+  ]){
+   reject((rows)=>rows.first.addAll(bad));
+  }
+  reject((rows)=>rows.add({...rows.first}));
+  for(final id in ActiveSkillSpec.reservedEffects.keys){
+   reject((rows)=>rows.singleWhere((row)=>row['id']==id).addAll({'family':'predation','kind':'passive'}));
+  }
+  final enabled=source()..['skillEnabled']=true;
+  expect(()=>AbyssMaster.fromJson(jsonEncode(enabled)),throwsFormatException);
  });
  test('無効マスターは全プールを拒否し有効マスターは名称付きで付与する',() async {
   final dir=await Directory.systemTemp.createTemp('abyss-master-');

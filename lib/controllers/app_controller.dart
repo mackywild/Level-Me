@@ -34,7 +34,6 @@ class AppController extends ChangeNotifier {
   _summonEngine.validatePending(state.world,state.summon);
   _buffCatalog.validateSavedEffects(state.world);
   _purificationCatalog.validateSavedStatuses(state.world);
-  _skillCatalog.validateSaved(state.skills);
   _skillCatalog.validateBattle(state.world,state.skills);
   _worldStatsFor(state);
  }
@@ -250,6 +249,7 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   if(working.skills.revision!=expectedRevision)throw StateError('Stale skill revision');
   change(working,id);
+  _skillCatalog.validateProgress(working.world,working.skills);
   // 保存前に変更後の補正値も検証し、計算不能な構成を確定しない。
   _worldStatsFor(working);
   await _store.save(working);
@@ -381,6 +381,7 @@ class AppController extends ChangeNotifier {
  Future<void> startWorldBattle(String id)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  _skillCatalog.validateProgress(working.world,working.skills);
   worldEngine.start(working.world,_worldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills));
   await _store.save(working);
   _state=working;

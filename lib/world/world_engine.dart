@@ -98,17 +98,33 @@ class ActiveSkillSpec {
  final String id,name;
  final int powerPercent,physicalCost,cooldown,hits,lifeCost;
  final ActiveSkillEffect effect;
+ /// 実装済みの特殊IDを汎用物理等へ差し替えない。
+ static const reservedEffects=<String,ActiveSkillEffect>{
+  'skill:foresight':ActiveSkillEffect.foresight,
+  'skill:speed_claw':ActiveSkillEffect.accelerationAttack,'skill:gale_claws':ActiveSkillEffect.accelerationAttack,
+  'skill:wound_repair':ActiveSkillEffect.repairHp,'skill:body_repair':ActiveSkillEffect.repairHp,'skill:life_rewind':ActiveSkillEffect.repairHp,'skill:full_repair':ActiveSkillEffect.repairHp,
+  'skill:time_cleanse':ActiveSkillEffect.timeCleanse,'skill:rewind':ActiveSkillEffect.rewindHp,
+  'skill:crimson_awakening':ActiveSkillEffect.crimsonAwakening,
+  'skill:still_claw':ActiveSkillEffect.stopAttack,'skill:chrono_combo':ActiveSkillEffect.stopAttack,
+  'skill:spacetime_break':ActiveSkillEffect.ultimateAttack,'skill:world_collapse':ActiveSkillEffect.ultimateAttack,
+ };
  void validate(){
-  if(!id.startsWith('skill:')||id.length<=6||name.trim().isEmpty||cooldown<0||cooldown>20||!_validEffect)throw const FormatException('Invalid active skill spec');
+  if((reservedEffects[id]!=null&&reservedEffects[id]!=effect)||!id.startsWith('skill:')||id.length<=6||name.trim().isEmpty||cooldown<0||cooldown>20||!_validEffect)throw const FormatException('Invalid active skill spec');
  }
  ActiveSkillRulesV1 get rules=>ActiveSkillRulesV1.forSpec(this);
+ int? missingStage(Set<String> cleared){
+  for(final stage in rules.requiredStages){
+   if(!cleared.contains(WorldCatalog.mainId(stage)))return stage;
+  }
+  return null;
+ }
  int get repairPercent=>rules.repairPercent;
  bool get usesStopCooldown=>rules.sharedStopCooldown>0;
  int get ultimateUnlockStage=>effect==ActiveSkillEffect.ultimateAttack&&rules.requiredStages.isNotEmpty?rules.requiredStages.single:0;
  /// v1の定義許容範囲。旧版の意味を変更しない。
  bool get _validEffect=>switch(effect){
   ActiveSkillEffect.physical=>powerPercent>=1&&powerPercent<=500&&hits>=1&&hits<=10&&powerPercent*hits<=500&&physicalCost>=1&&physicalCost<=100&&lifeCost==0,
-  ActiveSkillEffect.foresight=>powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==14&&cooldown>=1,
+  ActiveSkillEffect.foresight=>id=='skill:foresight'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==14&&cooldown>=1,
   ActiveSkillEffect.accelerationAttack=>physicalCost==0&&cooldown>=1&&((id=='skill:speed_claw'&&powerPercent==250&&hits==1&&lifeCost==10)||(id=='skill:gale_claws'&&powerPercent==50&&hits==8&&lifeCost==45)),
   ActiveSkillEffect.repairHp=>powerPercent==0&&physicalCost==0&&hits==1&&cooldown>=1&&repairPercent>0&&lifeCost==(switch(repairPercent){10=>7,25=>21,50=>180,100=>365,_=>0}),
   ActiveSkillEffect.timeCleanse=>id=='skill:time_cleanse'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==30&&cooldown>=1,
@@ -232,7 +248,7 @@ class WorldBattle {
   final raw=j['awakeningTurns'];
   if(!equipped||raw is! int||raw<0||raw>awakening.single.rules.awakeningDuration)throw const FormatException('Invalid awakening state');
   final cd=_decodeSkillCooldowns(j)['skill:crimson_awakening']??0;
-  if(raw!=max(0,cd-(awakening.single.cooldown-awakening.single.rules.awakeningDuration))||(cd>0&&(j['turn'] is! int||(j['turn'] as int)<2)))throw const FormatException('Invalid awakening cooldown');
+  if(raw!=max(0,cd-(awakening.single.cooldown-awakening.single.rules.awakeningDuration))||(cd>0&&(j['turn'] is! int||(j['turn'] as int)<2+awakening.single.cooldown-cd)))throw const FormatException('Invalid awakening cooldown');
   return raw;
  }
  static List<LifeRewardBonus> _decodeLifeRewardBonuses(Map<String,dynamic> j){
@@ -338,7 +354,7 @@ class WorldState {
   if(j['version']!=1)throw const FormatException('Unsupported world save version');
   final w=WorldState(hp:j['hp'] as int,physical:j['physical'] as int,magic:j['magic'] as int,gold:j['gold'] as int,magicCrystals:j.containsKey('magicCrystals')?j['magicCrystals'] as int:0,shopSequence:j.containsKey('shopSequence')?j['shopSequence'] as int:0,itemUseSequence:j.containsKey('itemUseSequence')?j['itemUseSequence'] as int:0,summonTickets:j['summonTickets'] as int,supplyTickets:j['supplyTickets'] as int,sequence:j['sequence'] as int,energyAt:j['energyAt'] as int,hpAt:j['hpAt'] as int,pendingPhysical:j['pendingPhysical'] as int? ?? 0,pendingMagic:j['pendingMagic'] as int? ?? 0,pendingLevelUp:j['pendingLevelUp'] as bool? ?? false,lifespan:BigInt.parse(j['lifespanDays'] as String),cleared:List<String>.from(j['cleared'] as List).toSet(),battle:j['battle']==null?null:WorldBattle.fromJson(j['battle'] as Map<String,dynamic>),lastResult:j['lastResult'] as String);
   if([w.hp,w.physical,w.magic,w.gold,w.magicCrystals,w.shopSequence,w.itemUseSequence,w.summonTickets,w.supplyTickets,w.sequence,w.energyAt,w.hpAt,w.pendingPhysical,w.pendingMagic].any((v)=>v<0)||w.lifespan<BigInt.zero)throw const FormatException('Negative world resource');
-  if(w.battle!=null){final b=w.battle!;if((b.awakeningTurns>0&&!w.cleared.contains(WorldCatalog.mainId(12)))||(b.lifeRewardBonuses.isNotEmpty&&!w.cleared.contains(WorldCatalog.mainId(3)))||(b._rewindHistory!=null&&b._rewindHistory!.startHp!=w.hp)||b.id!=w.sequence||b.turn<1||b.enemyHp<1||b.enemyHp>b.encounter.hp||b.stats.hp<1||b.stats.physicalMax<1||b.stats.magicMax<1||b.stats.defense<0||b.stats.physical<1||b.stats.magic<1||!b.stats.crit.isFinite||b.stats.crit<0||b.stats.crit>1||w.hp<1||w.hp>b.stats.hp||w.physical>b.stats.physicalMax||w.magic>b.stats.magicMax||b.slowTurns<0||b.slowTurns>2||b.acceleratedClaws<0||b.acceleratedClaws>2||b.stopCooldown<0||b.stopCooldown>5||b.energyRemainder<0||b.energyRemainder>=WorldEngine.energyInterval||b.hpRemainder<0||b.hpRemainder>=WorldEngine.hpInterval)throw const FormatException('Invalid active battle');}
+  if(w.battle!=null){final b=w.battle!;if(b.activeSkills.any((spec)=>spec.missingStage(w.cleared)!=null))throw const FormatException('Locked active skill snapshot');if((b.awakeningTurns>0&&!w.cleared.contains(WorldCatalog.mainId(12)))||(b.lifeRewardBonuses.isNotEmpty&&!w.cleared.contains(WorldCatalog.mainId(3)))||(b._rewindHistory!=null&&b._rewindHistory!.startHp!=w.hp)||b.id!=w.sequence||b.turn<1||b.enemyHp<1||b.enemyHp>b.encounter.hp||b.stats.hp<1||b.stats.physicalMax<1||b.stats.magicMax<1||b.stats.defense<0||b.stats.physical<1||b.stats.magic<1||!b.stats.crit.isFinite||b.stats.crit<0||b.stats.crit>1||w.hp<1||w.hp>b.stats.hp||w.physical>b.stats.physicalMax||w.magic>b.stats.magicMax||b.slowTurns<0||b.slowTurns>2||b.acceleratedClaws<0||b.acceleratedClaws>2||b.stopCooldown<0||b.stopCooldown>5||b.energyRemainder<0||b.energyRemainder>=WorldEngine.energyInterval||b.hpRemainder<0||b.hpRemainder>=WorldEngine.hpInterval)throw const FormatException('Invalid active battle');}
   return w;
  }
 }
@@ -398,7 +414,10 @@ class WorldEngine {
   LifeRewardBonus.validate(lifeRewardBonuses);
   if(lifeRewardBonuses.isNotEmpty&&!w.cleared.contains(WorldCatalog.mainId(3)))throw StateError('STAGE 03 clear required');
   if(activeSkills.length>6||activeSkills.map((s)=>s.id).toSet().length!=activeSkills.length)throw const FormatException('Invalid active skill snapshot');
-  for(final spec in activeSkills){spec.validate();}
+  for(final spec in activeSkills){
+   spec.validate();
+   if(spec.missingStage(w.cleared)!=null)throw StateError('Active skill stage not cleared: ${spec.id}');
+  }
   if(w.battle!=null)throw StateError('A battle is already active');
   final e=WorldCatalog.byId(id);
   if(!isUnlocked(w,e))throw StateError('Encounter locked or completed');
@@ -546,10 +565,8 @@ class WorldEngine {
   if(b.turn==0x7fffffffffffffff)return 'ターン上限';
   final spec=matches.first;
   String? stageUnavailable(){
-   for(final stage in spec.rules.requiredStages){
-    if(!w.cleared.contains(WorldCatalog.mainId(stage)))return 'STAGE ${stage.toString().padLeft(2,'0')}クリアが必要';
-   }
-   return null;
+   final stage=spec.missingStage(w.cleared);
+   return stage==null?null:'STAGE ${stage.toString().padLeft(2,'0')}クリアが必要';
   }
   if(spec.usesStopCooldown){
    final reason=stageUnavailable();

@@ -97,6 +97,8 @@ class SkillCatalog {
   for(final def in definitions){
    if(!SkillState.validId(def.id)||def.name.trim().isEmpty||_definitions.containsKey(def.id))throw const FormatException('Invalid skill master');
    final spec=def.execution;
+   final reserved=ActiveSkillSpec.reservedEffects[def.id];
+   if(reserved!=null&&spec?.effect!=reserved)throw const FormatException('Invalid reserved skill mapping');
    if(spec!=null){
     spec.validate();
     if(def.kind!=SkillKind.active||spec.id!=def.id||spec.name!=def.name)throw const FormatException('Invalid skill execution mapping');
@@ -116,6 +118,7 @@ class SkillCatalog {
   for(final def in _definitions.values){
    final rule=def.acquisition;
    if(rule.clearedStage>0&&!WorldCatalog.titles.containsKey(rule.clearedStage))throw const FormatException('Unknown skill unlock stage');
+   if(def.execution?.rules.requiredStages.any((stage)=>!WorldCatalog.titles.containsKey(stage))==true)throw const FormatException('Unknown active rule unlock stage');
    final parent=rule.prerequisiteId;
    if(parent!=null){
     final prior=_definitions[parent];
@@ -140,6 +143,27 @@ class SkillCatalog {
   }
   for(final kind in SkillKind.values){
    if(state._slots(kind).any((id)=>find(id)?.kind!=kind))throw const FormatException('Invalid skill kind');
+  }
+ }
+ /// 習得後も保持される進行条件を照合する。支払済み通貨・当時のLvは再要求しない。
+ String? _progressUnavailable(WorldState world,SkillState state,SkillDefinition def){
+  final rule=def.acquisition;
+  if(rule.clearedStage>0&&!world.cleared.contains(WorldCatalog.mainId(rule.clearedStage)))return 'STAGE ${rule.clearedStage}クリアが必要';
+  final stage=def.execution?.missingStage(world.cleared);
+  if(stage!=null)return 'STAGE ${stage.toString().padLeft(2,'0')}クリアが必要';
+  final parent=rule.prerequisiteId;
+  if(parent!=null){
+   final count=state._learned[parent];
+   if(count==null)return '${find(parent)!.name}の習得が必要';
+   if(SkillMastery.level(count)<rule.prerequisiteLevel)return '${find(parent)!.name} Lv.${rule.prerequisiteLevel}が必要';
+  }
+  return null;
+ }
+ void validateProgress(WorldState world,SkillState state){
+  validateSaved(state);
+  for(final id in state.learned.keys){
+   final reason=_progressUnavailable(world,state,find(id)!);
+   if(reason!=null)throw FormatException('Invalid learned skill progress: $id / $reason');
   }
  }
  /// 装備補正後に固定値を加算する。装着順に依存せず、戦闘開始時のstatsに反映する。
@@ -170,6 +194,7 @@ class SkillCatalog {
   return List.unmodifiable(bonuses);
  }
  void validateBattle(WorldState world,SkillState state){
+  validateProgress(world,state);
   final b=world.battle;
   if(b==null)return;
   final rewards=rewardSnapshot(state);
@@ -211,16 +236,8 @@ class SkillCatalog {
   if(state.revision==0x7fffffffffffffff)return '変更番号上限';
   final rule=def.acquisition;
   if(playerLevel<rule.playerLevel)return 'プレイヤーLv.${rule.playerLevel}が必要';
-  if(rule.clearedStage>0&&!world.cleared.contains(WorldCatalog.mainId(rule.clearedStage)))return 'STAGE ${rule.clearedStage}クリアが必要';
-  for(final stage in def.execution?.rules.requiredStages??const <int>[]){
-   if(!world.cleared.contains(WorldCatalog.mainId(stage)))return 'STAGE ${stage.toString().padLeft(2,'0')}クリアが必要';
-  }
-  final parent=rule.prerequisiteId;
-  if(parent!=null){
-   final count=state._learned[parent];
-   if(count==null)return '${find(parent)!.name}の習得が必要';
-   if(SkillMastery.level(count)<rule.prerequisiteLevel)return '${find(parent)!.name} Lv.${rule.prerequisiteLevel}が必要';
-  }
+  final progress=_progressUnavailable(world,state,def);
+  if(progress!=null)return progress;
   if(world.gold<rule.gold)return 'ゴールド不足';
   if(world.magicCrystals<rule.magicCrystals)return '魔晶石不足';
   return null;
@@ -238,6 +255,8 @@ class SkillCatalog {
  void equip(WorldState world,SkillState state,String id){
   final def=_require(world,id);
   if(!state._learned.containsKey(id))throw StateError('Skill not learned');
+  final reason=_progressUnavailable(world,state,def);
+  if(reason!=null)throw StateError(reason);
   final slots=state._slots(def.kind);
   if(slots.contains(id)||slots.length>=SkillState.limit(def.kind))throw StateError('Skill slot unavailable');
   state._checkRevision();

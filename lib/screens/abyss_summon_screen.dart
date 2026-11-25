@@ -74,7 +74,7 @@ class _AbyssSummonScreenState extends State<AbyssSummonScreen>{
      if(rates.isEmpty)const ListTile(title:Text('有効な排出マスターはありません'))else
       for(final rate in rates)
        ListTile(dense:true,title:Text(c.summonRewardName(rate.entry.masterId)),subtitle:Text(rate.entry.rarity.name.toUpperCase()),trailing:Text('${rate.percent.toStringAsFixed(4)}%')),
-     const ListTile(subtitle:Text('現在の解放状況での通常抽選1枠の確率です。天井・10連保証による変化と丸め誤差を含みません。')),
+     const ListTile(subtitle:Text('現在の解放状況での通常抽選1枠の確率です。天井・10連保証は含みません。表示は小数4桁に丸めています。')),
     ]),
     const Divider(),
     const Text('天井進捗'),

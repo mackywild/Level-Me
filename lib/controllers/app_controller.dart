@@ -14,11 +14,12 @@ import '../world/abyss_inventory.dart';
 import '../world/abyss_equipment.dart';
 import '../world/abyss_enhancement.dart';
 import '../world/abyss_dismantle.dart';
+import '../world/abyss_shop.dart';
 import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,this.enhancementScaling=const EnhancementScaling.disabled()}):_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,this.enhancementScaling=const EnhancementScaling.disabled()}):_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -51,6 +52,7 @@ class AppController extends ChangeNotifier {
    final material=master.supply(recipe.materialId);
    return material!=null&&material.category=='material'&&material.rarity==recipe.rarity;
   });
+  _shopCatalog.validateMaterials((offer)=>master.supply(offer.materialId)?.category=='material');
   _abyssMaster=master;
   _equipmentCatalog=master.equipment;
   _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment,random:_summonRandom);
@@ -105,6 +107,16 @@ class AppController extends ChangeNotifier {
    notifyListeners();
   }
  }
+ final ShopCatalog _shopCatalog;
+ List<ShopOffer> get shopOffers=>_shopCatalog.offers;
+ Future<ShopOffer> purchaseWorldMaterial(String offerId,int expectedSequence)=>_inventoryTransaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final result=_shopCatalog.purchase(world:working.world,inventory:working.inventory,offerId:offerId,expectedSequence:expectedSequence);
+  await _store.save(working);
+  _state=working;
+  return result;
+ });
  final DismantlePolicy _dismantlePolicy;
  bool _inventoryBusy=false;
  bool get inventoryBusy=>_inventoryBusy;

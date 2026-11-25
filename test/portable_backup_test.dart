@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/models/app_state.dart';
+import 'package:level_me/controllers/app_controller.dart';
+import 'package:level_me/world/abyss_equipment.dart';
 import 'package:level_me/world/world_catalog.dart';
 import 'package:level_me/world/abyss_inventory.dart';
 import 'package:level_me/world/world_engine.dart';
@@ -189,5 +191,83 @@ void main() {
   expect(restored.totalExp,100);
   expect(restored.world.gold,123);
   expect(restored.inventory.stacks['test_material'],5);
+ });
+ test('controller rejects incompatible equipped masters before touching files or readiness',() async {
+  final catalog=EquipmentCatalog(const [
+   EquipmentDefinition(id:'equipment:ring',name:'Ring',slot:EquipmentSlot.ring,rarity:EquipmentRarity.r,physical:5,magic:2,defense:1),
+   EquipmentDefinition(id:'equipment:head',name:'Head',slot:EquipmentSlot.head,rarity:EquipmentRarity.sr,physical:3,magic:4,defense:6),
+  ]);
+  final controller=AppController(player,portableBackup:backup,equipmentCatalog:catalog);
+  addTearDown(controller.dispose);
+  await controller.initialize();
+  final initial=controller.state;
+  final base=controller.worldStats;
+  await fe.record('q',true);
+  await fe.setFlag('q',true);
+  final raw=await controller.exportPortableBackup();
+  final original=jsonEncode(initial.toJson());
+  final before=<String,String>{};
+  for(final name in PortableBackup.names){
+   for(final suffix in ['', '.bak']){
+    final f=file('$name$suffix');
+    if(await f.exists())before['$name$suffix']=await f.readAsString();
+   }
+  }
+  final paths=(await dir.list().map((e)=>e.path).toList())..sort();
+  for(final variant in [0,1,2]){
+   final imported=AppStateData.initial()..totalExp=999;
+   final item=imported.inventory.addEquipment(variant==0?'equipment:missing':'equipment:ring',variant==1?EquipmentSlot.head:EquipmentSlot.ring,variant==2?EquipmentRarity.ssr:EquipmentRarity.r);
+   imported.inventory.equip(item.id);
+   final envelope=jsonDecode(raw) as Map<String,dynamic>;
+   (envelope['files'] as Map)[PortableBackup.playerName]=imported.toJson();
+   await expectLater(controller.importPortableBackup(jsonEncode(envelope)),throwsStateError);
+   expect(controller.ready,true);
+   expect(identical(controller.state,initial),true);
+   expect(jsonEncode(controller.state.toJson()),original);
+   for(final entry in before.entries){
+    expect(await file(entry.key).readAsString(),entry.value);
+   }
+   expect((await dir.list().map((e)=>e.path).toList())..sort(),paths);
+  }
+  final valid=AppStateData.fromJson(jsonDecode(original) as Map<String,dynamic>);
+  final ring=valid.inventory.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.r);
+  final head=valid.inventory.addEquipment('equipment:head',EquipmentSlot.head,EquipmentRarity.sr);
+  valid.inventory.equip(ring.id);
+  valid.inventory.equip(head.id);
+  final envelope=jsonDecode(raw) as Map<String,dynamic>;
+  (envelope['files'] as Map)[PortableBackup.playerName]=valid.toJson();
+  await controller.importPortableBackup(jsonEncode(envelope));
+  expect(controller.ready,true);
+  expect(controller.state.inventory.equipped.length,2);
+  expect(controller.worldStats.physical,base.physical+8);
+  expect(controller.worldStats.magic,base.magic+6);
+  expect(controller.worldStats.defense,base.defense+7);
+  expect((await player.load()).inventory.equipped,valid.inventory.equipped);
+ });
+ test('incompatible local backup and pending journal are preserved without publication',() async {
+  final controller=AppController(player,portableBackup:backup);
+  addTearDown(controller.dispose);
+  await controller.initialize();
+  final original=await file(PortableBackup.playerName).readAsString();
+  final raw=await backup.export();
+  final invalid=AppStateData.initial();
+  final item=invalid.inventory.addEquipment('equipment:missing',EquipmentSlot.ring,EquipmentRarity.r);
+  invalid.inventory.equip(item.id);
+  final badPlayer=jsonEncode(invalid.toJson());
+  await file('${PortableBackup.playerName}.bak').writeAsString(badPlayer);
+  expect(await controller.hasBackup(),false);
+  await expectLater(controller.restoreBackup(),throwsStateError);
+  expect(controller.ready,true);
+  expect(await file(PortableBackup.playerName).readAsString(),original);
+  expect(await file('${PortableBackup.playerName}.bak').readAsString(),badPlayer);
+  final envelope=jsonDecode(raw) as Map<String,dynamic>;
+  (envelope['files'] as Map)[PortableBackup.playerName]=invalid.toJson();
+  final journal=jsonEncode(envelope);
+  await file(PortableBackup.journalName).writeAsString(journal);
+  await expectLater(controller.initialize(),throwsStateError);
+  expect(controller.ready,false);
+  expect(await file(PortableBackup.journalName).readAsString(),journal);
+  expect(await file(PortableBackup.playerName).readAsString(),original);
+  expect(await file('${PortableBackup.playerName}.bak').readAsString(),badPlayer);
  });
 }

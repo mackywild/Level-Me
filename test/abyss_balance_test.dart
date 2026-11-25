@@ -8,11 +8,6 @@ import 'package:level_me/world/abyss_summon.dart';
 import 'package:level_me/world/world_catalog.dart';
 import 'package:level_me/world/world_engine.dart';
 
-class _LowRollRandom implements Random {
- @override double nextDouble()=>0.9;
- @override int nextInt(int max)=>0;
- @override bool nextBool()=>false;
-}
 class _WorstDamageRandom implements Random {
  int calls=0;
  @override double nextDouble()=>calls++%2==0?0.9:0;
@@ -83,7 +78,7 @@ void main(){
   expect(world.gold,525);
  });
  test('フリー再戦でGは増えるが召喚券は増えない',(){
-  final engine=WorldEngine(random:_LowRollRandom());
+  final engine=WorldEngine(random:_WorstDamageRandom());
   final world=WorldState();
   const now=1000000;
   for(final id in ['p01_main','p01_hunt','p01_hunt']){
@@ -93,10 +88,12 @@ void main(){
    world.energyAt=now;
    world.hpAt=now;
    engine.start(world,base,id,now);
-   while(world.battle!=null){
+   for(var turn=0;world.battle!=null&&turn<20;turn++){
     final battle=world.battle!;
     engine.act(world,WorldCommand.claw,battle.id,battle.turn,now);
    }
+   expect(world.battle,isNull);
+   expect(world.hp,greaterThan(0));
   }
   expect(world.summonTickets,3);
   expect(world.supplyTickets,1);

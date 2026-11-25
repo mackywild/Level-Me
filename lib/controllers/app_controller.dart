@@ -13,7 +13,11 @@ import '../world/world_engine.dart';
 import '../world/abyss_inventory.dart';
 import '../world/abyss_equipment.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog}):_portableBackup=portableBackup,equipmentCatalog=equipmentCatalog??EquipmentCatalog.production;
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog}):_portableBackup=portableBackup,equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+  _store.validatePlayer=_validateEquipment;
+  _portableBackup?.validatePlayer=_validateEquipment;
+ }
+ void _validateEquipment(AppStateData state)=>equipmentCatalog.validateLoadout(state.inventory);
  final EquipmentCatalog equipmentCatalog;
  final PortableBackup? _portableBackup;
  final LocalStore _store;
@@ -72,7 +76,9 @@ class AppController extends ChangeNotifier {
  Future<void> initialize() async {
   _ready=false;
   await _portableBackup?.resumePendingRestore();
-  _state=await _store.load();
+  final loaded=await _store.load();
+  _validateEquipment(loaded);
+  _state=loaded;
   _recoverForNewDay();
   worldEngine.refresh(_state.world,worldStats,_nowMs);
   await _store.save(_state);
@@ -86,12 +92,12 @@ class AppController extends ChangeNotifier {
   return backup.export();
  });
  Future<void> importPortableBackup(String raw) async {
-  PortableBackup.validate(raw);
+  PortableBackup.validate(raw,validatePlayer:_validateEquipment);
   final backup=_portableBackup;
   if(backup==null)throw StateError('Backup unavailable');
-  _ready=false;
   await _transaction(() async {
    await backup.restore(raw);
+   _ready=false;
    await initialize();
   });
  }

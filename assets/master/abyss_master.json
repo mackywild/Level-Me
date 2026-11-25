@@ -537,6 +537,15 @@
       "kind": "energyDiscount",
       "percent": 30,
       "duration": 3
+    },
+    {
+      "id": "item:buff_lethal_protection",
+      "name": "不屈薬",
+      "rarity": "ssr",
+      "category": "buff",
+      "kind": "lethalProtection",
+      "percent": 100,
+      "duration": 1
     }
   ]
 }

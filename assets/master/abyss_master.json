@@ -398,5 +398,80 @@
       "pool": "supplies",
       "masterId": "item:underworld_iron"
     }
+  ],
+  "recoveryEnabled": false,
+  "recovery": [
+    {
+      "id": "item:recovery_hp_20",
+      "name": "HP回復薬（小）",
+      "rarity": "n",
+      "category": "recovery",
+      "target": "hp",
+      "percent": 20
+    },
+    {
+      "id": "item:recovery_hp_50",
+      "name": "HP回復薬（中）",
+      "rarity": "r",
+      "category": "recovery",
+      "target": "hp",
+      "percent": 50
+    },
+    {
+      "id": "item:recovery_hp_100",
+      "name": "HP回復薬（大）",
+      "rarity": "sr",
+      "category": "recovery",
+      "target": "hp",
+      "percent": 100
+    },
+    {
+      "id": "item:recovery_physical_15",
+      "name": "物理回復薬（小）",
+      "rarity": "n",
+      "category": "recovery",
+      "target": "physical",
+      "percent": 15
+    },
+    {
+      "id": "item:recovery_physical_30",
+      "name": "物理回復薬（中）",
+      "rarity": "r",
+      "category": "recovery",
+      "target": "physical",
+      "percent": 30
+    },
+    {
+      "id": "item:recovery_physical_50",
+      "name": "物理回復薬（大）",
+      "rarity": "sr",
+      "category": "recovery",
+      "target": "physical",
+      "percent": 50
+    },
+    {
+      "id": "item:recovery_magic_15",
+      "name": "魔法回復薬（小）",
+      "rarity": "n",
+      "category": "recovery",
+      "target": "magic",
+      "percent": 15
+    },
+    {
+      "id": "item:recovery_magic_30",
+      "name": "魔法回復薬（中）",
+      "rarity": "r",
+      "category": "recovery",
+      "target": "magic",
+      "percent": 30
+    },
+    {
+      "id": "item:recovery_magic_50",
+      "name": "魔法回復薬（大）",
+      "rarity": "sr",
+      "category": "recovery",
+      "target": "magic",
+      "percent": 50
+    }
   ]
 }

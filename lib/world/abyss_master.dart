@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'abyss_equipment.dart';
+import 'abyss_compendium.dart';
 import 'abyss_consumable.dart';
 import 'abyss_buff.dart';
 import 'abyss_purification.dart';
@@ -16,7 +17,7 @@ class SupplyDefinition {
 
 /// 承認済みマスターだけをゲームへ公開する。
 class AbyssMaster {
- AbyssMaster._(this.equipment,this.summon,this._supplies,this.enabled,this.recovery,this.buffs,this.purification);
+ AbyssMaster._(this.equipment,this.summon,this._supplies,this.enabled,this.recovery,this.buffs,this.purification,this.compendium);
  static const assetPath='assets/master/abyss_master.json';
  final EquipmentCatalog equipment;
  final SummonCatalog summon;
@@ -25,6 +26,7 @@ class AbyssMaster {
  final ConsumableCatalog recovery;
  final BuffCatalog buffs;
  final PurificationCatalog purification;
+ final CompendiumCatalog compendium;
  SupplyDefinition? supply(String id)=>_supplies[id];
  factory AbyssMaster.fromJson(String raw){
   final root=jsonDecode(raw) as Map<String,dynamic>;
@@ -115,6 +117,10 @@ class AbyssMaster {
     if(validatedSummon.entries(pool,rarity).isEmpty)throw const FormatException('Incomplete prologue summon pool');
    }
   }
-  return AbyssMaster._(enabled?validatedEquipment:EquipmentCatalog.production,enabled?validatedSummon:SummonCatalog.production,Map.unmodifiable(enabled?supplies:<String,SupplyDefinition>{}),enabled,ConsumableCatalog.production,BuffCatalog.production,PurificationCatalog.production);
+  final compendium=enabled?CompendiumCatalog([
+   for(final def in equipment)CompendiumDefinition(id:def.id,name:def.name,category:CompendiumCategory.equipment,rarity:def.rarity,description:'${def.slot.name} / 物攻 +${def.physical} / 魔攻 +${def.magic} / 防御 +${def.defense}'),
+   for(final def in supplies.values)CompendiumDefinition(id:def.id,name:def.name,category:CompendiumCategory.material,rarity:def.rarity,description:'素材'),
+  ]):CompendiumCatalog.production;
+  return AbyssMaster._(enabled?validatedEquipment:EquipmentCatalog.production,enabled?validatedSummon:SummonCatalog.production,Map.unmodifiable(enabled?supplies:<String,SupplyDefinition>{}),enabled,ConsumableCatalog.production,BuffCatalog.production,PurificationCatalog.production,compendium);
  }
 }

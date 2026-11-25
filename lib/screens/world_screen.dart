@@ -111,7 +111,7 @@ class _WorldScreenState extends State<WorldScreen>{
         onPressed:busy||c.inventoryBusy||evaluation.amount==null?null:()=>run(() async {
          final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
           title:const Text('回復アイテムを使用しますか？'),
-          content:Text('${item.name} × 1 / 回復予定：${evaluation.amount}\\n1ターンを消費し、敵の反撃を受けます。'),
+          content:Text('${item.name} × 1 / 回復予定：${evaluation.amount}\n1ターンを消費し、敵の反撃を受けます。'),
           actions:[
            TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('キャンセル')),
            FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('使用を確定')),
@@ -121,6 +121,34 @@ class _WorldScreenState extends State<WorldScreen>{
          await c.useBattleRecoveryItem(item.id,battleId,turn,sequence,expectedGeneration:generation);
         }),
         child:Text('${item.name} × ${c.state.inventory.stacks[item.id]} / ${evaluation.reason??'回復予定：${evaluation.amount}'}'),
+       );
+      }),
+    ]),
+    panel([const Text('BUFF / 状態効果',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),
+     if(b.buffs.isEmpty)const Text('発動中のバフなし'),
+     for(final entry in b.buffs.entries)
+      Text('${entry.key.label}：残り ${entry.value} ターン'),
+     if(!c.buffItems.any((item)=>(c.state.inventory.stacks[item.id]??0)>0))const Text('所持バフアイテムなし'),
+     for(final item in c.buffItems.where((item)=>(c.state.inventory.stacks[item.id]??0)>0))
+      Builder(builder:(context){
+       final reason=c.battleBuffUnavailable(item.id);
+       final sequence=w.itemUseSequence,generation=c.restoreGeneration,battleId=b.id,turn=b.turn;
+       final effect='${item.kind.label} ${item.kind.percent}% / ${item.kind.duration}ターン';
+       return OutlinedButton(
+        key:ValueKey('buff-${item.id}'),
+        onPressed:busy||c.inventoryBusy||reason!=null?null:()=>run(() async {
+         final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+          title:const Text('バフアイテムを使用しますか？'),
+          content:Text('${item.name} × 1\n$effect\n1ターンを消費し、敵の反撃判定が発生します。'),
+          actions:[
+           TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('キャンセル')),
+           FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('使用を確定')),
+          ],
+         ));
+         if(!mounted||confirmed!=true)return;
+         await c.useBattleBuffItem(item.id,battleId,turn,sequence,expectedGeneration:generation);
+        }),
+        child:Text('${item.name} × ${c.state.inventory.stacks[item.id]} / ${reason??effect}'),
        );
       }),
     ]),

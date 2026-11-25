@@ -17,6 +17,10 @@ class BuffCatalog {
  final _items=<String,BuffItem>{};
  static final production=BuffCatalog(const []);
  List<BuffItem> get items=>List.unmodifiable(_items.values);
+ void validateSavedEffects(WorldState world){
+  final allowed=_items.values.map((item)=>item.kind).toSet();
+  if(world.battle?.buffs.keys.any((kind)=>!allowed.contains(kind))??false)throw const FormatException('Unapproved saved battle buff');
+ }
  BuffItem validate({required WorldState world,required AbyssInventory inventory,required String id,required int expectedSequence,required int battleId,required int turn,required WorldEngine engine}){
   if(world.itemUseSequence!=expectedSequence)throw StateError('Stale item use request');
   if(world.itemUseSequence==0x7fffffffffffffff)throw StateError('Item use sequence overflow');

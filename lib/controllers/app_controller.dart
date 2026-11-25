@@ -35,6 +35,7 @@ class AppController extends ChangeNotifier {
   _buffCatalog.validateSavedEffects(state.world);
   _purificationCatalog.validateSavedStatuses(state.world);
   _skillCatalog.validateSaved(state.skills);
+  _skillCatalog.validateBattle(state.world,state.skills);
  }
  EquipmentCatalog _equipmentCatalog;
  EquipmentCatalog get equipmentCatalog=>_equipmentCatalog;
@@ -371,11 +372,22 @@ class AppController extends ChangeNotifier {
  Future<void> startWorldBattle(String id)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
-  worldEngine.start(working.world,worldStats,id,_nowMs);
+  worldEngine.start(working.world,worldStats,id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills));
   await _store.save(working);
   _state=working;
   notifyListeners();
  },keepPublishedState:true);
+ Future<void> useBattleActiveSkill(String id,int battleId,int turn,{required int expectedGeneration})=>_inventoryTransaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  _skillCatalog.validateBattle(working.world,working.skills);
+  final now=_nowMs;
+  worldEngine.actActiveSkill(working.world,id,battleId,turn,now);
+  worldEngine.refresh(working.world,worldStats,now);
+  await _store.save(working);
+  _state=working;
+ });
  Future<void> worldCommand(WorldCommand command,int battleId,int turn,{int? expectedGeneration})=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
   if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');

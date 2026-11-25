@@ -183,6 +183,11 @@ void main(){
   await expectLater(c.unequipWorldItem(EquipmentSlot.ring),throwsStateError);
   await expectLater(c.equipWorldItem(first.id),throwsStateError);
   await c.worldCommand(WorldCommand.retreat,battle.id,battle.turn);
+  store.fail=true;
+  await expectLater(c.unequipWorldItem(EquipmentSlot.ring),throwsStateError);
+  expect(c.state.inventory.equipped[EquipmentSlot.ring],second.id);
+  expect(c.worldStats.physical,base+8);
+  store.fail=false;
   await c.unequipWorldItem(EquipmentSlot.ring);
   expect(c.worldStats.physical,base);
   expect((await store.load()).inventory.equipped,isEmpty);
@@ -195,5 +200,26 @@ void main(){
   expect(()=>AbyssInventory.fromJson(inv.toJson()..['equipped']={'head':item.id}),throwsFormatException);
   expect(()=>AbyssInventory.fromJson(inv.toJson()..['equipped']={'ring':'eq_99'}),throwsFormatException);
   expect(()=>inv.equip('eq_99'),throwsStateError);
+ });
+ test('equip rejects missing or mismatched catalog entries without changing state',() async {
+  final catalog=EquipmentCatalog(const [
+   EquipmentDefinition(id:'equipment:ring',name:'Ring',slot:EquipmentSlot.ring,rarity:EquipmentRarity.r),
+  ]);
+  final c=AppController(store,equipmentCatalog:catalog);
+  addTearDown(c.dispose);
+  await c.initialize();
+  final valid=c.state.inventory.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.r);
+  final missing=c.state.inventory.addEquipment('equipment:missing',EquipmentSlot.ring,EquipmentRarity.r);
+  final wrongSlot=c.state.inventory.addEquipment('equipment:ring',EquipmentSlot.head,EquipmentRarity.r);
+  final wrongRarity=c.state.inventory.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.sr);
+  await c.equipWorldItem(valid.id);
+  final snapshot=jsonEncode(c.state.toJson());
+  final persisted=store.data;
+  for(final item in [missing,wrongSlot,wrongRarity]){
+   await expectLater(c.equipWorldItem(item.id),throwsStateError);
+   expect(jsonEncode(c.state.toJson()),snapshot);
+   expect(store.data,persisted);
+   expect(c.ready,true);
+  }
  });
 }

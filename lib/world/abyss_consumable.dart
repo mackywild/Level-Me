@@ -31,6 +31,7 @@ class ConsumableCatalog {
  int previewInBattle({required WorldState world,required AbyssInventory inventory,required String id,required int expectedSequence,required int battleId,required int expectedTurn}){
   final battle=world.battle;
   if(battle==null||battle.id!=battleId||battle.turn!=expectedTurn)throw StateError('Stale battle command');
+  if(battle.turn==0x7fffffffffffffff)throw StateError('Battle turn overflow');
   return _preview(world:world,stats:battle.stats,inventory:inventory,id:id,expectedSequence:expectedSequence);
  }
  int _preview({required WorldState world,required WorldStats stats,required AbyssInventory inventory,required String id,required int expectedSequence}){

@@ -8,6 +8,7 @@ import '../models/app_state.dart';
 class LocalStore {
  LocalStore({Directory? directory}) : _directory = directory;
  final Directory? _directory;
+ void Function(AppStateData)? validatePlayer;
  Future<void> _pending = Future<void>.value();
  static const fileName = 'level_me_state_v2.json';
  static const legacyFileName = 'level_me_state_v1.json';
@@ -27,7 +28,9 @@ class LocalStore {
       data['quests'] is! List) {
    throw const FormatException('Invalid player save structure');
   }
-  return AppStateData.fromJson(data);
+  final state=AppStateData.fromJson(data);
+  validatePlayer?.call(state);
+  return state;
  }
 
  File _initial(File primary)=>File('${primary.path}$initialSuffix');

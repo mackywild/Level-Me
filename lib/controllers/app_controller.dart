@@ -10,12 +10,19 @@ import '../services/level_calculator.dart';
 import '../services/local_store.dart';
 import '../services/portable_backup.dart';
 import '../world/world_engine.dart';
+import '../world/abyss_inventory.dart';
+import '../world/abyss_equipment.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup}):_portableBackup=portableBackup;
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog}):_portableBackup=portableBackup,equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+  _store.validatePlayer=_validateEquipment;
+  _portableBackup?.validatePlayer=_validateEquipment;
+ }
+ void _validateEquipment(AppStateData state)=>equipmentCatalog.validateLoadout(state.inventory);
+ final EquipmentCatalog equipmentCatalog;
  final PortableBackup? _portableBackup;
  final LocalStore _store;
  final WorldEngine worldEngine=WorldEngine();
- WorldStats get worldStats=>WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(_state.totalExp).level,fitness:LevelCalculator.statRankFromExp(_state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(_state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(_state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(_state.stats[StatType.creativity]??0));
+ WorldStats get worldStats=>equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(_state.totalExp).level,fitness:LevelCalculator.statRankFromExp(_state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(_state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(_state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(_state.stats[StatType.creativity]??0)),_state.inventory);
  int get _nowMs=>DateTime.now().millisecondsSinceEpoch;
  Future<void> startWorldBattle(String id)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
@@ -26,6 +33,19 @@ class AppController extends ChangeNotifier {
   if(!_ready)throw StateError('Player not ready');
   worldEngine.act(_state.world,command,battleId,turn,_nowMs);
   worldEngine.refresh(_state.world,worldStats,_nowMs);
+  await _persist();
+ });
+ Future<void> equipWorldItem(String id)=>_transaction(() async {
+  if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
+  final item=_state.inventory.equipment[id];
+  if(item==null)throw StateError('Equipment not owned');
+  equipmentCatalog.require(item);
+  _state.inventory.equip(id);
+  await _persist();
+ });
+ Future<void> unequipWorldItem(EquipmentSlot slot)=>_transaction(() async {
+  if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
+  _state.inventory.unequip(slot);
   await _persist();
  });
  AppStateData _state=AppStateData.initial();
@@ -56,7 +76,9 @@ class AppController extends ChangeNotifier {
  Future<void> initialize() async {
   _ready=false;
   await _portableBackup?.resumePendingRestore();
-  _state=await _store.load();
+  final loaded=await _store.load();
+  _validateEquipment(loaded);
+  _state=loaded;
   _recoverForNewDay();
   worldEngine.refresh(_state.world,worldStats,_nowMs);
   await _store.save(_state);
@@ -70,12 +92,12 @@ class AppController extends ChangeNotifier {
   return backup.export();
  });
  Future<void> importPortableBackup(String raw) async {
-  PortableBackup.validate(raw);
+  PortableBackup.validate(raw,validatePlayer:_validateEquipment);
   final backup=_portableBackup;
   if(backup==null)throw StateError('Backup unavailable');
-  _ready=false;
   await _transaction(() async {
    await backup.restore(raw);
+   _ready=false;
    await initialize();
   });
  }

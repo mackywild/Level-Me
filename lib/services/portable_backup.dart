@@ -11,6 +11,7 @@ import 'local_store.dart';
 class PortableBackup {
  PortableBackup({Directory? directory}):_directory=directory;
  final Directory? _directory;
+ void Function(AppStateData)? validatePlayer;
  static const playerName=LocalStore.fileName;
  static const legacyPlayerName=LocalStore.legacyFileName;
  static const progressName='fe_progress_v1.json';
@@ -25,7 +26,7 @@ class PortableBackup {
   await temp.writeAsString(raw,flush:true);
   await temp.rename(file.path);
  }
- static Map<String,dynamic> validate(String raw) {
+ static Map<String,dynamic> validate(String raw,{void Function(AppStateData)? validatePlayer}) {
   if(utf8.encode(raw).length>maxBytes)throw const FormatException('Backup too large');
   final data=jsonDecode(raw);
   if(data is! Map<String,dynamic>||data['format']!='level-me-backup'||(data['version']!=1&&data['version']!=2)) {
@@ -40,10 +41,11 @@ class PortableBackup {
   if(p is! Map<String,dynamic>||p['totalExp'] is! int||p['stats'] is! Map||p['quests'] is! List) {
    throw const FormatException('Invalid player data');
   }
-  AppStateData.fromJson(p);
+  final state=AppStateData.fromJson(p);
+  validatePlayer?.call(state);
   FeProgressStore.decodeProgress(jsonEncode(files[progressName]));
   FeProgressStore.decodeFlags(jsonEncode(files[flagsName]));
-  return {...data,'version':2,'files':{playerName:AppStateData.fromJson(p).toJson(),progressName:files[progressName],flagsName:files[flagsName]}};
+  return {...data,'version':2,'files':{playerName:state.toJson(),progressName:files[progressName],flagsName:files[flagsName]}};
  }
  Future<String> _snapshot(Directory dir) async {
   final files=<String,dynamic>{};
@@ -59,7 +61,7 @@ class PortableBackup {
    }
   }
   final raw=jsonEncode({'format':'level-me-backup','version':2,'createdAt':DateTime.now().toUtc().toIso8601String(),'files':files});
-  validate(raw);
+  validate(raw,validatePlayer:validatePlayer);
   return raw;
  }
  Future<String> export() => FeProgressStore.synchronized(() async {
@@ -68,7 +70,7 @@ class PortableBackup {
   return _snapshot(dir);
  });
  Future<void> restore(String raw) => FeProgressStore.synchronized(() async {
-  validate(raw);
+  validate(raw,validatePlayer:validatePlayer);
   final dir=await _dir();
   final journal=_file(dir,journalName);
   if(await journal.exists())throw StateError('Restore already pending');
@@ -89,7 +91,7 @@ class PortableBackup {
   if(await journal.exists())await _finish(dir,journal);
  });
  Future<void> _finish(Directory dir,File journal) async {
-  final data=validate(await journal.readAsString());
+  final data=validate(await journal.readAsString(),validatePlayer:validatePlayer);
   final files=data['files'] as Map<String,dynamic>;
   for(final name in names) {
    final file=_file(dir,name);

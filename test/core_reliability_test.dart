@@ -8,6 +8,8 @@ import 'package:level_me/models/stat_type.dart';
 import 'package:level_me/models/quest.dart';
 import 'package:level_me/services/local_store.dart';
 import 'package:level_me/world/world_engine.dart';
+import 'package:level_me/world/abyss_inventory.dart';
+import 'package:level_me/world/abyss_equipment.dart';
 
 class MemoryStore extends LocalStore {
  String? data;
@@ -153,5 +155,71 @@ void main(){
   for(var i=0;i<40;i++){await controller.drawBattleReward();}
   expect(controller.state.totalExp,exp);
   expect(controller.state.gachaTickets,0);
+ });
+ test('equipment changes persist, affect battle snapshot, and rollback on save failure',() async {
+  final catalog=EquipmentCatalog(const [
+   EquipmentDefinition(id:'equipment:test_ring',name:'Test ring',slot:EquipmentSlot.ring,rarity:EquipmentRarity.r,physical:5),
+   EquipmentDefinition(id:'equipment:test_ring2',name:'Test ring 2',slot:EquipmentSlot.ring,rarity:EquipmentRarity.r,physical:8),
+  ]);
+  final c=AppController(store,equipmentCatalog:catalog);
+  addTearDown(c.dispose);
+  await c.initialize();
+  final base=c.worldStats.physical;
+  final first=c.state.inventory.addEquipment('equipment:test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  final second=c.state.inventory.addEquipment('equipment:test_ring2',EquipmentSlot.ring,EquipmentRarity.r);
+  await c.equipWorldItem(first.id);
+  expect(c.worldStats.physical,base+5);
+  store.fail=true;
+  await expectLater(c.equipWorldItem(second.id),throwsStateError);
+  expect(c.state.inventory.equipped[EquipmentSlot.ring],first.id);
+  expect(c.worldStats.physical,base+5);
+  store.fail=false;
+  await c.equipWorldItem(second.id);
+  expect(c.worldStats.physical,base+8);
+  expect((await store.load()).inventory.equipped[EquipmentSlot.ring],second.id);
+  await c.startWorldBattle('p01_main');
+  final battle=c.state.world.battle!;
+  expect(battle.stats.physical,base+8);
+  await expectLater(c.unequipWorldItem(EquipmentSlot.ring),throwsStateError);
+  await expectLater(c.equipWorldItem(first.id),throwsStateError);
+  await c.worldCommand(WorldCommand.retreat,battle.id,battle.turn);
+  store.fail=true;
+  await expectLater(c.unequipWorldItem(EquipmentSlot.ring),throwsStateError);
+  expect(c.state.inventory.equipped[EquipmentSlot.ring],second.id);
+  expect(c.worldStats.physical,base+8);
+  store.fail=false;
+  await c.unequipWorldItem(EquipmentSlot.ring);
+  expect(c.worldStats.physical,base);
+  expect((await store.load()).inventory.equipped,isEmpty);
+ });
+ test('loadout legacy default and invalid references',(){
+  final inv=AbyssInventory();
+  final item=inv.addEquipment('equipment:test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  inv.equip(item.id);
+  expect(AbyssInventory.fromJson(inv.toJson()..remove('equipped')).equipped,isEmpty);
+  expect(()=>AbyssInventory.fromJson(inv.toJson()..['equipped']={'head':item.id}),throwsFormatException);
+  expect(()=>AbyssInventory.fromJson(inv.toJson()..['equipped']={'ring':'eq_99'}),throwsFormatException);
+  expect(()=>inv.equip('eq_99'),throwsStateError);
+ });
+ test('equip rejects missing or mismatched catalog entries without changing state',() async {
+  final catalog=EquipmentCatalog(const [
+   EquipmentDefinition(id:'equipment:ring',name:'Ring',slot:EquipmentSlot.ring,rarity:EquipmentRarity.r),
+  ]);
+  final c=AppController(store,equipmentCatalog:catalog);
+  addTearDown(c.dispose);
+  await c.initialize();
+  final valid=c.state.inventory.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.r);
+  final missing=c.state.inventory.addEquipment('equipment:missing',EquipmentSlot.ring,EquipmentRarity.r);
+  final wrongSlot=c.state.inventory.addEquipment('equipment:ring',EquipmentSlot.head,EquipmentRarity.r);
+  final wrongRarity=c.state.inventory.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.sr);
+  await c.equipWorldItem(valid.id);
+  final snapshot=jsonEncode(c.state.toJson());
+  final persisted=store.data;
+  for(final item in [missing,wrongSlot,wrongRarity]){
+   await expectLater(c.equipWorldItem(item.id),throwsStateError);
+   expect(jsonEncode(c.state.toJson()),snapshot);
+   expect(store.data,persisted);
+   expect(c.ready,true);
+  }
  });
 }

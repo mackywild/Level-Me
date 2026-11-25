@@ -317,15 +317,23 @@ class AppController extends ChangeNotifier {
  int get _nowMs=>_clockMs();
  Future<void> startWorldBattle(String id)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
-  worldEngine.start(_state.world,worldStats,id,_nowMs);
-  await _persist();
- });
- Future<void> worldCommand(WorldCommand command,int battleId,int turn)=>_transaction(() async {
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  worldEngine.start(working.world,worldStats,id,_nowMs);
+  await _store.save(working);
+  _state=working;
+  notifyListeners();
+ },keepPublishedState:true);
+ Future<void> worldCommand(WorldCommand command,int battleId,int turn,{int? expectedGeneration})=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
-  worldEngine.act(_state.world,command,battleId,turn,_nowMs);
-  worldEngine.refresh(_state.world,worldStats,_nowMs);
-  await _persist();
- });
+  if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final now=_nowMs;
+  worldEngine.act(working.world,command,battleId,turn,now);
+  worldEngine.refresh(working.world,worldStats,now);
+  await _store.save(working);
+  _state=working;
+  notifyListeners();
+ },keepPublishedState:true);
  Future<void> equipWorldItem(String id)=>_transaction(() async {
   if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
   final item=_state.inventory.equipment[id];

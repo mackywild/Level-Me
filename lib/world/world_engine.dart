@@ -28,18 +28,39 @@ class WorldStats {
  factory WorldStats.fromJson(Map<String,dynamic> j)=>WorldStats(hp:j['hp'] as int,physical:j['physical'] as int,magic:j['magic'] as int,defense:j['defense'] as int,physicalMax:j['physicalMax'] as int,magicMax:j['magicMax'] as int,crit:(j['crit'] as num).toDouble());
 }
 
+/// Version 1: Park–Miller PRNG. All arithmetic fits signed 64-bit.
+class BattleRandom {
+ static const version=1,modulus=2147483647;
+ static int validate(Object? value){
+  if(value is! int||value<1||value>=modulus)throw const FormatException('Invalid battle RNG state');
+  return value;
+ }
+ static int legacySeed(int id,int turn)=>((BigInt.from(id)*BigInt.from(48271)+BigInt.from(turn))%BigInt.from(modulus-1)).toInt()+1;
+ static double next(WorldBattle battle){
+  battle._rngState=(battle._rngState*48271)%modulus;
+  return (battle._rngState-1)/(modulus-1);
+ }
+}
+
 class WorldBattle {
- WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs}):log=log??[],_buffs=Map.of(buffs??{});
+ WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,int? rngState}):log=log??[],_buffs=Map.of(buffs??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
  final int id;
  final String encounterId;
  final WorldStats stats;
  final int energyRemainder,hpRemainder;
  int enemyHp,turn,slowTurns,acceleratedClaws,stopCooldown;
  final List<String> log;
+ int _rngState;
+ int get rngState=>_rngState;
  final Map<BattleBuff,int> _buffs;
  Map<BattleBuff,int> get buffs=>Map.unmodifiable(_buffs);
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
- factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j));
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
+ factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),rngState:_decodeRng(j));
+ static int? _decodeRng(Map<String,dynamic> j){
+  if(!j.containsKey('rngVersion')&&!j.containsKey('rngState'))return null;
+  if(j['rngVersion'] is! int||j['rngVersion']!=BattleRandom.version)throw const FormatException('Unsupported battle RNG version');
+  return BattleRandom.validate(j['rngState']);
+ }
  static Map<BattleBuff,int> _decodeBuffs(Map<String,dynamic> j){
   if(!j.containsKey('buffs'))return {};
   final raw=j['buffs'];
@@ -75,8 +96,11 @@ class WorldState {
 }
 
 class WorldEngine {
- WorldEngine({Random? random}):_random=random??Random();
- final Random _random;
+ WorldEngine({Random? random,Random? seedRandom}):_testRandom=random,_seedRandom=seedRandom??Random.secure();
+ // 既存の固定乱数ユニット試験専用。本番Controllerは指定しない。
+ final Random? _testRandom;
+ final Random _seedRandom;
+ double _roll(WorldBattle battle)=>_testRandom?.nextDouble()??BattleRandom.next(battle);
  static const energyInterval=600000,hpInterval=1800000;
  bool isUnlocked(WorldState w,WorldEncounter e){
   if(e.main)return !w.cleared.contains(e.id)&&(e.stage==1||w.cleared.contains(WorldCatalog.mainId(e.stage-1)));
@@ -122,8 +146,10 @@ class WorldEngine {
   if(!isUnlocked(w,e))throw StateError('Encounter locked or completed');
   refresh(w,s,now);
   if(w.hp<=0)throw StateError('HP recovery required');
+  if(w.sequence==0x7fffffffffffffff)throw StateError('Battle sequence overflow');
+  final seed=_seedRandom.nextInt(BattleRandom.modulus-1)+1;
   w.sequence++;
-  w.battle=WorldBattle(id:w.sequence,encounterId:id,stats:s,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
+  w.battle=WorldBattle(rngState:seed,id:w.sequence,encounterId:id,stats:s,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
   w.lastResult='';
  }
  String? unavailable(WorldState w,WorldCommand command){
@@ -167,8 +193,8 @@ class WorldEngine {
   }else if(guarding){b.log.add('防御態勢');}
   else{
    final chance=b._buffs.containsKey(BattleBuff.critical)?min<double>(1.0,s.crit+BattleBuff.critical.percent/100):s.crit;
-   final critical=_random.nextDouble()<chance?1.5:1.0;
-   final variance=0.95+_random.nextDouble()*0.10;
+   final critical=_roll(b)<chance?1.5:1.0;
+   final variance=0.95+_roll(b)*0.10;
    switch(command){
     case WorldCommand.claw:
      final strong=w.physical>=4;
@@ -230,7 +256,7 @@ class WorldEngine {
    final int extra=(s.defense~/100)*BattleBuff.defense.percent+(s.defense%100)*BattleBuff.defense.percent~/100;
    final defense=b._buffs.containsKey(BattleBuff.defense)?s.defense+min<int>(extra,max<int>(0,0x7fffffffffffff9b-s.defense)):s.defense;
    final attack=damage(e.attack,defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
-   if(b._buffs.containsKey(BattleBuff.evasion)&&_random.nextDouble()<BattleBuff.evasion.percent/100){
+   if(b._buffs.containsKey(BattleBuff.evasion)&&_roll(b)<BattleBuff.evasion.percent/100){
     b.log.add('敵の反撃を回避した。');
    }else{
     w.hp=max(0,w.hp-attack);

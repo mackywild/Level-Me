@@ -17,11 +17,12 @@ import '../world/abyss_dismantle.dart';
 import '../world/abyss_shop.dart';
 import '../world/abyss_consumable.dart';
 import '../world/abyss_buff.dart';
+import '../world/abyss_purification.dart';
 import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,BuffCatalog? buffCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_buffCatalog=buffCatalog??BuffCatalog.production,_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,BuffCatalog? buffCatalog,PurificationCatalog? purificationCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_purificationCatalog=purificationCatalog??PurificationCatalog.production,_buffCatalog=buffCatalog??BuffCatalog.production,_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -30,6 +31,7 @@ class AppController extends ChangeNotifier {
   equipmentCatalog.validateLoadout(state.inventory);
   _summonEngine.validatePending(state.world,state.summon);
   _buffCatalog.validateSavedEffects(state.world);
+  _purificationCatalog.validateSavedStatuses(state.world);
  }
  EquipmentCatalog _equipmentCatalog;
  EquipmentCatalog get equipmentCatalog=>_equipmentCatalog;
@@ -59,6 +61,8 @@ class AppController extends ChangeNotifier {
   // 現行の素材マスターに回復品を混入させない。正式統合は別PR。
   if(_consumableCatalog.items.isNotEmpty)throw const FormatException('Recovery master not enabled');
   if(_buffCatalog.items.isNotEmpty)throw const FormatException('Buff master not enabled');
+  if(_purificationCatalog.items.isNotEmpty)throw const FormatException('Purification master not enabled');
+  _purificationCatalog=master.purification;
   _consumableCatalog=master.recovery;
   _buffCatalog=master.buffs;
   _abyssMaster=master;
@@ -201,6 +205,34 @@ class AppController extends ChangeNotifier {
   worldEngine.refresh(working.world,worldStats,now);
   await _store.save(working);
   _state=working;
+ });
+ PurificationCatalog _purificationCatalog;
+ List<PurificationItem> get purificationItems=>_purificationCatalog.items;
+ String? battlePurificationUnavailable(String id){
+  if(!_ready||_inventoryBusy)return '所持品処理中';
+  final w=_state.world,b=w.battle;
+  if(b==null)return '戦闘中ではありません';
+  try{
+   _purificationCatalog.preview(world:w,inventory:_state.inventory,id:id,expectedSequence:w.itemUseSequence,battleId:b.id,turn:b.turn,engine:worldEngine);
+   return null;
+  }on StateError catch(error){
+   return switch(error.message){
+    'No removable status'=>'浄化対象なし',
+    'Insufficient items'=>'所持数不足',
+    _=>'使用できません',
+   };
+  }
+ }
+ Future<int> useBattlePurificationItem(String id,int battleId,int turn,int expectedSequence,{required int expectedGeneration})=>_inventoryTransaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final now=_nowMs;
+  final count=_purificationCatalog.use(world:working.world,inventory:working.inventory,id:id,expectedSequence:expectedSequence,battleId:battleId,turn:turn,engine:worldEngine,now:now);
+  worldEngine.refresh(working.world,worldStats,now);
+  await _store.save(working);
+  _state=working;
+  return count;
  });
  final ShopCatalog _shopCatalog;
  List<ShopOffer> get shopOffers=>_shopCatalog.offers;

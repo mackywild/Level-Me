@@ -11,6 +11,13 @@ extension BattleBuffRules on BattleBuff {
  String get description=>isCharge?'致死ダメージ1回をHP1で耐える（戦闘終了まで）':'$label $percent% / $durationターン';
 }
 
+enum BattleStatus { poison }
+
+extension BattleStatusRules on BattleStatus {
+ int get duration=>3;
+ String get label=>'毒';
+}
+
 enum WorldCommand { claw, heavyClaw, magic, guard, slow, retreat, accelerate, stopTime, compositeClaw }
 
 class WorldStats {
@@ -45,7 +52,7 @@ class BattleRandom {
 }
 
 class WorldBattle {
- WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,int? rngState}):log=log??[],_buffs=Map.of(buffs??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
+ WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses,int? rngState}):log=log??[],_buffs=Map.of(buffs??{}),_statuses=Map.of(statuses??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
  final int id;
  final String encounterId;
  final WorldStats stats;
@@ -55,9 +62,25 @@ class WorldBattle {
  int _rngState;
  int get rngState=>_rngState;
  final Map<BattleBuff,int> _buffs;
+ final Map<BattleStatus,int> _statuses;
+ Map<BattleStatus,int> get statuses=>Map.unmodifiable(_statuses);
  Map<BattleBuff,int> get buffs=>Map.unmodifiable(_buffs);
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
- factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),rngState:_decodeRng(j));
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
+ factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),rngState:_decodeRng(j));
+ static Map<BattleStatus,int> _decodeStatuses(Map<String,dynamic> j){
+  if(!j.containsKey('statuses'))return {};
+  final raw=j['statuses'];
+  if(raw is! Map<String,dynamic>)throw const FormatException('Invalid battle statuses');
+  final result=<BattleStatus,int>{};
+  for(final entry in raw.entries){
+   final matches=BattleStatus.values.where((kind)=>kind.name==entry.key);
+   if(matches.isEmpty)throw const FormatException('Unknown battle status');
+   final kind=matches.first,value=entry.value;
+   if(value is! int||value<1||value>kind.duration)throw const FormatException('Invalid status duration');
+   result[kind]=value;
+  }
+  return result;
+ }
  static int? _decodeRng(Map<String,dynamic> j){
   if(!j.containsKey('rngVersion')&&!j.containsKey('rngState'))return null;
   if(j['rngVersion'] is! int||j['rngVersion']!=BattleRandom.version)throw const FormatException('Unsupported battle RNG version');
@@ -245,6 +268,21 @@ class WorldEngine {
   b.log.add('$itemName — $amount 回復');
   _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false);
  }
+ int validatePurification(WorldState w,int battleId,int expectedTurn){
+  final b=w.battle;
+  if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
+  if(b.turn==0x7fffffffffffffff)throw StateError('Battle turn overflow');
+  if(b._statuses.isEmpty)throw StateError('No removable status');
+  return b._statuses.length;
+ }
+ void finishPurificationTurn(WorldState w,int battleId,int expectedTurn,int now,String name){
+  validatePurification(w,battleId,expectedTurn);
+  final b=w.battle!;
+  final labels=b._statuses.keys.map((kind)=>kind.label).join('・');
+  b._statuses.clear();
+  b.log.add('$name — $labels を浄化');
+  _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false);
+ }
  void validateBuff(WorldState w,BattleBuff kind,int battleId,int expectedTurn){
   final b=w.battle;
   if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
@@ -283,6 +321,13 @@ class WorldEngine {
   }
   if(!castingStop&&b.stopCooldown>0)b.stopCooldown--;
   if(w.hp==0){_end(w,now,'敗北 — 回復後に再挑戦できます');return;}
+  if(b._statuses.containsKey(BattleStatus.poison)){
+   final damage=min<int>(max<int>(0,w.hp-1),max<int>(1,(s.hp~/100)*5+(s.hp%100)*5~/100));
+   w.hp-=damage;
+   if(damage>0)b.log.add('毒 — HP -$damage');
+   final remaining=b._statuses[BattleStatus.poison]!-1;
+   if(remaining==0){b._statuses.remove(BattleStatus.poison);}else{b._statuses[BattleStatus.poison]=remaining;}
+  }
   if(b._buffs.containsKey(BattleBuff.regeneration)&&newBuff!=BattleBuff.regeneration){
    final amount=min(s.hp-w.hp,max(1,(s.hp~/100)*BattleBuff.regeneration.percent+(s.hp%100)*BattleBuff.regeneration.percent~/100));
    w.hp+=amount;
@@ -296,7 +341,7 @@ class WorldEngine {
    final healed=min<int>(e.hp-b.enemyHp,effective);
    b.enemyHp+=healed;
    if(healed>0)b.log.add('敵の再生 — HP +$healed');
-   if(b._buffs.containsKey(BattleBuff.regenerationSuppression))b.log.add('敵再生抑制 — 回復量50%軽減');
+   if(b._buffs.containsKey(BattleBuff.regenerationSuppression))b.log.add('敵再生抑制 — 回復量${BattleBuff.regenerationSuppression.percent}%軽減');
   }
   for(final kind in b._buffs.keys.toList()){
    if(kind==newBuff||kind.isCharge)continue;

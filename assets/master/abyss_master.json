@@ -556,5 +556,14 @@
       "percent": 50,
       "duration": 3
     }
+  ],
+  "purificationEnabled": false,
+  "purification": [
+    {
+      "id": "item:purification",
+      "name": "浄化薬",
+      "rarity": "sr",
+      "category": "purification"
+    }
   ]
 }

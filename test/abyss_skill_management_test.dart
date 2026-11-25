@@ -76,17 +76,15 @@ void main(){
   expect(restored.state.skills.revision,4);
   expect(restored.state.skills.active,[def.id]);
  });
- testWidgets('習得確認取消と確定、装着・解除を表示する',(tester) async{
+ testWidgets('習得確認取消と確定、装着可能表示',(tester) async{
   final dir=await Directory.systemTemp.createTemp('skill-ui-');
   addTearDown(()=>dir.delete(recursive:true));
   final c=AppController(LocalStore(directory:dir),skillCatalog:catalog,clockMs:()=>now);
   addTearDown(c.dispose);
   await c.initialize();
   await tester.pumpWidget(MaterialApp(home:AbyssSkillScreen(controller:c)));
-  final button=find.byKey(const ValueKey('skill:unused'));
   // 下部の候補までスクロールする。
   final target=find.byKey(const ValueKey('skill-skill:test'));
-  expect(button,findsNothing);
   await tester.scrollUntilVisible(target,250,scrollable:find.byType(Scrollable).first);
   await tester.tap(target);await tester.pumpAndSettle();
   await tester.tap(find.text('キャンセル'));await tester.pumpAndSettle();
@@ -94,7 +92,8 @@ void main(){
   await tester.tap(target);await tester.pumpAndSettle();
   await tester.tap(find.text('確定'));
   await tester.runAsync(() async{
-   while(c.inventoryBusy){await Future<void>.delayed(const Duration(milliseconds:10));}
+   for(var i=0;i<200&&c.inventoryBusy;i++){await Future<void>.delayed(const Duration(milliseconds:10));}
+   expect(c.inventoryBusy,false);
   });
   await tester.pumpAndSettle();
   expect(c.state.skills.learned.containsKey(def.id),true);

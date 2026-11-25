@@ -11,14 +11,14 @@ class WorldEncounter {
  factory WorldEncounter.fromBattleJson(Map<String,dynamic> j,String expectedId){
   for(final key in const ['id','title','enemy','rank']){
    final value=j[key];
-   if(value is! String||value.trim().isEmpty)throw FormatException('Invalid encounter snapshot string: $key');
+   if(value is! String||(key!='rank'&&value.isEmpty))throw FormatException('Invalid encounter snapshot string: $key');
   }
   for(final key in const ['stage','hp','attack','defense','gold','lifeDays','regenerationPercent']){
    if(j[key] is! int)throw FormatException('Invalid encounter snapshot integer: $key');
   }
   if(j['main'] is! bool||j['timeResistant'] is! bool)throw const FormatException('Invalid encounter snapshot flags');
   final e=WorldEncounter.fromJson(j);
-  if(e.id!=expectedId||e.stage<1||e.hp<1||e.attack<0||e.defense<0||e.gold<0||e.lifeDays<0||e.defense>0x7fffffffffffff9b)throw const FormatException('Invalid encounter snapshot values');
+  if(e.id!=expectedId||e.stage<1||e.hp<1||e.attack<0||e.defense<0||e.gold<0||e.lifeDays<0)throw const FormatException('Invalid encounter snapshot values');
   // 進行IDの消滅・ステージ移動・初回券種別変更は自動移行しない。
   final matches=WorldCatalog.encounters.where((current)=>current.id==expectedId);
   if(matches.isEmpty||matches.single.stage!=e.stage||matches.single.main!=e.main)throw const FormatException('Incompatible encounter identity');

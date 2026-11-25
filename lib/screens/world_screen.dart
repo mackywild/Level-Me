@@ -7,6 +7,7 @@ import 'abyss_summon_screen.dart';
 import 'abyss_forge_screen.dart';
 import 'abyss_inventory_screen.dart';
 import 'abyss_shop_screen.dart';
+import 'abyss_compendium_screen.dart';
 
 class WorldScreen extends StatefulWidget {
  const WorldScreen({super.key,required this.controller});
@@ -190,6 +191,7 @@ class _WorldScreenState extends State<WorldScreen>{
      Text('物攻 ${s.physical} / 魔攻 ${s.magic} / 防御 ${s.defense}'),
      FilledButton(onPressed:busy?null:()=>Navigator.of(context).push<void>(MaterialPageRoute(builder:(_)=>AbyssForgeScreen(controller:c))),child:const Text('深淵鍛造へ')),
      FilledButton(onPressed:busy?null:()=>Navigator.of(context).push<void>(MaterialPageRoute(builder:(_)=>AbyssInventoryScreen(controller:c))),child:const Text('深淵所持品へ')),
+     FilledButton(onPressed:busy||!c.ready?null:()=>Navigator.of(context).push<void>(MaterialPageRoute(builder:(_)=>AbyssCompendiumScreen(controller:c))),child:const Text('深淵図鑑へ')),
      FilledButton(onPressed:busy?null:()=>Navigator.of(context).push<void>(MaterialPageRoute(builder:(_)=>AbyssShopScreen(controller:c))),child:const Text('深淵商店へ')),
      for(final slot in EquipmentSlot.values)
       Row(children:[Expanded(child:Text('${slot.name}: ${c.equipmentCatalog.find(c.state.inventory.equipment[c.state.inventory.equipped[slot]]?.masterId??'')?.name??'未装着'}')),

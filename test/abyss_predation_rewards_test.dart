@@ -116,15 +116,16 @@ void main(){
   for(final bad in [null,[],{},['unknown'],[a.name,a.name],[10],[a.name,b.name,'unknown']]){
    expect(()=>WorldBattle.fromJson({...raw,'lifeRewardBonuses':bad}),throwsFormatException);
   }
-  for(final altered in [{...raw}..remove('lifeRewardBonuses'),{...raw,'lifeRewardBonuses':[a.name]},{...raw,'lifeRewardBonuses':[b.name,a.name]}]){
-   final changed=WorldState.fromJson({...w.toJson(),'battle':altered});
-   expect(()=>catalog.validateBattle(changed,state),throwsFormatException);
+  for(final altered in [{...raw}..remove('lifeRewardBonuses'),{...raw,'lifeRewardBonuses':[a.name]}]){
+   expect(()=>WorldState.fromJson({...w.toJson(),'battle':altered}),throwsFormatException);
   }
+  final changed=WorldState.fromJson({...w.toJson(),'battle':{...raw,'lifeRewardBonuses':[b.name,a.name]}});
+  expect(()=>catalog.validateBattle(changed,state),throwsFormatException);
   expect(()=>WorldState.fromJson({...w.toJson(),'cleared':['p01_main','p02_main']}),throwsFormatException);
   final old=world();
   engine.start(old,stats,'p03_hunt',now);
-  expect(old.battle!.toJson().containsKey('lifeRewardBonuses'),false);
-  catalog.validateBattle(WorldState.fromJson(old.toJson()),SkillState());
+  final oldRaw=old.battle!.toJson()..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses');
+  catalog.validateBattle(WorldState.fromJson({...old.toJson(),'battle':oldRaw}),SkillState());
   final locked=WorldState();
   final before=jsonEncode(locked.toJson());
   expect(()=>engine.start(locked,stats,'p01_main',now,lifeRewardBonuses:[a]),throwsStateError);

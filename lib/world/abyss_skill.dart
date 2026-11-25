@@ -177,8 +177,8 @@ class SkillCatalog {
   for(var i=0;i<rewards.length;i++){
    if(rewards[i]!=b.lifeRewardBonuses[i])throw const FormatException('Invalid battle life reward snapshot');
   }
-  // 旧戦闘は空snapshotのまま継続可能。非空の場合は現在の装着定義との一致を必須とする。
-  if(b.activeSkills.isEmpty)return;
+  // 版番号導入前のみ空snapshotを許容する。版付き戦闘は空でも装着定義と照合する。
+  if(b.executionVersion==null&&b.activeSkills.isEmpty)return;
   final expected=snapshot(state);
   if(expected.length!=b.activeSkills.length)throw const FormatException('Invalid battle skill loadout');
   for(var i=0;i<expected.length;i++){

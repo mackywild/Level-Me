@@ -22,3 +22,4 @@ flutter:
   assets:
     - assets/questions/fe_seed.json
     - assets/master/world_encounters.json
+    - assets/master/abyss_master.json

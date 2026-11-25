@@ -16,6 +16,7 @@ String _activeSkillDescription(AppController c,WorldState w,ActiveSkillSpec spec
   ActiveSkillEffect.foresight=>'次の反撃無効',
   ActiveSkillEffect.repairHp=>'HP ${spec.repairPercent}%回復',
   ActiveSkillEffect.timeCleanse=>'毒を浄化',
+  ActiveSkillEffect.rewindHp=>'前ターンHP復元（記録：${w.battle?.previousTurnHp??"なし"}）',
   ActiveSkillEffect.physical||ActiveSkillEffect.accelerationAttack=>'威力${spec.powerPercent}%${spec.hits==1?'':' × ${spec.hits}'}',
  };
  return '$cost / $effect';

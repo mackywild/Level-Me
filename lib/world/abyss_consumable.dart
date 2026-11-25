@@ -2,7 +2,7 @@ import 'dart:math';
 import 'abyss_inventory.dart';
 import 'world_engine.dart';
 
-enum RecoveryTarget { hp, physical, magic }
+enum RecoveryTarget { hp, physical, magic, all }
 
 class RecoveryItem {
  const RecoveryItem({required this.id,required this.name,required this.target,required this.percent});
@@ -14,7 +14,7 @@ class RecoveryItem {
 class ConsumableCatalog {
  ConsumableCatalog(Iterable<RecoveryItem> items){
   for(final item in items){
-   if(!item.id.startsWith('item:')||item.id.length<=5||item.name.trim().isEmpty||item.percent<=0||item.percent>100||_items.containsKey(item.id))throw const FormatException('Invalid recovery item');
+   if(!item.id.startsWith('item:')||item.id.length<=5||item.name.trim().isEmpty||item.percent<=0||item.percent>100||(item.target==RecoveryTarget.all&&item.percent!=100)||_items.containsKey(item.id))throw const FormatException('Invalid recovery item');
    _items[item.id]=item;
   }
  }
@@ -24,6 +24,24 @@ class ConsumableCatalog {
  RecoveryItem? find(String id)=>_items[id];
  List<RecoveryItem> get items=>List.unmodifiable(_items.values);
 
+ ({int hp,int physical,int magic}) _amounts(WorldState world,WorldStats stats,RecoveryItem item){
+  int amount(int current,int maximum){
+   if(maximum<=0||current<0||current>maximum)throw StateError('Invalid recovery resource');
+   if(current==maximum)return 0;
+   return min<int>(maximum-current,max<int>(1,(maximum~/100)*item.percent+(maximum%100)*item.percent~/100));
+  }
+  return (
+   hp:item.target==RecoveryTarget.hp||item.target==RecoveryTarget.all?amount(world.hp,stats.hp):0,
+   physical:item.target==RecoveryTarget.physical||item.target==RecoveryTarget.all?amount(world.physical,stats.physicalMax):0,
+   magic:item.target==RecoveryTarget.magic||item.target==RecoveryTarget.all?amount(world.magic,stats.magicMax):0,
+  );
+ }
+ // 複数資源の合計値は既存APIの表示用。個別の回復量は最大値を超えない。
+ int _total(({int hp,int physical,int magic}) amounts){
+  final sum=BigInt.from(amounts.hp)+BigInt.from(amounts.physical)+BigInt.from(amounts.magic);
+  if(sum>BigInt.from(0x7fffffffffffffff))throw StateError('Recovery total overflow');
+  return sum.toInt();
+ }
  int preview({required WorldState world,required WorldStats stats,required AbyssInventory inventory,required String id,required int expectedSequence}){
   if(world.battle!=null)throw StateError('Consumable unavailable in battle');
   return _preview(world:world,stats:stats,inventory:inventory,id:id,expectedSequence:expectedSequence);
@@ -41,35 +59,27 @@ class ConsumableCatalog {
   final item=find(id);
   if(item==null)throw StateError('Recovery item unavailable');
   if((inventory.stacks[id]??0)<1)throw StateError('Insufficient items');
-  final (current,maximum)=switch(item.target){
-   RecoveryTarget.hp=>(world.hp,stats.hp),
-   RecoveryTarget.physical=>(world.physical,stats.physicalMax),
-   RecoveryTarget.magic=>(world.magic,stats.magicMax),
-  };
-  if(maximum<=0||current<0||current>=maximum)throw StateError('Recovery not needed');
-  // 最大値基準、整数切り捨て、最低1。上限を超えない。
-  final amount=min(maximum-current,max(1,(maximum~/100)*item.percent+(maximum%100)*item.percent~/100));
+  final amount=_total(_amounts(world,stats,item));
+  if(amount==0)throw StateError('Recovery not needed');
   return amount;
  }
  int use({required WorldState world,required WorldStats stats,required AbyssInventory inventory,required String id,required int expectedSequence}){
   final amount=preview(world:world,stats:stats,inventory:inventory,id:id,expectedSequence:expectedSequence);
-  _apply(world,inventory,id,amount);
+  _apply(world,stats,inventory,id);
   return amount;
  }
  int useInBattle({required WorldState world,required AbyssInventory inventory,required String id,required int expectedSequence,required int battleId,required int expectedTurn,required WorldEngine engine,required int now}){
   final amount=previewInBattle(world:world,inventory:inventory,id:id,expectedSequence:expectedSequence,battleId:battleId,expectedTurn:expectedTurn);
-  _apply(world,inventory,id,amount);
+  _apply(world,world.battle!.stats,inventory,id);
   engine.finishRecoveryTurn(world,battleId,expectedTurn,now,find(id)!.name,amount);
   return amount;
  }
- void _apply(WorldState world,AbyssInventory inventory,String id,int amount){
-  final item=find(id)!;
+ void _apply(WorldState world,WorldStats stats,AbyssInventory inventory,String id){
+  final amounts=_amounts(world,stats,find(id)!);
   inventory.removeStack(id,1);
-  switch(item.target){
-   case RecoveryTarget.hp:world.hp+=amount;
-   case RecoveryTarget.physical:world.physical+=amount;
-   case RecoveryTarget.magic:world.magic+=amount;
-  }
+  world.hp+=amounts.hp;
+  world.physical+=amounts.physical;
+  world.magic+=amounts.magic;
   world.itemUseSequence++;
  }
 }

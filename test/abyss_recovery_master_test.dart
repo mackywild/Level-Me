@@ -22,10 +22,10 @@ void main(){
  Map<String,dynamic> raw()=>jsonDecode(File(AbyssMaster.assetPath).readAsStringSync()) as Map<String,dynamic>;
  const item=RecoveryItem(id:'item:hp_test',name:'試験回復薬',target:RecoveryTarget.hp,percent:20);
  final catalog=ConsumableCatalog(const [item]);
- test('実マスターの回復候補9種は召喚マスター有効時も非公開',(){
+ test('実マスターの回復候補10種は召喚マスター有効時も非公開',(){
   final root=raw();
   expect(root['recoveryEnabled'],false);
-  expect((root['recovery'] as List).length,9);
+  expect((root['recovery'] as List).length,10);
   for(final enabled in [false,true]){
    root['enabled']=enabled;
    final master=AbyssMaster.fromJson(jsonEncode(root));

@@ -59,6 +59,7 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
   RecoveryTarget.hp=>'HP',
   RecoveryTarget.physical=>'物理エネルギー',
   RecoveryTarget.magic=>'魔法エネルギー',
+  RecoveryTarget.all=>'HP・物理・魔法（合計）',
  };
  Future<void> _recover(RecoveryItem item) async {
   final c=widget.controller;

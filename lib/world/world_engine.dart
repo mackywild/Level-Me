@@ -71,6 +71,12 @@ class ActiveSkillSpec {
   _=>0,
  };
  bool get usesStopCooldown=>effect==ActiveSkillEffect.stopAttack;
+ /// 奥義個別の試験解放条件。一般物理の500%上限は変更しない。
+ int get ultimateUnlockStage=>effect!=ActiveSkillEffect.ultimateAttack?0:switch(id){
+  'skill:spacetime_break'=>18,
+  'skill:world_collapse'=>21,
+  _=>0,
+ };
  bool get _validEffect=>switch(effect){
   ActiveSkillEffect.physical=>powerPercent>=1&&powerPercent<=500&&hits>=1&&hits<=10&&powerPercent*hits<=500&&physicalCost>=1&&physicalCost<=100&&lifeCost==0,
   ActiveSkillEffect.foresight=>powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==14&&cooldown>=1,
@@ -80,7 +86,7 @@ class ActiveSkillSpec {
   ActiveSkillEffect.rewindHp=>id=='skill:rewind'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==90&&cooldown==8,
   ActiveSkillEffect.crimsonAwakening=>id=='skill:crimson_awakening'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==30&&cooldown==5,
   ActiveSkillEffect.stopAttack=>physicalCost==0&&hits==1&&cooldown==0&&((id=='skill:still_claw'&&powerPercent==250&&lifeCost==45)||(id=='skill:chrono_combo'&&powerPercent==400&&lifeCost==90)),
-  ActiveSkillEffect.ultimateAttack=>id=='skill:spacetime_break'&&powerPercent==500&&physicalCost==0&&hits==1&&lifeCost==180&&cooldown==8,
+  ActiveSkillEffect.ultimateAttack=>physicalCost==0&&hits==1&&((id=='skill:spacetime_break'&&powerPercent==500&&lifeCost==180&&cooldown==8)||(id=='skill:world_collapse'&&powerPercent==800&&lifeCost==730&&cooldown==10)),
  };
  Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown,'hits':hits,'effect':effect.name,'lifeCost':lifeCost};
  factory ActiveSkillSpec.fromJson(Map<String,dynamic> j){
@@ -456,7 +462,10 @@ class WorldEngine {
    if(!w.cleared.contains(WorldCatalog.mainId(12)))return 'STAGE 12クリアが必要';
    if(b.awakeningTurns>0)return '覚醒発動中';
   }
-  if(spec.effect==ActiveSkillEffect.ultimateAttack&&!w.cleared.contains(WorldCatalog.mainId(18)))return 'STAGE 18クリアが必要';
+  if(spec.effect==ActiveSkillEffect.ultimateAttack){
+   final stage=spec.ultimateUnlockStage;
+   if(stage==0||!w.cleared.contains(WorldCatalog.mainId(stage)))return 'STAGE $stageクリアが必要';
+  }
   if(w.lifespan<BigInt.from(spec.lifeCost))return '寿命不足';
   if(w.physical<activeSkillCost(w,spec))return '物理エネルギー不足';
   return null;

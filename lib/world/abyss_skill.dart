@@ -74,7 +74,7 @@ class SkillCatalog {
  }
  List<ActiveSkillSpec> snapshot(SkillState state){
   validateSaved(state);
-  return List.unmodifiable([for(final id in state.active)if(find(id)?.execution case final spec?)spec]);
+  return List<ActiveSkillSpec>.unmodifiable([for(final id in state.active) ?find(id)?.execution]);
  }
  void validateBattle(WorldState world,SkillState state){
   final b=world.battle;

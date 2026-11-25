@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import '../world/abyss_inventory.dart';
 import '../world/abyss_dismantle.dart';
+import '../world/abyss_consumable.dart';
 
 class AbyssInventoryScreen extends StatefulWidget {
  const AbyssInventoryScreen({super.key,required this.controller});
@@ -54,6 +55,41 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
    if(mounted)setState(()=>_confirming=false);
   }
  }
+ String _target(RecoveryTarget target)=>switch(target){
+  RecoveryTarget.hp=>'HP',
+  RecoveryTarget.physical=>'物理エネルギー',
+  RecoveryTarget.magic=>'魔法エネルギー',
+ };
+ Future<void> _recover(RecoveryItem item) async {
+  final c=widget.controller;
+  if(_confirming)return;
+  try{
+   final evaluation=c.evaluateRecovery(item.id);
+   final amount=evaluation.amount;
+   if(amount==null){
+    if(mounted)setState(()=>_message=evaluation.reason);
+    return;
+   }
+   final sequence=c.state.world.itemUseSequence;
+   final generation=c.restoreGeneration;
+   setState(()=>_confirming=true);
+   final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+    title:const Text('回復アイテムを使用しますか？'),
+    content:Text('${item.name} × 1\n${_target(item.target)}：回復予定 $amount\n自然回復により確定時の回復量が変わる場合があります。'),
+    actions:[
+     TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('キャンセル')),
+     FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('使用を確定')),
+    ],
+   ));
+   if(!mounted||confirmed!=true)return;
+   final recovered=await c.useWorldRecoveryItem(item.id,sequence,expectedGeneration:generation);
+   if(mounted)setState(()=>_message='${_target(item.target)}を$recovered 回復しました');
+  }catch(_){
+   if(mounted)setState(()=>_message='使用できませんでした。現在の回復状態・所持数を確認してください。');
+  }finally{
+   if(mounted)setState(()=>_confirming=false);
+  }
+ }
  bool _matches(String id,String name)=>id.toLowerCase().contains(_query)||name.toLowerCase().contains(_query);
  @override Widget build(BuildContext context)=>Scaffold(
   appBar:AppBar(title:const Text('深淵所持品')),
@@ -79,7 +115,19 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
     if(_message!=null)Text(_message!),
     if(_materials)...[
      if(stacks.isEmpty)const Text('該当する素材なし'),
-     for(final entry in stacks)ListTile(title:Text(c.summonRewardName(entry.key)),subtitle:Text(entry.key),trailing:Text('× ${entry.value}')),
+     for(final entry in stacks)
+      if(c.recoveryItem(entry.key) case final item?)
+       Builder(builder:(context){
+        final evaluation=c.evaluateRecovery(item.id);
+        return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text('${item.name} × ${entry.value}'),
+        Text('${_target(item.target)} 最大値の${item.percent}%回復'),
+        if(evaluation.reason case final reason?)Text(reason)
+        else Text('回復予定：${evaluation.amount}'),
+        FilledButton(onPressed:locked||evaluation.amount==null?null:()=>_recover(item),child:const Text('使用')),
+       ])));
+       })
+      else ListTile(title:Text(c.summonRewardName(entry.key)),subtitle:Text(entry.key),trailing:Text('× ${entry.value}')),
     ]else...[
      FilterChip(label:const Text('お気に入りのみ'),selected:_favoritesOnly,onSelected:(value)=>setState(()=>_favoritesOnly=value)),
      DropdownButton<EquipmentRarity?>(

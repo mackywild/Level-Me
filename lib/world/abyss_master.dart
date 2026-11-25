@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'abyss_equipment.dart';
+import 'abyss_consumable.dart';
 import 'abyss_inventory.dart';
 import 'abyss_summon.dart';
 import 'abyss_summon_transaction.dart';
@@ -12,12 +13,13 @@ class SupplyDefinition {
 
 /// 承認済みマスターだけをゲームへ公開する。
 class AbyssMaster {
- AbyssMaster._(this.equipment,this.summon,this._supplies,this.enabled);
+ AbyssMaster._(this.equipment,this.summon,this._supplies,this.enabled,this.recovery);
  static const assetPath='assets/master/abyss_master.json';
  final EquipmentCatalog equipment;
  final SummonCatalog summon;
  final Map<String,SupplyDefinition> _supplies;
  final bool enabled;
+ final ConsumableCatalog recovery;
  SupplyDefinition? supply(String id)=>_supplies[id];
  factory AbyssMaster.fromJson(String raw){
   final root=jsonDecode(raw) as Map<String,dynamic>;
@@ -43,6 +45,20 @@ class AbyssMaster {
    if(!def.id.startsWith('item:')||def.id.length<=5||def.name.trim().isEmpty||def.category!='material'||supplies.containsKey(def.id))throw const FormatException('Invalid supply master');
    supplies[def.id]=def;
   }
+  // 回復品候補は素材と別区分。召喚・販売・付与の正式承認までは公開しない。
+  final recoveryItems=<RecoveryItem>[];
+  final recoveryIds=<String>{};
+  final recoveryEnabled=root.containsKey('recoveryEnabled')?root['recoveryEnabled'] as bool:false;
+  if(recoveryEnabled)throw const FormatException('Recovery activation not approved');
+  for(final row in (root.containsKey('recovery')?root['recovery'] as List:const [])){
+   final j=row as Map<String,dynamic>;
+   final id=j['id'] as String;
+   final rarity=EquipmentRarity.values.byName(j['rarity'] as String);
+   if(j['category']!='recovery'||supplies.containsKey(id)||!recoveryIds.add(id)||rarity.index>EquipmentRarity.ssr.index)throw const FormatException('Invalid recovery master');
+   recoveryItems.add(RecoveryItem(id:id,name:j['name'] as String,target:RecoveryTarget.values.byName(j['target'] as String),percent:j['percent'] as int));
+  }
+  // 非公開の候補についても形式を検証する。
+  ConsumableCatalog(recoveryItems);
   final entries=<SummonEntry>[];
   final seen=<String>{};
   for(final row in root['summon'] as List){
@@ -69,6 +85,6 @@ class AbyssMaster {
     if(validatedSummon.entries(pool,rarity).isEmpty)throw const FormatException('Incomplete prologue summon pool');
    }
   }
-  return AbyssMaster._(enabled?validatedEquipment:EquipmentCatalog.production,enabled?validatedSummon:SummonCatalog.production,Map.unmodifiable(enabled?supplies:<String,SupplyDefinition>{}),enabled);
+  return AbyssMaster._(enabled?validatedEquipment:EquipmentCatalog.production,enabled?validatedSummon:SummonCatalog.production,Map.unmodifiable(enabled?supplies:<String,SupplyDefinition>{}),enabled,ConsumableCatalog.production);
  }
 }

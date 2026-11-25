@@ -20,7 +20,7 @@ import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,this.enhancementScaling=const EnhancementScaling.disabled()}):_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -56,11 +56,12 @@ class AppController extends ChangeNotifier {
   _shopCatalog.validateMaterials((offer)=>master.supply(offer.materialId)?.category=='material');
   // 現行の素材マスターに回復品を混入させない。正式統合は別PR。
   if(_consumableCatalog.items.isNotEmpty)throw const FormatException('Recovery master not enabled');
+  _consumableCatalog=master.recovery;
   _abyssMaster=master;
   _equipmentCatalog=master.equipment;
   _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment,random:_summonRandom);
  }
- String summonRewardName(String id)=>equipmentCatalog.find(id)?.name??_abyssMaster?.supply(id)?.name??id;
+ String summonRewardName(String id)=>equipmentCatalog.find(id)?.name??_abyssMaster?.supply(id)?.name??_consumableCatalog.find(id)?.name??id;
  EquipmentRarity get summonHighestUnlocked=>_summonEngine.highestUnlocked(_state.world);
  List<int> get summonWeights=>const SummonPolicy().effectiveWeights(summonHighestUnlocked);
  List<SummonRate> summonRates(SummonPool pool)=>_summonEngine.rates(_state.world,pool);
@@ -110,8 +111,27 @@ class AppController extends ChangeNotifier {
    notifyListeners();
   }
  }
- final ConsumableCatalog _consumableCatalog;
+ ConsumableCatalog _consumableCatalog;
  List<RecoveryItem> get recoveryItems=>_consumableCatalog.items;
+ RecoveryItem? recoveryItem(String id)=>_consumableCatalog.find(id);
+ ({int? amount,String? reason}) evaluateRecovery(String id){
+  if(!_ready)return (amount:null,reason:'初期化中');
+  if(_inventoryBusy)return (amount:null,reason:'所持品処理中');
+  try{
+   final working=WorldState.fromJson(jsonDecode(jsonEncode(_state.world.toJson())) as Map<String,dynamic>);
+   final stats=worldStats;
+   worldEngine.refresh(working,stats,_nowMs);
+   final amount=_consumableCatalog.preview(world:working,stats:stats,inventory:_state.inventory,id:id,expectedSequence:working.itemUseSequence);
+   return (amount:amount,reason:null);
+  }on StateError catch(error){
+   return (amount:null,reason:switch(error.message){
+    'Recovery not needed'=>'回復不要',
+    'Consumable unavailable in battle'=>'戦闘中は使用できません',
+    'Insufficient items'=>'所持数不足',
+    _=>'使用できません',
+   });
+  }
+ }
  Future<int> useWorldRecoveryItem(String id,int expectedSequence,{required int expectedGeneration})=>_inventoryTransaction(() async {
   if(!_ready)throw StateError('Player not ready');
   if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
@@ -235,7 +255,9 @@ class AppController extends ChangeNotifier {
  final LocalStore _store;
  final WorldEngine worldEngine=WorldEngine();
  WorldStats get worldStats=>equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(_state.totalExp).level,fitness:LevelCalculator.statRankFromExp(_state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(_state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(_state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(_state.stats[StatType.creativity]??0)),_state.inventory,scaling:enhancementScaling);
- int get _nowMs=>DateTime.now().millisecondsSinceEpoch;
+ final int Function() _clockMs;
+ static int _systemClockMs()=>DateTime.now().millisecondsSinceEpoch;
+ int get _nowMs=>_clockMs();
  Future<void> startWorldBattle(String id)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
   worldEngine.start(_state.world,worldStats,id,_nowMs);

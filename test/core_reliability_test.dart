@@ -15,7 +15,8 @@ import 'package:level_me/world/abyss_summon.dart';
 import 'package:level_me/world/abyss_summon_transaction.dart';
 
 class _ZeroRandom implements Random {
- @override int nextInt(int max)=>0;
+ int calls=0;
+ @override int nextInt(int max){calls++;return 0;}
  @override double nextDouble()=>0;
  @override bool nextBool()=>false;
 }
@@ -292,5 +293,54 @@ void main(){
   final before=jsonEncode(controller.state.toJson());
   await expectLater(controller.summonWorldItems(SummonPool.equipment,1,0),throwsStateError);
   expect(jsonEncode(controller.state.toJson()),before);
+ });
+ test('concurrent and invalid summons never draw twice or mutate rejected state',() async {
+  final defs=[for(final rarity in EquipmentRarity.values.take(2))EquipmentDefinition(id:'equipment:ring_${rarity.name}',name:'Ring',slot:EquipmentSlot.ring,rarity:rarity)];
+  final catalog=EquipmentCatalog(defs);
+  final pool=SummonCatalog([
+   for(final def in defs)SummonEntry(pool:SummonPool.equipment,masterId:def.id,rarity:def.rarity),
+   const SummonEntry(pool:SummonPool.relic,masterId:'equipment:ring_n',rarity:EquipmentRarity.n),
+   const SummonEntry(pool:SummonPool.supplies,masterId:'item:test_n',rarity:EquipmentRarity.n),
+  ]);
+  final random=_ZeroRandom();
+  final c=AppController(store,equipmentCatalog:catalog,summonCatalog:pool,summonRandom:random);
+  addTearDown(c.dispose);
+  await c.initialize();
+  Future<void> reject(SummonPool pool) async {
+   final before=jsonEncode(c.state.toJson());
+   final calls=random.calls;
+   await expectLater(c.summonWorldItems(pool,1,c.state.summon.sequence),throwsStateError);
+   expect(jsonEncode(c.state.toJson()),before);
+   expect(random.calls,calls);
+  }
+  await reject(SummonPool.equipment);
+  c.state.world.summonTickets=20;
+  c.state.world.supplyTickets=20;
+  await reject(SummonPool.relic);
+  await reject(SummonPool.supplies);
+  await c.startWorldBattle('p01_main');
+  await reject(SummonPool.equipment);
+  final battle=c.state.world.battle!;
+  await c.worldCommand(WorldCommand.retreat,battle.id,battle.turn);
+  final first=c.summonWorldItems(SummonPool.equipment,1,0);
+  final second=c.summonWorldItems(SummonPool.equipment,1,0);
+  final rejected=expectLater(second,throwsStateError);
+  await first;
+  await rejected;
+  expect(random.calls,2);
+  expect(c.state.world.summonTickets,19);
+  expect(c.state.inventory.equipment.length,1);
+ });
+ test('receipt rejects invalid instance IDs and pool mismatches',(){
+  Map<String,dynamic> raw(String pool,String master,String? id)=>{'sequence':1,'pool':pool,'rewards':[{'masterId':master,'rarity':'n','instanceId':id}]};
+  for(final id in [null,'eq_0','eq_01','invalid']){
+   expect(()=>SummonReceipt.fromJson(raw('equipment','equipment:ring_n',id)),throwsFormatException);
+  }
+  expect(()=>SummonReceipt.fromJson(raw('supplies','item:potion','eq_1')),throwsFormatException);
+  expect(()=>SummonReceipt.fromJson(raw('equipment','item:potion','eq_1')),throwsFormatException);
+  final duplicate=raw('equipment','equipment:ring_n','eq_1');
+  duplicate['rewards']=List.filled(10,(duplicate['rewards'] as List).first);
+  expect(()=>SummonReceipt.fromJson(duplicate),throwsFormatException);
+  expect(SummonReceipt.fromJson(raw('equipment','equipment:ring_n','eq_1')).rewards.single.instanceId,'eq_1');
  });
 }

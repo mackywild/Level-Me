@@ -1,11 +1,12 @@
 import 'dart:math';
 import 'world_catalog.dart';
 
-enum BattleBuff { attack, defense, regeneration }
+enum BattleBuff { attack, defense, regeneration, critical, evasion }
 
 extension BattleBuffRules on BattleBuff {
- int get percent=>switch(this){BattleBuff.attack=>25,BattleBuff.defense=>40,BattleBuff.regeneration=>5};
- int get duration=>this==BattleBuff.regeneration?5:3;
+ int get percent=>switch(this){BattleBuff.attack=>25,BattleBuff.defense=>40,BattleBuff.regeneration=>5,BattleBuff.critical=>25,BattleBuff.evasion=>20};
+ int get duration=>switch(this){BattleBuff.regeneration=>5,BattleBuff.evasion=>2,_=>3};
+ String get label=>switch(this){BattleBuff.attack=>'攻撃強化',BattleBuff.defense=>'防御強化',BattleBuff.regeneration=>'継続回復',BattleBuff.critical=>'会心率上昇',BattleBuff.evasion=>'回避率上昇'};
 }
 
 enum WorldCommand { claw, heavyClaw, magic, guard, slow, retreat, accelerate, stopTime, compositeClaw }
@@ -137,10 +138,11 @@ class WorldEngine {
    _=>null,
   };
  }
- int damage(int attack,int defense,double multiplier,{double critical=1,double variance=1})=>max(1,(attack*multiplier*100/(100+defense)*critical*variance).floor());
+ int damage(int attack,int defense,double multiplier,{double critical=1,double variance=1})=>max(1,(attack*multiplier*100/(100.0+defense)*critical*variance).floor());
  void act(WorldState w,WorldCommand command,int battleId,int expectedTurn,int now){
   final b=w.battle;
   if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
+  if(b.turn==0x7fffffffffffffff)throw StateError('Battle turn overflow');
   final unavailableReason=unavailable(w,command);
   if(unavailableReason!=null)throw StateError(unavailableReason);
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
@@ -164,7 +166,8 @@ class WorldEngine {
    b.log.add(skipEnemy?'時間停止 — 敵の行動停止':'時間停止は無効化された。');
   }else if(guarding){b.log.add('防御態勢');}
   else{
-   final critical=_random.nextDouble()<s.crit?1.5:1.0;
+   final chance=b._buffs.containsKey(BattleBuff.critical)?min<double>(1.0,s.crit+BattleBuff.critical.percent/100):s.crit;
+   final critical=_random.nextDouble()<chance?1.5:1.0;
    final variance=0.95+_random.nextDouble()*0.10;
    switch(command){
     case WorldCommand.claw:
@@ -202,6 +205,7 @@ class WorldEngine {
  void finishRecoveryTurn(WorldState w,int battleId,int expectedTurn,int now,String itemName,int amount){
   final b=w.battle;
   if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
+  if(b.turn==0x7fffffffffffffff)throw StateError('Battle turn overflow');
   if(amount<=0)throw StateError('Invalid recovery amount');
   b.log.add('$itemName — $amount 回復');
   _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false);
@@ -226,8 +230,12 @@ class WorldEngine {
    final int extra=(s.defense~/100)*BattleBuff.defense.percent+(s.defense%100)*BattleBuff.defense.percent~/100;
    final defense=b._buffs.containsKey(BattleBuff.defense)?s.defense+min<int>(extra,max<int>(0,0x7fffffffffffff9b-s.defense)):s.defense;
    final attack=damage(e.attack,defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
-   w.hp=max(0,w.hp-attack);
-   b.log.add('敵の反撃 — HP -$attack');
+   if(b._buffs.containsKey(BattleBuff.evasion)&&_random.nextDouble()<BattleBuff.evasion.percent/100){
+    b.log.add('敵の反撃を回避した。');
+   }else{
+    w.hp=max(0,w.hp-attack);
+    b.log.add('敵の反撃 — HP -$attack');
+   }
    if(b.slowTurns>0)b.slowTurns--;
   }
   if(!castingStop&&b.stopCooldown>0)b.stopCooldown--;

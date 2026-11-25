@@ -25,6 +25,9 @@ class EquipmentCatalog {
   if(definition==null||definition.slot!=item.slot||definition.rarity!=item.rarity)throw StateError('Equipment master unavailable or mismatched');
   return definition;
  }
+ void validateLoadout(AbyssInventory inventory){
+  for(final id in inventory.equipped.values){require(inventory.equipment[id]!);}
+ }
  WorldStats apply(WorldStats base,AbyssInventory inventory){
   var physical=base.physical,magic=base.magic,defense=base.defense;
   for(final id in inventory.equipped.values){

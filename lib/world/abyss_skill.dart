@@ -3,9 +3,10 @@ import 'world_engine.dart';
 enum SkillKind { active, passive }
 
 class SkillDefinition {
- const SkillDefinition({required this.id,required this.name,required this.kind});
+ const SkillDefinition({required this.id,required this.name,required this.kind,this.execution});
  final String id,name;
  final SkillKind kind;
+ final ActiveSkillSpec? execution;
 }
 
 class SkillState {
@@ -53,6 +54,11 @@ class SkillCatalog {
  SkillCatalog(Iterable<SkillDefinition> definitions){
   for(final def in definitions){
    if(!SkillState.validId(def.id)||def.name.trim().isEmpty||_definitions.containsKey(def.id))throw const FormatException('Invalid skill master');
+   final spec=def.execution;
+   if(spec!=null){
+    spec.validate();
+    if(def.kind!=SkillKind.active||spec.id!=def.id||spec.name!=def.name)throw const FormatException('Invalid skill execution mapping');
+   }
    _definitions[def.id]=def;
   }
  }
@@ -64,6 +70,22 @@ class SkillCatalog {
   if(state.learned.keys.any((id)=>find(id)==null))throw const FormatException('Unapproved learned skill');
   for(final kind in SkillKind.values){
    if(state._slots(kind).any((id)=>find(id)?.kind!=kind))throw const FormatException('Invalid skill kind');
+  }
+ }
+ List<ActiveSkillSpec> snapshot(SkillState state){
+  validateSaved(state);
+  return List.unmodifiable([for(final id in state.active)if(find(id)?.execution case final spec?)spec]);
+ }
+ void validateBattle(WorldState world,SkillState state){
+  final b=world.battle;
+  if(b==null)return;
+  // 旧戦闘は空snapshotのまま継続可能。非空の場合は現在の装着定義との一致を必須とする。
+  if(b.activeSkills.isEmpty)return;
+  final expected=snapshot(state);
+  if(expected.length!=b.activeSkills.length)throw const FormatException('Invalid battle skill loadout');
+  for(var i=0;i<expected.length;i++){
+   final a=expected[i],saved=b.activeSkills[i];
+   if(a.id!=saved.id||a.name!=saved.name||a.powerPercent!=saved.powerPercent||a.physicalCost!=saved.physicalCost||a.cooldown!=saved.cooldown)throw const FormatException('Invalid battle skill snapshot');
   }
  }
  SkillDefinition _require(WorldState world,String id){

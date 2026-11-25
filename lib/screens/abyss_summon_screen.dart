@@ -38,6 +38,7 @@ class _AbyssSummonScreenState extends State<AbyssSummonScreen>{
    final pool=pending?.pool??_pool;
    final highest=c.summonHighestUnlocked;
    final weights=c.summonWeights;
+   final rates=c.summonRates(pool);
    final tickets=pool==SummonPool.supplies?state.world.supplyTickets:state.world.summonTickets;
    final cost=SummonPolicy.costs[pool]!;
    final counters=state.summon.misses(pool);
@@ -68,6 +69,13 @@ class _AbyssSummonScreenState extends State<AbyssSummonScreen>{
     const Text('通常抽選の希少度確率（天井・10連保証を除く）'),
     for(final rarity in EquipmentRarity.values)
      ListTile(dense:true,title:Text(rarity.name.toUpperCase()),trailing:Text(rarity.index>highest.index?'未解放':'${(weights[rarity.index]/100).toStringAsFixed(2)}%')),
+    const Divider(),
+    ExpansionTile(title:const Text('個別排出内容・通常確率'),children:[
+     if(rates.isEmpty)const ListTile(title:Text('有効な排出マスターはありません'))else
+      for(final rate in rates)
+       ListTile(dense:true,title:Text(c.summonRewardName(rate.entry.masterId)),subtitle:Text(rate.entry.rarity.name.toUpperCase()),trailing:Text('${rate.percent.toStringAsFixed(4)}%')),
+     const ListTile(subtitle:Text('現在の解放状況での通常抽選1枠の確率です。天井・10連保証による変化と丸め誤差を含みません。')),
+    ]),
     const Divider(),
     const Text('天井進捗'),
     for(final entry in SummonPolicy.pityLimits.entries)

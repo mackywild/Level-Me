@@ -26,6 +26,26 @@ class AbyssInventory {
   _equipped[item.slot]=id;
  }
  void unequip(EquipmentSlot slot){_equipped.remove(slot);}
+ /// 保護状態を個体単位で更新し、他の属性は保持する。
+ void setFavorite(String id,bool favorite){
+  final item=_equipment[id];
+  if(item==null)throw StateError('Equipment not owned');
+  _equipment[id]=EquipmentInstance(id:item.id,masterId:item.masterId,slot:item.slot,rarity:item.rarity,enhancement:item.enhancement,favorite:favorite);
+ }
+ /// 分解対象の保護条件を低レベルAPIでも保証する。
+ EquipmentInstance requireDismantleable(String id,int expectedLevel){
+  final item=_equipment[id];
+  if(item==null)throw StateError('Equipment not owned');
+  if(item.enhancement!=expectedLevel)throw StateError('Stale dismantle request');
+  if(item.favorite||_equipped.containsValue(id))throw StateError('Equipment protected');
+  return item;
+ }
+ EquipmentInstance removeEquipment(String id,int expectedLevel){
+  final item=requireDismantleable(id,expectedLevel);
+  _equipment.remove(id);
+  return item;
+ }
+
  /// 強化値を一段階進める。個体ID・装着状態・お気に入りを保持する。
  EquipmentInstance enhance(String id,int expectedLevel){
   final item=_equipment[id];

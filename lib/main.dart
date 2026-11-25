@@ -17,8 +17,12 @@ import 'world/world_catalog.dart';
 import 'world/abyss_master.dart';
 void main(){
  WidgetsFlutterBinding.ensureInitialized();
- final controller=AppController(LocalStore(),portableBackup:PortableBackup());
+ final controller=AppController(LocalStore(),portableBackup:PortableBackup(),loadAbyssMaster:loadProductionMasters);
  runApp(LevelMeApp(controller:controller));
+}
+Future<AbyssMaster> loadProductionMasters() async {
+ WorldCatalog.loadJson(await rootBundle.loadString(WorldCatalog.assetPath));
+ return AbyssMaster.fromJson(await rootBundle.loadString(AbyssMaster.assetPath));
 }
 class LevelMeApp extends StatelessWidget{
  const LevelMeApp({super.key,required this.controller});
@@ -37,13 +41,7 @@ class _StartupGateState extends State<StartupGate> {
  void _start(){
   _loading=_initialize();
  }
- Future<void> _initialize() async {
-  WorldCatalog.loadJson(await rootBundle.loadString(WorldCatalog.assetPath));
-  if(!widget.controller.hasAbyssMaster){
-   widget.controller.configureAbyssMaster(AbyssMaster.fromJson(await rootBundle.loadString(AbyssMaster.assetPath)));
-  }
-  await widget.controller.initialize();
- }
+ Future<void> _initialize()=>widget.controller.initialize();
  Future<void> _restore() async {
   final confirmed=await showDialog<bool>(
    context:context,

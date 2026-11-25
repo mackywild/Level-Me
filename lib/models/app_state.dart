@@ -3,9 +3,11 @@ import 'boss.dart';
 import 'quest.dart';
 import 'stat_type.dart';
 import '../world/world_engine.dart';
+import '../world/abyss_inventory.dart';
 class AppStateData {
- AppStateData({required this.totalExp,required this.stats,required this.quests,required this.achievements,required this.activeDates,required this.boss,required this.completionCount,this.playerHp=100,this.maxPlayerHp=100,this.attackEnergy=0,this.gachaTickets=0,this.lastRecoveryDate='',this.lastKnownLevel=1, Map<String,dynamic>? sessions, List<Map<String,dynamic>>? sessionHistory,WorldState? world}):sessions=sessions??{},sessionHistory=sessionHistory??[],world=world??WorldState();
+ AppStateData({required this.totalExp,required this.stats,required this.quests,required this.achievements,required this.activeDates,required this.boss,required this.completionCount,this.playerHp=100,this.maxPlayerHp=100,this.attackEnergy=0,this.gachaTickets=0,this.lastRecoveryDate='',this.lastKnownLevel=1, Map<String,dynamic>? sessions, List<Map<String,dynamic>>? sessionHistory,WorldState? world,AbyssInventory? inventory}):sessions=sessions??{},sessionHistory=sessionHistory??[],world=world??WorldState(),inventory=inventory??AbyssInventory();
  final WorldState world;
+ final AbyssInventory inventory;
  int totalExp,completionCount;
  int playerHp,maxPlayerHp,attackEnergy,gachaTickets,lastKnownLevel;
  String lastRecoveryDate;
@@ -29,11 +31,12 @@ class AppStateData {
   'achievements':achievements.map((e)=>e.toJson()).toList(),
   'activeDates':activeDates,'boss':boss.toJson(),
   'playerHp':playerHp,'maxPlayerHp':maxPlayerHp,'attackEnergy':attackEnergy,'gachaTickets':gachaTickets,
-  'world':world.toJson(),'sessions':sessions,'sessionHistory':sessionHistory,'lastRecoveryDate':lastRecoveryDate,'lastKnownLevel':lastKnownLevel};
+  'world':world.toJson(),'inventory':inventory.toJson(),'sessions':sessions,'sessionHistory':sessionHistory,'lastRecoveryDate':lastRecoveryDate,'lastKnownLevel':lastKnownLevel};
  factory AppStateData.fromJson(Map<String,dynamic> j) {
   final raw=j['stats'] as Map<String,dynamic>? ?? {};
   return AppStateData(totalExp:j['totalExp'] as int? ?? 0,
    world:j.containsKey('world')?WorldState.fromJson(j['world'] as Map<String,dynamic>):null,
+   inventory:j.containsKey('inventory')?AbyssInventory.fromJson(j['inventory'] as Map<String,dynamic>):null,
    completionCount:j['completionCount'] as int? ?? 0,
    sessions:Map<String,dynamic>.from(j['sessions'] as Map? ?? {}),
    sessionHistory:(j['sessionHistory'] as List? ?? []).map((e)=>Map<String,dynamic>.from(e as Map)).toList(),

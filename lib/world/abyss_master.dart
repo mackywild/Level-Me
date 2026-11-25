@@ -96,15 +96,16 @@ class AbyssMaster {
   if(root.containsKey('skillEnabled')&&root['skillEnabled']!=false)throw const FormatException('Skill activation not approved');
   final skillRows=root.containsKey('skills')?root['skills']:const [];
   if(skillRows is! List)throw const FormatException('Invalid skill candidates');
-  final skillCandidates=<SkillDefinition>[];
+  // 未公開候補はメタデータのみ。実行用SkillCatalogを生成せず独立して検証する。
+  final skillIds=<String>{};
   const families={'physical','time','acceleration','repair','predation','awakening'};
   for(final row in skillRows){
    if(row is! Map<String,dynamic>||row['id'] is! String||row['name'] is! String||!families.contains(row['family']))throw const FormatException('Invalid skill candidate');
+   final id=row['id'] as String,name=row['name'] as String;
+   if(!SkillState.validId(id)||name.trim().isEmpty||!skillIds.add(id))throw const FormatException('Invalid skill candidate metadata');
    final kind=row['family']=='predation'?SkillKind.passive:SkillKind.active;
-   if(row['kind']!=kind.name)throw const FormatException('Invalid skill candidate kind');
-   skillCandidates.add(SkillDefinition(id:row['id'] as String,name:row['name'] as String,kind:kind));
+   if(row['kind']!=kind.name||(ActiveSkillSpec.reservedEffects.containsKey(id)&&kind!=SkillKind.active))throw const FormatException('Invalid skill candidate kind');
   }
-  SkillCatalog(skillCandidates);
   final entries=<SummonEntry>[];
   final seen=<String>{};
   for(final row in root['summon'] as List){

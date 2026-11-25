@@ -104,21 +104,21 @@ void main(){
   final primary=File('${dir.path}/${LocalStore.fileName}');
   final before=jsonEncode(c.state.toJson()),bytes=await primary.readAsString();
   store.entered=Completer<void>();store.gate=Completer<void>();store.fail=true;
-  final failure=expectLater(c.learnWorldSkill('skill:a0',expectedGeneration:gen),throwsStateError);
+  final failure=expectLater(c.learnWorldSkill('skill:a0',expectedGeneration:gen,expectedRevision:c.state.skills.revision),throwsStateError);
   await store.entered!.future;
   expect(jsonEncode(c.state.toJson()),before);
   expect(await primary.readAsString(),bytes);
-  await expectLater(c.learnWorldSkill('skill:a1',expectedGeneration:gen),throwsStateError);
+  await expectLater(c.learnWorldSkill('skill:a1',expectedGeneration:gen,expectedRevision:c.state.skills.revision),throwsStateError);
   store.gate!.complete();
   await failure;
   expect(jsonEncode(c.state.toJson()),before);
   expect(await primary.readAsString(),bytes);
   store.gate=null;store.fail=false;
-  await c.learnWorldSkill('skill:a0',expectedGeneration:gen);
-  await c.equipWorldSkill('skill:a0',expectedGeneration:gen);
+  await c.learnWorldSkill('skill:a0',expectedGeneration:gen,expectedRevision:c.state.skills.revision);
+  await c.equipWorldSkill('skill:a0',expectedGeneration:gen,expectedRevision:c.state.skills.revision);
   final learned=jsonEncode(c.state.skills.toJson());
   store.fail=true;
-  await expectLater(c.unequipWorldSkill('skill:a0',expectedGeneration:gen),throwsStateError);
+  await expectLater(c.unequipWorldSkill('skill:a0',expectedGeneration:gen,expectedRevision:c.state.skills.revision),throwsStateError);
   expect(jsonEncode(c.state.skills.toJson()),learned);
   store.fail=false;
   final blocked=AppController(LocalStore(directory:dir),clockMs:()=>now);
@@ -130,13 +130,13 @@ void main(){
   addTearDown(restored.dispose);
   await restored.initialize();
   expect(jsonEncode(restored.state.skills.toJson()),learned);
-  await expectLater(restored.learnWorldSkill('skill:a0',expectedGeneration:restored.restoreGeneration),throwsStateError);
-  await expectLater(restored.equipWorldSkill('skill:a0',expectedGeneration:restored.restoreGeneration),throwsStateError);
+  await expectLater(restored.learnWorldSkill('skill:a0',expectedGeneration:restored.restoreGeneration,expectedRevision:restored.state.skills.revision),throwsStateError);
+  await expectLater(restored.equipWorldSkill('skill:a0',expectedGeneration:restored.restoreGeneration,expectedRevision:restored.state.skills.revision),throwsStateError);
   final previousGeneration=restored.restoreGeneration;
   await restored.importPortableBackup(initial);
   expect(restored.state.skills.learned,isEmpty);
-  await expectLater(restored.learnWorldSkill('skill:a0',expectedGeneration:previousGeneration),throwsStateError);
-  await restored.learnWorldSkill('skill:a0',expectedGeneration:restored.restoreGeneration);
+  await expectLater(restored.learnWorldSkill('skill:a0',expectedGeneration:previousGeneration,expectedRevision:restored.state.skills.revision),throwsStateError);
+  await restored.learnWorldSkill('skill:a0',expectedGeneration:restored.restoreGeneration,expectedRevision:restored.state.skills.revision);
   expect(restored.state.skills.learned['skill:a0'],0);
  });
  test('本番のスキル定義は空、実マスターと試験カタログの混用を拒否',() async{
@@ -150,7 +150,7 @@ void main(){
   addTearDown(prod.dispose);
   await prod.initialize();
   expect(prod.skillDefinitions,isEmpty);
-  await expectLater(prod.learnWorldSkill('skill:a0',expectedGeneration:prod.restoreGeneration),throwsStateError);
+  await expectLater(prod.learnWorldSkill('skill:a0',expectedGeneration:prod.restoreGeneration,expectedRevision:prod.state.skills.revision),throwsStateError);
   expect(prod.state.skills.learned,isEmpty);
  });
 }

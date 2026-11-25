@@ -56,11 +56,12 @@ class AppController extends ChangeNotifier {
   _shopCatalog.validateMaterials((offer)=>master.supply(offer.materialId)?.category=='material');
   // 現行の素材マスターに回復品を混入させない。正式統合は別PR。
   if(_consumableCatalog.items.isNotEmpty)throw const FormatException('Recovery master not enabled');
+  _consumableCatalog=master.recovery;
   _abyssMaster=master;
   _equipmentCatalog=master.equipment;
   _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment,random:_summonRandom);
  }
- String summonRewardName(String id)=>equipmentCatalog.find(id)?.name??_abyssMaster?.supply(id)?.name??id;
+ String summonRewardName(String id)=>equipmentCatalog.find(id)?.name??_abyssMaster?.supply(id)?.name??_consumableCatalog.find(id)?.name??id;
  EquipmentRarity get summonHighestUnlocked=>_summonEngine.highestUnlocked(_state.world);
  List<int> get summonWeights=>const SummonPolicy().effectiveWeights(summonHighestUnlocked);
  List<SummonRate> summonRates(SummonPool pool)=>_summonEngine.rates(_state.world,pool);
@@ -110,8 +111,26 @@ class AppController extends ChangeNotifier {
    notifyListeners();
   }
  }
- final ConsumableCatalog _consumableCatalog;
+ ConsumableCatalog _consumableCatalog;
  List<RecoveryItem> get recoveryItems=>_consumableCatalog.items;
+ RecoveryItem? recoveryItem(String id)=>_consumableCatalog.find(id);
+ int recoveryPreview(String id){
+  if(!_ready||_inventoryBusy)throw StateError('Recovery unavailable');
+  final working=WorldState.fromJson(jsonDecode(jsonEncode(_state.world.toJson())) as Map<String,dynamic>);
+  final stats=worldStats;
+  worldEngine.refresh(working,stats,_nowMs);
+  return _consumableCatalog.preview(world:working,stats:stats,inventory:_state.inventory,id:id,expectedSequence:working.itemUseSequence);
+ }
+ String? recoveryUnavailable(String id){
+  try{recoveryPreview(id);return null;}on StateError catch(error){
+   return switch(error.message){
+    'Recovery not needed'=>'回復不要',
+    'Consumable unavailable in battle'=>'戦闘中は使用できません',
+    'Insufficient items'=>'所持数不足',
+    _=>'使用できません',
+   };
+  }
+ }
  Future<int> useWorldRecoveryItem(String id,int expectedSequence,{required int expectedGeneration})=>_inventoryTransaction(() async {
   if(!_ready)throw StateError('Player not ready');
   if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');

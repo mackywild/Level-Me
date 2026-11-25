@@ -38,6 +38,7 @@ class AbyssInventory {
   if(item==null)throw StateError('Equipment not owned');
   if(item.enhancement!=expectedLevel)throw StateError('Stale dismantle request');
   if(item.favorite||_equipped.containsValue(id))throw StateError('Equipment protected');
+  if(item.enhancement!=0)throw StateError('Enhanced equipment protected');
   return item;
  }
  EquipmentInstance removeEquipment(String id,int expectedLevel){

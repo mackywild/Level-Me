@@ -194,4 +194,86 @@ void main(){
   expect(restored.battle!.acceleratedClaws,0);
   expect(restored.battle!.stopCooldown,0);
  });
+ group('composite claw',(){
+  const durable=WorldStats(hp:10000,physical:11,magic:1,defense:1000,physicalMax:27,magicMax:38,crit:0);
+  void startComposite({bool resistant=false}){
+   if(resistant){
+    final raw=jsonDecode(File(WorldCatalog.assetPath).readAsStringSync()) as Map<String,dynamic>;
+    final enemy=(raw['encounters'] as List).firstWhere((e)=>e['id']=='p01_elite') as Map<String,dynamic>;
+    enemy['timeResistant']=true;
+    addTearDown(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
+    WorldCatalog.loadJson(jsonEncode(raw));
+   }
+   engine=WorldEngine(random:_FixedRandom());
+   w.cleared.add('p01_main');
+   w.lifespan=BigInt.from(200);
+   engine.start(w,durable,'p01_elite',now);
+  }
+  test('requires both unlocks and 90 days without mutating rejected state',(){
+   startComposite();
+   expect(engine.unavailable(w,WorldCommand.compositeClaw),isNotNull);
+   w.cleared.add('p06_main');
+   expect(engine.unavailable(w,WorldCommand.compositeClaw),isNotNull);
+   w.cleared.add('p12_main');
+   w.lifespan=BigInt.from(89);
+   final before=jsonEncode(w.toJson());
+   expect(engine.unavailable(w,WorldCommand.compositeClaw),'寿命不足');
+   expect(()=>act(WorldCommand.compositeClaw),throwsStateError);
+   expect(jsonEncode(w.toJson()),before);
+   w.lifespan=BigInt.from(90);
+   expect(engine.unavailable(w,WorldCommand.compositeClaw),isNull);
+   act(WorldCommand.compositeClaw);
+   expect(w.lifespan,BigInt.zero);
+  });
+  test('400 percent damage, single turn, exact cost, shared cooldown survives reload',(){
+   startComposite();
+   w.cleared.addAll(['p06_main','p12_main']);
+   final hp=w.hp,physical=w.physical,magic=w.magic;
+   final id=w.battle!.id,turn=w.battle!.turn;
+   act(WorldCommand.compositeClaw);
+   expect(w.battle,isNotNull);
+   expect(w.battle!.enemyHp,35);
+   expect(w.hp,hp);
+   expect(w.physical,physical);expect(w.magic,magic);
+   expect(w.lifespan,BigInt.from(110));
+   expect(w.battle!.turn,turn+1);
+   expect(w.battle!.stopCooldown,5);
+   expect(w.battle!.acceleratedClaws,0);
+   final snapshot=jsonEncode(w.toJson());
+   expect(()=>engine.act(w,WorldCommand.compositeClaw,id,turn,now),throwsStateError);
+   expect(jsonEncode(w.toJson()),snapshot);
+   w=WorldState.fromJson(jsonDecode(snapshot) as Map<String,dynamic>);
+   for(var cd=5;cd>0;cd--){
+    expect(w.battle!.stopCooldown,cd);
+    expect(engine.unavailable(w,WorldCommand.stopTime),'クールダウン中');
+    expect(engine.unavailable(w,WorldCommand.compositeClaw),'クールダウン中');
+    act(WorldCommand.guard);
+   }
+   expect(w.battle!.stopCooldown,0);
+   expect(engine.unavailable(w,WorldCommand.compositeClaw),isNull);
+   act(WorldCommand.stopTime);
+   expect(w.battle!.stopCooldown,5);
+   w.lifespan=BigInt.from(100);
+   expect(engine.unavailable(w,WorldCommand.compositeClaw),'クールダウン中');
+  });
+  test('resistance prevents stop but not damage or cost',(){
+   startComposite(resistant:true);
+   w.cleared.addAll(['p06_main','p12_main']);
+   final hp=w.hp;
+   act(WorldCommand.compositeClaw);
+   expect(w.battle!.enemyHp,35);
+   expect(w.hp,lessThan(hp));
+   expect(w.lifespan,BigInt.from(110));
+   expect(w.battle!.stopCooldown,5);
+  });
+  test('existing acceleration does not multiply composite damage or consume normal claw charges',(){
+   startComposite();
+   w.cleared.addAll(['p06_main','p12_main']);
+   act(WorldCommand.accelerate);
+   act(WorldCommand.compositeClaw);
+   expect(w.battle!.enemyHp,35);
+   expect(w.battle!.acceleratedClaws,2);
+   expect(w.lifespan,BigInt.from(103));
+  });
+ });
 }

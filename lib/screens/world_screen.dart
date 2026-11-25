@@ -104,6 +104,19 @@ class _WorldScreenState extends State<WorldScreen>{
        ])),
       )),
     ]),
+    if(b.activeSkills.isNotEmpty)panel([
+     const Text('SKILL / 能動スキル',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),
+     for(final spec in b.activeSkills)
+      Builder(builder:(context){
+       final reason=c.worldEngine.activeSkillUnavailable(w,spec.id);
+       final battleId=b.id,turn=b.turn,generation=c.restoreGeneration;
+       return OutlinedButton(
+        key:ValueKey('active-skill-${spec.id}'),
+        onPressed:busy||c.inventoryBusy||reason!=null?null:()=>run(()=>c.useBattleActiveSkill(spec.id,battleId,turn,expectedGeneration:generation)),
+        child:Text('${spec.name} / 物理 ${c.worldEngine.activeSkillCost(w,spec)} / 威力${spec.powerPercent}% / CD ${b.skillCooldowns[spec.id]??0}${reason==null?'':' / $reason'}'),
+       );
+      }),
+    ]),
     panel([const Text('ITEM / 回復アイテム',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),
      if(c.inventoryBusy)const LinearProgressIndicator(),
      if(!c.recoveryItems.any((item)=>(c.state.inventory.stacks[item.id]??0)>0))const Text('使用可能な回復アイテムなし'),

@@ -39,7 +39,9 @@ class _StartupGateState extends State<StartupGate> {
  }
  Future<void> _initialize() async {
   WorldCatalog.loadJson(await rootBundle.loadString(WorldCatalog.assetPath));
-  widget.controller.configureAbyssMaster(AbyssMaster.fromJson(await rootBundle.loadString(AbyssMaster.assetPath)));
+  if(!widget.controller.hasAbyssMaster){
+   widget.controller.configureAbyssMaster(AbyssMaster.fromJson(await rootBundle.loadString(AbyssMaster.assetPath)));
+  }
   await widget.controller.initialize();
  }
  Future<void> _restore() async {

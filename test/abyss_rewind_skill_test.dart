@@ -117,7 +117,12 @@ void main(){
  });
  test('未解放・寿命不足・古いturnは履歴と資産を変更しない',(){
   final engine=WorldEngine();
-  for(final w in [start(engine,unlocked:false),start(engine,life:89)]){
+  final locked=WorldState(lifespan:BigInt.from(90),hpAt:now,energyAt:now);
+  final lockedBefore=jsonEncode(locked.toJson());
+  expect(()=>engine.start(locked,stats,'p01_main',now,activeSkills:[spec]),throwsStateError);
+  expect(jsonEncode(locked.toJson()),lockedBefore);
+  final tampered=start(engine)..cleared.remove('p16_main');
+  for(final w in [tampered,start(engine,life:89)]){
    final b=w.battle!;
    engine.act(w,WorldCommand.guard,b.id,1,now);
    final before=jsonEncode(w.toJson());

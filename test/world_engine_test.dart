@@ -189,7 +189,7 @@ void main(){
  test('old active battle save defaults chrono state to zero',(){
   engine.start(w,stats,'p01_main',now);
   final raw=jsonDecode(jsonEncode(w.toJson())) as Map<String,dynamic>;
-  (raw['battle'] as Map)..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses')..remove('acceleratedClaws')..remove('stopCooldown');
+  (raw['battle'] as Map)..remove('encounterSnapshot')..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses')..remove('acceleratedClaws')..remove('stopCooldown');
   final restored=WorldState.fromJson(raw);
   expect(restored.battle!.acceleratedClaws,0);
   expect(restored.battle!.stopCooldown,0);

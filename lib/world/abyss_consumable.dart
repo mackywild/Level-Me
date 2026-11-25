@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'abyss_inventory.dart';
 import 'world_engine.dart';
 
@@ -25,11 +24,7 @@ class ConsumableCatalog {
  List<RecoveryItem> get items=>List.unmodifiable(_items.values);
 
  ({int hp,int physical,int magic}) _amounts(WorldState world,WorldStats stats,RecoveryItem item){
-  int amount(int current,int maximum){
-   if(maximum<=0||current<0||current>maximum)throw StateError('Invalid recovery resource');
-   if(current==maximum)return 0;
-   return min<int>(maximum-current,max<int>(1,(maximum~/100)*item.percent+(maximum%100)*item.percent~/100));
-  }
+  int amount(int current,int maximum)=>WorldEngine.recoveryAmount(current,maximum,item.percent);
   return (
    hp:item.target==RecoveryTarget.hp||item.target==RecoveryTarget.all?amount(world.hp,stats.hp):0,
    physical:item.target==RecoveryTarget.physical||item.target==RecoveryTarget.all?amount(world.physical,stats.physicalMax):0,

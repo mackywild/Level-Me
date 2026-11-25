@@ -12,6 +12,7 @@ import '../services/portable_backup.dart';
 import '../world/world_engine.dart';
 import '../world/abyss_inventory.dart';
 import '../world/abyss_equipment.dart';
+import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
@@ -21,8 +22,16 @@ class AppController extends ChangeNotifier {
   _portableBackup?.validatePlayer=_validateEquipment;
  }
  void _validateEquipment(AppStateData state)=>equipmentCatalog.validateLoadout(state.inventory);
- final EquipmentCatalog equipmentCatalog;
- late final SummonEngine _summonEngine;
+ EquipmentCatalog equipmentCatalog;
+ late SummonEngine _summonEngine;
+ AbyssMaster? _abyssMaster;
+ void configureAbyssMaster(AbyssMaster master){
+  if(_ready||_summonBusy)throw StateError('Cannot replace master while active');
+  _abyssMaster=master;
+  equipmentCatalog=master.equipment;
+  _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment);
+ }
+ String summonRewardName(String id)=>equipmentCatalog.find(id)?.name??_abyssMaster?.supply(id)?.name??id;
  EquipmentRarity get summonHighestUnlocked=>_summonEngine.highestUnlocked(_state.world);
  List<int> get summonWeights=>const SummonPolicy().effectiveWeights(summonHighestUnlocked);
  String? summonUnavailable(SummonPool pool,int count){

@@ -16,19 +16,21 @@ import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom}):_portableBackup=portableBackup,equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom}):_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
  }
  void _validateEquipment(AppStateData state)=>equipmentCatalog.validateLoadout(state.inventory);
- EquipmentCatalog equipmentCatalog;
+ EquipmentCatalog _equipmentCatalog;
+ EquipmentCatalog get equipmentCatalog=>_equipmentCatalog;
  late SummonEngine _summonEngine;
  AbyssMaster? _abyssMaster;
+ bool get hasAbyssMaster=>_abyssMaster!=null;
  void configureAbyssMaster(AbyssMaster master){
-  if(_ready||_summonBusy)throw StateError('Cannot replace master while active');
+  if(_ready||_summonBusy||_abyssMaster!=null)throw StateError('Cannot replace master while active');
   _abyssMaster=master;
-  equipmentCatalog=master.equipment;
+  _equipmentCatalog=master.equipment;
   _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment);
  }
  String summonRewardName(String id)=>equipmentCatalog.find(id)?.name??_abyssMaster?.supply(id)?.name??id;

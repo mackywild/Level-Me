@@ -93,18 +93,25 @@ void main(){
   c.state.inventory.addStack('item:iron',1);
   c.state.inventory.removeStack('item:iron',1);
   await tester.pumpWidget(MaterialApp(home:AbyssCompendiumScreen(controller:c)));
+  final ironCard=find.byKey(const ValueKey('item:iron'));
+  final ironTitle=find.descendant(of:ironCard,matching:find.text('鉄'));
   expect(find.text('発見済み 1 / 32'),findsOneWidget);
-  expect(find.text('鉄'),findsOneWidget);
+  expect(ironCard,findsOneWidget);
+  expect(ironTitle,findsOneWidget);
   expect(find.textContaining('現在未所持'),findsOneWidget);
   expect(find.text('布の頭巾'),findsNothing);
   expect(find.text('？？？'),findsWidgets);
   await tester.enterText(find.byKey(const ValueKey('compendium-search')),'cloth_cap');
   await tester.pumpAndSettle();
   expect(find.text('該当する図鑑項目なし'),findsOneWidget);
+  expect(ironCard,findsNothing);
   expect(find.text('？？？'),findsNothing);
   await tester.enterText(find.byKey(const ValueKey('compendium-search')),'鉄');
   await tester.pumpAndSettle();
-  expect(find.text('鉄'),findsOneWidget);
+  expect(ironCard,findsOneWidget);
+  expect(ironTitle,findsOneWidget);
+  expect(find.text('？？？'),findsNothing);
+  expect(find.text('該当する図鑑項目なし'),findsNothing);
   expect(find.text('発見済み 1 / 32'),findsOneWidget);
  });
 }

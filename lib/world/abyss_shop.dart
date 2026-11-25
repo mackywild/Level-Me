@@ -23,7 +23,7 @@ class ShopCatalog {
  void validateMaterials(bool Function(ShopOffer) valid){
   if(_offers.values.any((offer)=>!valid(offer)))throw const FormatException('Invalid shop material master');
  }
- ShopOffer purchase({required WorldState world,required AbyssInventory inventory,required String offerId,required int expectedSequence}){
+ ShopOffer validate({required WorldState world,required AbyssInventory inventory,required String offerId,required int expectedSequence}){
   if(world.battle!=null)throw StateError('Shop unavailable in battle');
   if(world.shopSequence!=expectedSequence)throw StateError('Stale shop request');
   final next=world.shopSequence+1;
@@ -34,13 +34,17 @@ class ShopCatalog {
   if(balance<offer.price)throw StateError('Insufficient shop currency');
   final count=inventory.stacks[offer.materialId]??0;
   if(count+offer.quantity<=count)throw StateError('Stack overflow');
+  return offer;
+ }
+ ShopOffer purchase({required WorldState world,required AbyssInventory inventory,required String offerId,required int expectedSequence}){
+  final offer=validate(world:world,inventory:inventory,offerId:offerId,expectedSequence:expectedSequence);
   inventory.addStack(offer.materialId,offer.quantity);
   if(offer.currency==ShopCurrency.gold){
    world.gold-=offer.price;
   }else{
    world.magicCrystals-=offer.price;
   }
-  world.shopSequence=next;
+  world.shopSequence++;
   return offer;
  }
 }

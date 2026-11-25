@@ -109,7 +109,25 @@ class AppController extends ChangeNotifier {
  }
  final ShopCatalog _shopCatalog;
  List<ShopOffer> get shopOffers=>_shopCatalog.offers;
- Future<ShopOffer> purchaseWorldMaterial(String offerId,int expectedSequence)=>_inventoryTransaction(() async {
+ int _restoreGeneration=0;
+ int get restoreGeneration=>_restoreGeneration;
+ String? shopUnavailable(String id,int sequence){
+  if(!_ready)return '初期化中';
+  if(_inventoryBusy)return '所持品処理中';
+  try {
+   _shopCatalog.validate(world:_state.world,inventory:_state.inventory,offerId:id,expectedSequence:sequence);
+   return null;
+  } on StateError catch(error){
+   return switch(error.message){
+    'Shop unavailable in battle'=>'戦闘中は購入できません',
+    'Insufficient shop currency'=>'通貨残高不足',
+    'Stack overflow'=>'素材所持数の上限です',
+    _=>'購入できません',
+   };
+  }
+ }
+ Future<ShopOffer> purchaseWorldMaterial(String offerId,int expectedSequence,{int? expectedGeneration})=>_inventoryTransaction(() async {
+  if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final result=_shopCatalog.purchase(world:working.world,inventory:working.inventory,offerId:offerId,expectedSequence:expectedSequence);
@@ -134,6 +152,7 @@ class AppController extends ChangeNotifier {
     'Enhanced equipment protected'=>'強化済み装備は分解できません',
     'Dismantle recipe unavailable'=>'分解報酬未承認',
     'Stack overflow'=>'素材所持数の上限です',
+    'Crystal overflow'=>'魔晶石所持数の上限です',
     _=>'分解できません',
    };
   }
@@ -156,7 +175,10 @@ class AppController extends ChangeNotifier {
   await _store.save(working);
   _state=working;
  });
- Future<DismantleRecipe> dismantleWorldItem(String id,int expectedLevel)=>_inventoryTransaction(() async {
+ Future<DismantleRecipe> dismantleWorldItem(String id,int expectedLevel,{int? expectedGeneration,EquipmentInstance? expectedItem})=>_inventoryTransaction(() async {
+  if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final current=_state.inventory.equipment[id];
+  if(expectedItem!=null&&(current==null||current.id!=expectedItem.id||current.masterId!=expectedItem.masterId||current.slot!=expectedItem.slot||current.rarity!=expectedItem.rarity||current.enhancement!=expectedItem.enhancement))throw StateError('Stale equipment confirmation');
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final reward=_dismantlePolicy.dismantle(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel);
@@ -271,6 +293,7 @@ class AppController extends ChangeNotifier {
   final backup=_portableBackup;
   if(backup==null)throw StateError('Backup unavailable');
   await _transaction(() async {
+   _restoreGeneration++;
    await backup.restore(raw);
    _ready=false;
    await initialize();
@@ -284,6 +307,7 @@ class AppController extends ChangeNotifier {
  Future<void> restoreBackup() async {
   await _ensureAbyssMaster();
   await _transaction(() async {
+   _restoreGeneration++;
    await _store.restoreBackup();
    await initialize();
   });

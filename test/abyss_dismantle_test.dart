@@ -146,4 +146,76 @@ void main(){
   expect(inv.equipment[item.id]!.enhancement,1);
   expect(inv.discovered,contains(item.masterId));
  });
+ test('併用報酬は保存失敗で全資産不変、再起動・復元後も一括保存される',() async {
+  final dir=await Directory.systemTemp.createTemp('combined-reward-');
+  addTearDown(()=>dir.delete(recursive:true));
+  final store=_DelayedStore(dir);
+  final combined=DismantlePolicy(const [DismantleRecipe(rarity:EquipmentRarity.n,materialId:'item:iron',quantity:2,magicCrystals:3)]);
+  final c=AppController(store,portableBackup:PortableBackup(directory:dir),equipmentCatalog:catalog,dismantlePolicy:combined);
+  addTearDown(c.dispose);
+  await c.initialize();
+  final item=c.state.inventory.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.n);
+  c.state.world.magicCrystals=4;
+  c.state.inventory.addStack('item:iron',1);
+  await store.save(c.state);
+  final raw=await c.exportPortableBackup();
+  final generation=c.restoreGeneration;
+  final before=jsonEncode(c.state.toJson());
+  final primary=File('${dir.path}/${LocalStore.fileName}');
+  final bytes=await primary.readAsString();
+  store.gate=Completer<void>();
+  store.entered=Completer<void>();
+  store.fail=true;
+  final failed=expectLater(c.dismantleWorldItem(item.id,0),throwsStateError);
+  await store.entered!.future;
+  expect(jsonEncode(c.state.toJson()),before);
+  expect(await primary.readAsString(),bytes);
+  store.gate!.complete();
+  await failed;
+  expect(jsonEncode(c.state.toJson()),before);
+  expect(await primary.readAsString(),bytes);
+  store.gate=null;
+  store.fail=false;
+  await c.setWorldEquipmentFavorite(item.id,true);
+  await expectLater(c.dismantleWorldItem(item.id,0),throwsStateError);
+  await c.setWorldEquipmentFavorite(item.id,false);
+  await c.equipWorldItem(item.id);
+  await expectLater(c.dismantleWorldItem(item.id,0),throwsStateError);
+  await c.unequipWorldItem(item.slot);
+  await c.dismantleWorldItem(item.id,0);
+  final restarted=AppController(LocalStore(directory:dir),portableBackup:PortableBackup(directory:dir),equipmentCatalog:catalog,dismantlePolicy:combined);
+  addTearDown(restarted.dispose);
+  await restarted.initialize();
+  expect(restarted.state.world.magicCrystals,7);
+  expect(restarted.state.inventory.stacks['item:iron'],3);
+  expect(restarted.state.inventory.equipment,isEmpty);
+  await expectLater(restarted.dismantleWorldItem(item.id,0),throwsStateError);
+  await c.importPortableBackup(raw);
+  await expectLater(c.dismantleWorldItem(item.id,0,expectedGeneration:generation,expectedItem:item),throwsStateError);
+  expect(c.state.world.magicCrystals,4);
+  expect(c.state.inventory.stacks['item:iron'],1);
+  expect(c.state.inventory.equipment.containsKey(item.id),true);
+  await c.dismantleWorldItem(item.id,0,expectedGeneration:c.restoreGeneration,expectedItem:item);
+  expect(c.state.world.magicCrystals,7);
+ });
+ test('併用報酬の各加算上限と不正レシピを拒否する',(){
+  const reward=DismantleRecipe(rarity:EquipmentRarity.n,materialId:'item:iron',quantity:2,magicCrystals:3);
+  final combined=DismantlePolicy(const [reward]);
+  for(final crystalOverflow in [true,false]){
+   final s=AppStateData.initial();
+   final item=s.inventory.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.n);
+   if(crystalOverflow){s.world.magicCrystals=0x7fffffffffffffff;}else{s.inventory.addStack('item:iron',0x7fffffffffffffff);}
+   final before=jsonEncode(s.toJson());
+   expect(()=>combined.dismantle(world:s.world,inventory:s.inventory,catalog:catalog,id:item.id,expectedLevel:0),throwsStateError);
+   expect(jsonEncode(s.toJson()),before);
+  }
+  for(final invalid in const [
+   DismantleRecipe(rarity:EquipmentRarity.n,materialId:'',quantity:0,magicCrystals:-1),
+   DismantleRecipe(rarity:EquipmentRarity.n,materialId:'',quantity:0,magicCrystals:1000001),
+   DismantleRecipe(rarity:EquipmentRarity.n,materialId:'',quantity:0),
+   DismantleRecipe(rarity:EquipmentRarity.n,materialId:'equipment:ring',quantity:1,magicCrystals:3),
+  ]){
+   expect(()=>DismantlePolicy([invalid]),throwsFormatException);
+  }
+ });
 }

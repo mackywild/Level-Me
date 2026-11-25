@@ -129,4 +129,41 @@ void main(){
   await expectLater(restarted.purchaseWorldMaterial(crystals.id,1),throwsStateError);
   expect(jsonEncode(restarted.state.toJson()),before);
  });
+ test('外部・端末内復元と復元失敗後に旧世代の購入を拒否する',() async {
+  final dir=await Directory.systemTemp.createTemp('shop-generation-');
+  addTearDown(()=>dir.delete(recursive:true));
+  final store=LocalStore(directory:dir);
+  final c=AppController(store,portableBackup:PortableBackup(directory:dir),shopCatalog:catalog);
+  addTearDown(c.dispose);
+  await c.initialize();
+  c.state.world.gold=50;
+  await store.save(c.state);
+  final raw=await c.exportPortableBackup();
+  final primary=File('${dir.path}/${LocalStore.fileName}');
+  Future<void> reject(int generation) async {
+   final before=jsonEncode(c.state.toJson());
+   final bytes=await primary.readAsString();
+   await expectLater(c.purchaseWorldMaterial(gold.id,c.state.world.shopSequence,expectedGeneration:generation),throwsStateError);
+   expect(jsonEncode(c.state.toJson()),before);
+   expect(await primary.readAsString(),bytes);
+  }
+  final first=c.restoreGeneration;
+  await c.importPortableBackup(raw);
+  expect(c.state.world.shopSequence,0);
+  await reject(first);
+  final second=c.restoreGeneration;
+  await c.restoreBackup();
+  expect(c.state.world.shopSequence,0);
+  await reject(second);
+  final third=c.restoreGeneration;
+  await File('${primary.path}.bak').delete();
+  await expectLater(c.restoreBackup(),throwsA(isA<FileSystemException>()));
+  await reject(third);
+  final latest=c.restoreGeneration;
+  await expectLater(c.importPortableBackup('{}'),throwsFormatException);
+  expect(c.restoreGeneration,latest);
+  await c.purchaseWorldMaterial(gold.id,0,expectedGeneration:latest);
+  expect(c.state.world.gold,40);
+  expect(c.state.world.shopSequence,1);
+ });
 }

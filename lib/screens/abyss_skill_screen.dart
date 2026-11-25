@@ -55,6 +55,8 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
      for(var i=0;i<SkillState.limit(kind);i++)
       ListTile(dense:true,leading:const Icon(Icons.auto_awesome),title:Text('枠 ${i+1}：${i<(kind==SkillKind.active?state.active:state.passive).length?names[(kind==SkillKind.active?state.active:state.passive)[i]]??'不明':'空き枠'}')),
     ],
+    if(defs.any((def)=>def.passiveBonus!=null))
+     Text('現在の能力値：物攻 ${c.worldStats.physical} / 魔攻 ${c.worldStats.magic} / 防御 ${c.worldStats.defense}'),
     if(c.state.world.battle!=null)const Text('戦闘中は変更できません'),
     if(c.inventoryBusy)const LinearProgressIndicator(),
     if(_message!=null)Text(_message!),
@@ -71,7 +73,10 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
        final action=equipped?'解除':learned?'装着':'習得';
        final full=learned&&!equipped&&slots.length>=SkillState.limit(def.kind);
        return Card(child:ListTile(
-        title:Text(def.name),subtitle:Text(equipped?'装着中':learned?'習得済み':'未習得'),
+        title:Text(def.name),subtitle:Text([
+         equipped?'装着中':learned?'習得済み':'未習得',
+         if(def.passiveBonus case final bonus?)'物攻 +${bonus.physical} / 魔攻 +${bonus.magic} / 防御 +${bonus.defense}',
+        ].join('\n')),
         trailing:OutlinedButton(key:ValueKey('skill-${def.id}'),onPressed:locked||full?null:()=>_change(def,action,revision,generation),child:Text(full?'枠満杯':action)),
        ));
       }),

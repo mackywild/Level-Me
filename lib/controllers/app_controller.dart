@@ -23,12 +23,19 @@ class AppController extends ChangeNotifier {
  void _validateEquipment(AppStateData state)=>equipmentCatalog.validateLoadout(state.inventory);
  final EquipmentCatalog equipmentCatalog;
  late final SummonEngine _summonEngine;
- Future<SummonReceipt> summonWorldItems(SummonPool pool,int count,int expectedSequence)=>_transaction(() async {
-  if(!_ready)throw StateError('Player not ready');
-  final receipt=_summonEngine.draw(world:_state.world,inventory:_state.inventory,state:_state.summon,pool:pool,count:count,expectedSequence:expectedSequence);
-  await _persist();
-  return receipt;
- });
+ Future<SummonReceipt> summonWorldItems(SummonPool pool,int count,int expectedSequence) {
+  String? checkpoint;
+  return _transaction(() async {
+   if(!_ready)throw StateError('Player not ready');
+   final alreadyPrepared=_state.summon.pending!=null;
+   _summonEngine.prepare(world:_state.world,state:_state.summon,pool:pool,count:count,expectedSequence:expectedSequence);
+   if(!alreadyPrepared)await _store.save(_state);
+   checkpoint=jsonEncode(_state.toJson());
+   final receipt=_summonEngine.commit(world:_state.world,inventory:_state.inventory,state:_state.summon);
+   await _persist();
+   return receipt;
+  },rollbackSnapshot:()=>checkpoint);
+ }
  final PortableBackup? _portableBackup;
  final LocalStore _store;
  final WorldEngine worldEngine=WorldEngine();
@@ -61,11 +68,11 @@ class AppController extends ChangeNotifier {
  AppStateData _state=AppStateData.initial();
  bool _ready=false;
  Future<void> _queue=Future<void>.value();
- Future<T> _transaction<T>(Future<T> Function() action) {
+ Future<T> _transaction<T>(Future<T> Function() action,{String? Function()? rollbackSnapshot}) {
   final result=_queue.then((_) async {
    final snapshot=jsonEncode(_state.toJson());
    try {return await action();} catch (_) {
-    _state=AppStateData.fromJson(jsonDecode(snapshot) as Map<String,dynamic>);
+    _state=AppStateData.fromJson(jsonDecode(rollbackSnapshot?.call()??snapshot) as Map<String,dynamic>);
     notifyListeners();
     rethrow;
    }

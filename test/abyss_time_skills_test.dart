@@ -8,6 +8,7 @@ import 'package:level_me/world/abyss_master.dart';
 import 'package:level_me/world/abyss_skill.dart';
 import 'package:level_me/world/abyss_time_candidates.dart';
 import 'package:level_me/world/world_catalog.dart';
+import 'helpers/extended_world_catalog.dart';
 import 'package:level_me/world/world_engine.dart';
 
 class _Store extends LocalStore {
@@ -28,10 +29,16 @@ void main(){
  late SkillCatalog catalog;
  const stats=WorldStats(hp:100,physical:40,magic:45,defense:10,physicalMax:27,magicMax:38,crit:0.05);
  setUpAll((){
-  WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync());
+  loadExtendedWorldCatalog(9);
   catalog=SkillCatalog(const [def]);
  });
  WorldState world({int life=14,bool unlocked=true,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses})=>WorldState(physical:0,lifespan:BigInt.from(life),cleared:{if(unlocked)'p09_main'},sequence:1,hpAt:now,energyAt:now,battle:WorldBattle(id:1,encounterId:'p01_main',stats:stats,enemyHp:10,rngState:1,activeSkills:[spec],buffs:buffs,statuses:statuses,slowTurns:1,stopCooldown:3));
+ test('未公開ST09を実マスターのまま習得カタログに登録できない',(){
+  try{
+   WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync());
+   expect(()=>SkillCatalog(const [def]),throwsFormatException);
+  }finally{loadExtendedWorldCatalog(9);}
+ });
  test('設計書候補値・ST09習得条件・本番無効',(){
   expect(spec.lifeCost,14);
   expect(spec.effect,ActiveSkillEffect.foresight);

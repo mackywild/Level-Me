@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import '../world/world_catalog.dart';
 import '../world/world_engine.dart';
+import '../world/abyss_inventory.dart';
 
 class WorldScreen extends StatefulWidget {
  const WorldScreen({super.key,required this.controller});
@@ -97,6 +98,16 @@ class _WorldScreenState extends State<WorldScreen>{
     ]),
     panel([const Text('BATTLE LOG',style:TextStyle(color:gold,letterSpacing:2)),const SizedBox(height:8),for(final line in b.log)Padding(padding:const EdgeInsets.symmetric(vertical:3),child:Text(line))]),
    ]else...[
+    panel([const Text('ABYSS EQUIPMENT',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),
+     Text('物攻 ${s.physical} / 魔攻 ${s.magic} / 防御 ${s.defense}'),
+     for(final slot in EquipmentSlot.values)
+      Row(children:[Expanded(child:Text('${slot.name}: ${c.equipmentCatalog.find(c.state.inventory.equipment[c.state.inventory.equipped[slot]]?.masterId??'')?.name??'未装着'}')),
+       if(c.state.inventory.equipped.containsKey(slot))TextButton(onPressed:busy?null:()=>run(()=>c.unequipWorldItem(slot)),child:const Text('解除'))]),
+     if(c.state.inventory.equipment.isEmpty)const Text('所持装備なし'),
+     for(final item in c.state.inventory.equipment.values)
+      if(c.equipmentCatalog.find(item.masterId)!=null&&!c.state.inventory.equipped.containsValue(item.id))
+       OutlinedButton(onPressed:busy?null:()=>run(()=>c.equipWorldItem(item.id)),child:Text('${c.equipmentCatalog.find(item.masterId)!.name} / ${item.id} を装着')),
+    ]),
     panel([Text('PROLOGUE   ${w.cleared.where((id)=>id.endsWith("_main")).length} / 21',style:const TextStyle(color:gold,letterSpacing:2)),
      const SizedBox(height:10),
      for(final entry in WorldCatalog.titles.entries)

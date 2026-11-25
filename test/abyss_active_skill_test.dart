@@ -109,6 +109,7 @@ void main(){
   store.fail=true;
   await expectLater(c.useBattleActiveSkill(spec.id,id,1,expectedGeneration:gen),throwsStateError);
   final attempted=store.attempted!;
+  expect(c.state.skills.learned[spec.id],0);
   expect(jsonEncode(c.state.toJson()),before);
   expect(await primary.readAsString(),bytes);
   final restored=AppController(LocalStore(directory:dir),skillCatalog:catalog,clockMs:()=>now);
@@ -119,6 +120,8 @@ void main(){
   expect(restored.state.world.battle,isNull);
   expect(restored.state.world.gold,40);
   expect(restored.state.world.physical,22);
+  expect(restored.state.skills.learned[spec.id],1);
+  expect(restored.state.skills.revision,2);
   await expectLater(restored.useBattleActiveSkill(spec.id,id,1,expectedGeneration:restored.restoreGeneration),throwsStateError);
  });
 }

@@ -387,7 +387,7 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   _skillCatalog.validateBattle(working.world,working.skills);
   final now=_nowMs;
-  worldEngine.actActiveSkill(working.world,id,battleId,turn,now);
+  _skillCatalog.executeActive(worldEngine,working.world,working.skills,id,battleId,turn,now);
   worldEngine.refresh(working.world,worldStats,now);
   await _store.save(working);
   _state=working;

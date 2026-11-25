@@ -75,6 +75,7 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
        return Card(child:ListTile(
         title:Text(def.name),subtitle:Text([
          equipped?'装着中':learned?'習得済み':'未習得',
+         if(learned&&def.execution!=null)'Lv.${SkillMastery.level(state.learned[def.id]!)} / 熟練度 ${state.learned[def.id]} / ${SkillMastery.maxUses}',
          if(def.passiveBonus case final bonus?)'物攻 +${bonus.physical} / 魔攻 +${bonus.magic} / 防御 +${bonus.defense}',
         ].join('\n')),
         trailing:OutlinedButton(key:ValueKey('skill-${def.id}'),onPressed:locked||full?null:()=>_change(def,action,revision,generation),child:Text(full?'枠満杯':action)),

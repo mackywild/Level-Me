@@ -59,7 +59,7 @@ void main(){
   final raw=SkillState().toJson();
   for(final invalid in [
    {...raw,'version':1.0},
-   {...raw,'version':2},
+   {...raw,'version':3},
    {...raw,'learned':null},
    {...raw,'learned':{'bad':0}},
    {...raw,'learned':{'skill:a0':-1}},

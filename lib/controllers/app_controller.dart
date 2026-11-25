@@ -27,6 +27,7 @@ class AppController extends ChangeNotifier {
  List<int> get summonWeights=>const SummonPolicy().effectiveWeights(summonHighestUnlocked);
  String? summonUnavailable(SummonPool pool,int count){
   if(!_ready)return '初期化中';
+  if(_summonBusy)return '召喚処理中';
   final pending=_state.summon.pending;
   if(_state.world.battle!=null)return '戦闘中は召喚できません';
   if(pending!=null&&(pending.pool!=pool||pending.rewards.length!=count))return '保留中の召喚を先に確定してください';
@@ -45,18 +46,30 @@ class AppController extends ChangeNotifier {
   }
  }
 
- Future<SummonReceipt> summonWorldItems(SummonPool pool,int count,int expectedSequence) {
-  String? checkpoint;
-  return _transaction(() async {
-   if(!_ready)throw StateError('Player not ready');
-   final alreadyPrepared=_state.summon.pending!=null;
-   _summonEngine.prepare(world:_state.world,state:_state.summon,pool:pool,count:count,expectedSequence:expectedSequence);
-   if(!alreadyPrepared)await _store.save(_state);
-   checkpoint=jsonEncode(_state.toJson());
-   final receipt=_summonEngine.commit(world:_state.world,inventory:_state.inventory,state:_state.summon);
-   await _persist();
-   return receipt;
-  },rollbackSnapshot:()=>checkpoint);
+ bool _summonBusy=false;
+ bool get summonBusy=>_summonBusy;
+ Future<SummonReceipt> summonWorldItems(SummonPool pool,int count,int expectedSequence) async {
+  if(_summonBusy)throw StateError('Summon in progress');
+  _summonBusy=true;
+  notifyListeners();
+  try {
+   return await _transaction(() async {
+    if(!_ready)throw StateError('Player not ready');
+    final prepared=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+    final alreadyPrepared=prepared.summon.pending!=null;
+    _summonEngine.prepare(world:prepared.world,state:prepared.summon,pool:pool,count:count,expectedSequence:expectedSequence);
+    if(!alreadyPrepared)await _store.save(prepared);
+    _state=prepared;
+    final working=AppStateData.fromJson(jsonDecode(jsonEncode(prepared.toJson())) as Map<String,dynamic>);
+    final receipt=_summonEngine.commit(world:working.world,inventory:working.inventory,state:working.summon);
+    await _store.save(working);
+    _state=working;
+    return receipt;
+   },keepPublishedState:true);
+  } finally {
+   _summonBusy=false;
+   notifyListeners();
+  }
  }
  final PortableBackup? _portableBackup;
  final LocalStore _store;
@@ -90,11 +103,11 @@ class AppController extends ChangeNotifier {
  AppStateData _state=AppStateData.initial();
  bool _ready=false;
  Future<void> _queue=Future<void>.value();
- Future<T> _transaction<T>(Future<T> Function() action,{String? Function()? rollbackSnapshot}) {
+ Future<T> _transaction<T>(Future<T> Function() action,{bool keepPublishedState=false}) {
   final result=_queue.then((_) async {
    final snapshot=jsonEncode(_state.toJson());
    try {return await action();} catch (_) {
-    _state=AppStateData.fromJson(jsonDecode(rollbackSnapshot?.call()??snapshot) as Map<String,dynamic>);
+    if(!keepPublishedState)_state=AppStateData.fromJson(jsonDecode(snapshot) as Map<String,dynamic>);
     notifyListeners();
     rethrow;
    }

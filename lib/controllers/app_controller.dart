@@ -21,7 +21,10 @@ class AppController extends ChangeNotifier {
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
  }
- void _validateEquipment(AppStateData state)=>equipmentCatalog.validateLoadout(state.inventory);
+ void _validateEquipment(AppStateData state){
+  equipmentCatalog.validateLoadout(state.inventory);
+  _summonEngine.validatePending(state.world,state.summon);
+ }
  EquipmentCatalog _equipmentCatalog;
  EquipmentCatalog get equipmentCatalog=>_equipmentCatalog;
  late SummonEngine _summonEngine;
@@ -45,6 +48,7 @@ class AppController extends ChangeNotifier {
  String summonRewardName(String id)=>equipmentCatalog.find(id)?.name??_abyssMaster?.supply(id)?.name??id;
  EquipmentRarity get summonHighestUnlocked=>_summonEngine.highestUnlocked(_state.world);
  List<int> get summonWeights=>const SummonPolicy().effectiveWeights(summonHighestUnlocked);
+ List<SummonRate> summonRates(SummonPool pool)=>_summonEngine.rates(_state.world,pool);
  String? summonUnavailable(SummonPool pool,int count){
   if(!_ready)return '初期化中';
   if(_summonBusy)return '召喚処理中';

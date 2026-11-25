@@ -52,7 +52,7 @@ class BattleRandom {
 }
 
 /// 戦闘開始時に固定する、承認済み能動スキルの実行定義。
-enum ActiveSkillEffect { physical, foresight, accelerationAttack, repairHp, timeCleanse, rewindHp, crimsonAwakening, stopAttack }
+enum ActiveSkillEffect { physical, foresight, accelerationAttack, repairHp, timeCleanse, rewindHp, crimsonAwakening, stopAttack, ultimateAttack }
 
 class ActiveSkillSpec {
  const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown,this.hits=1,this.effect=ActiveSkillEffect.physical,this.lifeCost=0});
@@ -80,6 +80,7 @@ class ActiveSkillSpec {
   ActiveSkillEffect.rewindHp=>id=='skill:rewind'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==90&&cooldown==8,
   ActiveSkillEffect.crimsonAwakening=>id=='skill:crimson_awakening'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==30&&cooldown==5,
   ActiveSkillEffect.stopAttack=>physicalCost==0&&hits==1&&cooldown==0&&((id=='skill:still_claw'&&powerPercent==250&&lifeCost==45)||(id=='skill:chrono_combo'&&powerPercent==400&&lifeCost==90)),
+  ActiveSkillEffect.ultimateAttack=>id=='skill:spacetime_break'&&powerPercent==500&&physicalCost==0&&hits==1&&lifeCost==180&&cooldown==8,
  };
  Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown,'hits':hits,'effect':effect.name,'lifeCost':lifeCost};
  factory ActiveSkillSpec.fromJson(Map<String,dynamic> j){
@@ -455,6 +456,7 @@ class WorldEngine {
    if(!w.cleared.contains(WorldCatalog.mainId(12)))return 'STAGE 12クリアが必要';
    if(b.awakeningTurns>0)return '覚醒発動中';
   }
+  if(spec.effect==ActiveSkillEffect.ultimateAttack&&!w.cleared.contains(WorldCatalog.mainId(18)))return 'STAGE 18クリアが必要';
   if(w.lifespan<BigInt.from(spec.lifeCost))return '寿命不足';
   if(w.physical<activeSkillCost(w,spec))return '物理エネルギー不足';
   return null;
@@ -503,7 +505,7 @@ class WorldEngine {
    _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id);
    return;
   }
-  if(spec.effect==ActiveSkillEffect.accelerationAttack||spec.usesStopCooldown)b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
+  if(spec.effect==ActiveSkillEffect.accelerationAttack||spec.effect==ActiveSkillEffect.ultimateAttack||spec.usesStopCooldown)b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
   final skipEnemy=spec.usesStopCooldown&&_applyStop(b,e);
   if(spec.usesStopCooldown)b.log.add(skipEnemy?'時間停止 — 敵の行動停止':'時間停止は無効化された。');
   final bonus=_attackBonus(b,physical:true);

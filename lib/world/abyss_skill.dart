@@ -108,6 +108,7 @@ class SkillCatalog {
    }
    final reward=def.lifeRewardBonus;
    if(reward!=null&&(def.kind!=SkillKind.passive||def.id!=reward.skillId||def.acquisition.clearedStage!=3))throw const FormatException('Invalid life reward skill mapping');
+   if(spec?.usesStopCooldown==true&&def.acquisition.clearedStage!=12)throw const FormatException('Invalid stop skill acquisition');
    def.acquisition.validate();
    _definitions[def.id]=def;
   }
@@ -210,6 +211,7 @@ class SkillCatalog {
   final rule=def.acquisition;
   if(playerLevel<rule.playerLevel)return 'プレイヤーLv.${rule.playerLevel}が必要';
   if(rule.clearedStage>0&&!world.cleared.contains(WorldCatalog.mainId(rule.clearedStage)))return 'STAGE ${rule.clearedStage}クリアが必要';
+  if(def.execution?.usesStopCooldown==true&&id=='skill:chrono_combo'&&!world.cleared.contains(WorldCatalog.mainId(6)))return 'STAGE 06クリアが必要';
   final parent=rule.prerequisiteId;
   if(parent!=null){
    final count=state._learned[parent];

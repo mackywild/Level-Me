@@ -52,7 +52,7 @@ class BattleRandom {
 }
 
 /// 戦闘開始時に固定する、承認済み能動スキルの実行定義。
-enum ActiveSkillEffect { physical, foresight, accelerationAttack, repairHp, timeCleanse, rewindHp, crimsonAwakening }
+enum ActiveSkillEffect { physical, foresight, accelerationAttack, repairHp, timeCleanse, rewindHp, crimsonAwakening, stopAttack }
 
 class ActiveSkillSpec {
  const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown,this.hits=1,this.effect=ActiveSkillEffect.physical,this.lifeCost=0});
@@ -70,6 +70,7 @@ class ActiveSkillSpec {
   'skill:full_repair'=>100,
   _=>0,
  };
+ bool get usesStopCooldown=>effect==ActiveSkillEffect.stopAttack;
  bool get _validEffect=>switch(effect){
   ActiveSkillEffect.physical=>powerPercent>=1&&powerPercent<=500&&hits>=1&&hits<=10&&powerPercent*hits<=500&&physicalCost>=1&&physicalCost<=100&&lifeCost==0,
   ActiveSkillEffect.foresight=>powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==14&&cooldown>=1,
@@ -78,6 +79,7 @@ class ActiveSkillSpec {
   ActiveSkillEffect.timeCleanse=>id=='skill:time_cleanse'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==30&&cooldown>=1,
   ActiveSkillEffect.rewindHp=>id=='skill:rewind'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==90&&cooldown==8,
   ActiveSkillEffect.crimsonAwakening=>id=='skill:crimson_awakening'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==30&&cooldown==5,
+  ActiveSkillEffect.stopAttack=>physicalCost==0&&hits==1&&cooldown==0&&((id=='skill:still_claw'&&powerPercent==250&&lifeCost==45)||(id=='skill:chrono_combo'&&powerPercent==400&&lifeCost==90)),
  };
  Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown,'hits':hits,'effect':effect.name,'lifeCost':lifeCost};
  factory ActiveSkillSpec.fromJson(Map<String,dynamic> j){
@@ -341,6 +343,11 @@ class WorldEngine {
    _=>null,
   };
  }
+ /// 停止系コマンドと奥義で共有する停止CDと耐性判定。
+ bool _applyStop(WorldBattle b,WorldEncounter e){
+  b.stopCooldown=5;
+  return !e.timeResistant;
+ }
  int damage(int attack,int defense,double multiplier,{double critical=1,double variance=1})=>max(1,(attack*multiplier*100/(100.0+defense)*critical*variance).floor());
  void act(WorldState w,WorldCommand command,int battleId,int expectedTurn,int now){
   final b=w.battle;
@@ -364,8 +371,7 @@ class WorldEngine {
    b.log.add('自己加速 — 次の紅爪2回の威力2倍');
   }else if(command==WorldCommand.stopTime){
    w.lifespan-=BigInt.from(30);
-   b.stopCooldown=5;
-   skipEnemy=!e.timeResistant;
+   skipEnemy=_applyStop(b,e);
    b.log.add(skipEnemy?'時間停止 — 敵の行動停止':'時間停止は無効化された。');
   }else if(guarding){b.log.add('防御態勢');}
   else{
@@ -383,8 +389,7 @@ class WorldEngine {
      w.physical-=energyCost(w,command);dealt=damage(s.physical,e.defense,1.8*attackBonus,critical:critical,variance:variance);
     case WorldCommand.compositeClaw:
      w.lifespan-=BigInt.from(90);
-     b.stopCooldown=5;
-     skipEnemy=!e.timeResistant;
+     skipEnemy=_applyStop(b,e);
      b.log.add(skipEnemy?'複合爪撃 — 時間停止・自己加速・爪撃':'複合爪撃 — 時間停止は無効化された。');
      dealt=damage(s.physical,e.defense,4.0*attackBonus,critical:critical,variance:variance);
     case WorldCommand.magic:
@@ -417,6 +422,7 @@ class WorldEngine {
   if(current==maximum)return 0;
   return min<int>(maximum-current,max<int>(1,(maximum~/100)*percent+(maximum%100)*percent~/100));
  }
+ int activeSkillCooldown(WorldBattle b,ActiveSkillSpec spec)=>spec.usesStopCooldown?b.stopCooldown:b.skillCooldowns[spec.id]??0;
  int activeSkillCost(WorldState w,ActiveSkillSpec spec)=>w.battle?.buffs.containsKey(BattleBuff.energyDiscount)==true?(spec.physicalCost*(100-BattleBuff.energyDiscount.percent)+99)~/100:spec.physicalCost;
  String? activeSkillUnavailable(WorldState w,String id){
   final b=w.battle;
@@ -424,8 +430,12 @@ class WorldEngine {
   final matches=b.activeSkills.where((s)=>s.id==id);
   if(matches.isEmpty)return '装着済みスキルではありません';
   if(b.turn==0x7fffffffffffffff)return 'ターン上限';
-  if((b._skillCooldowns[id]??0)>0)return 'クールダウン中';
   final spec=matches.first;
+  if(spec.usesStopCooldown){
+   if(!w.cleared.contains(WorldCatalog.mainId(12)))return 'STAGE 12クリアが必要';
+   if(spec.id=='skill:chrono_combo'&&!w.cleared.contains(WorldCatalog.mainId(6)))return 'STAGE 06クリアが必要';
+  }
+  if(activeSkillCooldown(b,spec)>0)return 'クールダウン中';
   if(spec.effect==ActiveSkillEffect.foresight&&!w.cleared.contains(WorldCatalog.mainId(9)))return 'STAGE 09クリアが必要';
   if(spec.effect==ActiveSkillEffect.accelerationAttack&&!w.cleared.contains(WorldCatalog.mainId(6)))return 'STAGE 06クリアが必要';
   if((spec.effect==ActiveSkillEffect.repairHp||spec.effect==ActiveSkillEffect.timeCleanse)&&!w.cleared.contains(WorldCatalog.mainId(3)))return 'STAGE 03クリアが必要';
@@ -493,7 +503,9 @@ class WorldEngine {
    _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id);
    return;
   }
-  if(spec.effect==ActiveSkillEffect.accelerationAttack)b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
+  if(spec.effect==ActiveSkillEffect.accelerationAttack||spec.usesStopCooldown)b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
+  final skipEnemy=spec.usesStopCooldown&&_applyStop(b,e);
+  if(spec.usesStopCooldown)b.log.add(skipEnemy?'時間停止 — 敵の行動停止':'時間停止は無効化された。');
   final bonus=_attackBonus(b,physical:true);
   final chance=b._buffs.containsKey(BattleBuff.critical)?min<double>(1.0,s.crit+BattleBuff.critical.percent/100):s.crit;
   // 各hitで独立に会心・乱数・防御・丸めを適用。撃破後は乱数を消費しない。
@@ -507,7 +519,7 @@ class WorldEngine {
   }
   if(spec.cooldown>0)b._skillCooldowns[id]=spec.cooldown;
   if(_victory(w,now))return;
-  _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id);
+  _finishTurn(w,now,skipEnemy:skipEnemy,guarding:false,castingStop:spec.usesStopCooldown,castSkill:id);
  }
  /// 回復行動後も通常行動と同じ敵反撃・効果経過を適用する。
  void finishRecoveryTurn(WorldState w,int battleId,int expectedTurn,int now,String itemName,int amount){

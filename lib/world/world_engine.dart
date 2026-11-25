@@ -51,8 +51,25 @@ class BattleRandom {
  }
 }
 
+/// 戦闘開始時に固定する、承認済み能動スキルの実行定義。
+class ActiveSkillSpec {
+ const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown});
+ final String id,name;
+ final int powerPercent,physicalCost,cooldown;
+ void validate(){
+  if(!id.startsWith('skill:')||id.length<=6||name.trim().isEmpty||powerPercent<1||powerPercent>500||physicalCost<1||physicalCost>100||cooldown<0||cooldown>20)throw const FormatException('Invalid active skill spec');
+ }
+ Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown};
+ factory ActiveSkillSpec.fromJson(Map<String,dynamic> j){
+  if(j['id'] is! String||j['name'] is! String||j['powerPercent'] is! int||j['physicalCost'] is! int||j['cooldown'] is! int)throw const FormatException('Invalid active skill spec');
+  final spec=ActiveSkillSpec(id:j['id'] as String,name:j['name'] as String,powerPercent:j['powerPercent'] as int,physicalCost:j['physicalCost'] as int,cooldown:j['cooldown'] as int);
+  spec.validate();
+  return spec;
+ }
+}
+
 class WorldBattle {
- WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses,int? rngState}):log=log??[],_buffs=Map.of(buffs??{}),_statuses=Map.of(statuses??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
+ WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses,List<ActiveSkillSpec> activeSkills=const [],Map<String,int>? skillCooldowns,int? rngState}):log=log??[],_buffs=Map.of(buffs??{}),_statuses=Map.of(statuses??{}),activeSkills=List.unmodifiable(activeSkills),_skillCooldowns=Map.of(skillCooldowns??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
  final int id;
  final String encounterId;
  final WorldStats stats;
@@ -63,10 +80,36 @@ class WorldBattle {
  int get rngState=>_rngState;
  final Map<BattleBuff,int> _buffs;
  final Map<BattleStatus,int> _statuses;
+ final List<ActiveSkillSpec> activeSkills;
+ final Map<String,int> _skillCooldowns;
+ Map<String,int> get skillCooldowns=>Map.unmodifiable(_skillCooldowns);
  Map<BattleStatus,int> get statuses=>Map.unmodifiable(_statuses);
  Map<BattleBuff,int> get buffs=>Map.unmodifiable(_buffs);
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
- factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),rngState:_decodeRng(j));
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
+ factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:_decodeActiveSkills(j),skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j));
+ static List<ActiveSkillSpec> _decodeActiveSkills(Map<String,dynamic> j){
+  final raw=j.containsKey('activeSkills')?j['activeSkills']:const [];
+  if(raw is! List||raw.length>6)throw const FormatException('Invalid active skill snapshot');
+  final ids=<String>{};
+  return raw.map((row){
+   if(row is! Map<String,dynamic>)throw const FormatException('Invalid active skill snapshot');
+   final spec=ActiveSkillSpec.fromJson(row);
+   if(!ids.add(spec.id))throw const FormatException('Duplicate active skill snapshot');
+   return spec;
+  }).toList();
+ }
+ static Map<String,int> _decodeSkillCooldowns(Map<String,dynamic> j){
+  final raw=j.containsKey('skillCooldowns')?j['skillCooldowns']:<String,dynamic>{};
+  if(raw is! Map<String,dynamic>)throw const FormatException('Invalid skill cooldowns');
+  final specs={for(final spec in _decodeActiveSkills(j))spec.id:spec};
+  final result=<String,int>{};
+  for(final entry in raw.entries){
+   final spec=specs[entry.key],value=entry.value;
+   if(spec==null||value is! int||value<1||value>spec.cooldown)throw const FormatException('Invalid skill cooldown');
+   result[entry.key]=value;
+  }
+  return result;
+ }
  static Map<BattleStatus,int> _decodeStatuses(Map<String,dynamic> j){
   if(!j.containsKey('statuses'))return {};
   final raw=j['statuses'];
@@ -165,7 +208,9 @@ class WorldEngine {
   w.magic=levelUp?s.magicMax:min(s.magicMax,w.magic+magic);
   if(levelUp)w.hp=s.hp;
  }
- void start(WorldState w,WorldStats s,String id,int now){
+ void start(WorldState w,WorldStats s,String id,int now,{List<ActiveSkillSpec> activeSkills=const []}){
+  if(activeSkills.length>6||activeSkills.map((s)=>s.id).toSet().length!=activeSkills.length)throw const FormatException('Invalid active skill snapshot');
+  for(final spec in activeSkills){spec.validate();}
   if(w.battle!=null)throw StateError('A battle is already active');
   final e=WorldCatalog.byId(id);
   if(!isUnlocked(w,e))throw StateError('Encounter locked or completed');
@@ -174,7 +219,7 @@ class WorldEngine {
   if(w.sequence==0x7fffffffffffffff)throw StateError('Battle sequence overflow');
   final seed=_seedRandom.nextInt(BattleRandom.modulus-1)+1;
   w.sequence++;
-  w.battle=WorldBattle(rngState:seed,id:w.sequence,encounterId:id,stats:s,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
+  w.battle=WorldBattle(activeSkills:activeSkills,rngState:seed,id:w.sequence,encounterId:id,stats:s,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
   w.lastResult='';
  }
  /// 単一の消費計算を可否・実行・画面で共有する。寿命には適用しない。
@@ -248,6 +293,11 @@ class WorldEngine {
    b.enemyHp=max(0,b.enemyHp-dealt);
    b.log.add('${critical>1?'会心！ ':''}$dealt ダメージ');
   }
+  if(_victory(w,now))return;
+  _finishTurn(w,now,skipEnemy:skipEnemy,guarding:guarding,castingStop:castingStop);
+ }
+ bool _victory(WorldState w,int now){
+  final b=w.battle!,e=WorldCatalog.byId(w.battle!.encounterId);
   if(b.enemyHp==0){
    final first=w.cleared.add(e.id);
    final gold=e.gold;
@@ -255,9 +305,39 @@ class WorldEngine {
    w.lifespan+=BigInt.from(e.lifeDays);
    if(first){if(e.main){w.summonTickets+=3;}else{w.supplyTickets++;}}
    _end(w,now,'勝利 — $gold G / 寿命 +${e.lifeDays}日${first?' / 初回報酬獲得':''}');
-   return;
+   return true;
   }
-  _finishTurn(w,now,skipEnemy:skipEnemy,guarding:guarding,castingStop:castingStop);
+  return false;
+ }
+ int activeSkillCost(WorldState w,ActiveSkillSpec spec)=>w.battle?.buffs.containsKey(BattleBuff.energyDiscount)==true?(spec.physicalCost*(100-BattleBuff.energyDiscount.percent)+99)~/100:spec.physicalCost;
+ String? activeSkillUnavailable(WorldState w,String id){
+  final b=w.battle;
+  if(b==null)return '戦闘中ではありません';
+  final matches=b.activeSkills.where((s)=>s.id==id);
+  if(matches.isEmpty)return '装着済みスキルではありません';
+  if(b.turn==0x7fffffffffffffff)return 'ターン上限';
+  if((b._skillCooldowns[id]??0)>0)return 'クールダウン中';
+  if(w.physical<activeSkillCost(w,matches.first))return '物理エネルギー不足';
+  return null;
+ }
+ void actActiveSkill(WorldState w,String id,int battleId,int expectedTurn,int now){
+  final b=w.battle;
+  if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
+  final reason=activeSkillUnavailable(w,id);
+  if(reason!=null)throw StateError(reason);
+  final spec=b.activeSkills.firstWhere((s)=>s.id==id);
+  final e=WorldCatalog.byId(b.encounterId),s=b.stats;
+  w.physical-=activeSkillCost(w,spec);
+  final bonus=b._buffs.containsKey(BattleBuff.attack)?1+BattleBuff.attack.percent/100:1.0;
+  final chance=b._buffs.containsKey(BattleBuff.critical)?min<double>(1.0,s.crit+BattleBuff.critical.percent/100):s.crit;
+  final critical=_roll(b)<chance?1.5:1.0;
+  final variance=0.95+_roll(b)*0.10;
+  final dealt=damage(s.physical,e.defense,spec.powerPercent/100*bonus,critical:critical,variance:variance);
+  b.enemyHp=max(0,b.enemyHp-dealt);
+  b.log.add('${spec.name} — ${critical>1?'会心！ ':''}$dealt ダメージ');
+  if(spec.cooldown>0)b._skillCooldowns[id]=spec.cooldown;
+  if(_victory(w,now))return;
+  _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id);
  }
  /// 回復行動後も通常行動と同じ敵反撃・効果経過を適用する。
  void finishRecoveryTurn(WorldState w,int battleId,int expectedTurn,int now,String itemName,int amount){
@@ -297,7 +377,7 @@ class WorldEngine {
   b.log.add('$name — 効果発動');
   _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,newBuff:kind);
  }
- void _finishTurn(WorldState w,int now,{required bool skipEnemy,required bool guarding,required bool castingStop,BattleBuff? newBuff}){
+ void _finishTurn(WorldState w,int now,{required bool skipEnemy,required bool guarding,required bool castingStop,BattleBuff? newBuff,String? castSkill}){
   final b=w.battle!;
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
   if(!skipEnemy){
@@ -347,6 +427,11 @@ class WorldEngine {
    if(kind==newBuff||kind.isCharge)continue;
    final remaining=b._buffs[kind]!-1;
    if(remaining==0){b._buffs.remove(kind);}else{b._buffs[kind]=remaining;}
+  }
+  for(final id in b._skillCooldowns.keys.toList()){
+   if(id==castSkill)continue;
+   final remaining=b._skillCooldowns[id]!-1;
+   if(remaining==0){b._skillCooldowns.remove(id);}else{b._skillCooldowns[id]=remaining;}
   }
   b.turn++;
   if(b.log.length>12)b.log.removeRange(0,b.log.length-12);

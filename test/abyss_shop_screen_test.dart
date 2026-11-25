@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -14,8 +15,14 @@ import 'package:level_me/world/world_catalog.dart';
 
 class _Store extends LocalStore {
  String? data;
+ Completer<void>? gate;
+ bool fail=false;
  @override Future<AppStateData> load() async=>data==null?AppStateData.initial():AppStateData.fromJson(jsonDecode(data!) as Map<String,dynamic>);
- @override Future<void> save(AppStateData state) async {data=jsonEncode(state.toJson());}
+ @override Future<void> save(AppStateData state) async {
+  if(gate!=null)await gate!.future;
+  if(fail)throw StateError('Simulated save failure');
+  data=jsonEncode(state.toJson());
+ }
 }
 
 void main(){
@@ -64,5 +71,55 @@ void main(){
   expect((await store.load()).world.magicCrystals,3);
   await expectLater(c.dismantleWorldItem(item.id,0),throwsStateError);
   expect(c.state.world.magicCrystals,3);
+ });
+ testWidgets('魔晶石支払の保存失敗・再入場・残高更新と戦闘中拒否',(tester) async {
+  final store=_Store();
+  const crystalOffer=ShopOffer(id:'shop:alloy',materialId:'item:alloy',currency:ShopCurrency.magicCrystals,price:3,quantity:1);
+  final c=AppController(store,shopCatalog:ShopCatalog(const [crystalOffer]));
+  addTearDown(c.dispose);
+  await c.initialize();
+  c.state.world.magicCrystals=6;
+  await tester.pumpWidget(MaterialApp(home:AbyssShopScreen(controller:c)));
+  await tester.tap(find.widgetWithText(FilledButton,'購入'));
+  await tester.pumpAndSettle();
+  store.fail=true;
+  await tester.tap(find.text('購入を確定'));
+  await tester.pumpAndSettle();
+  expect(find.textContaining('購入できませんでした'),findsOneWidget);
+  expect(c.state.world.magicCrystals,6);
+  expect(c.state.inventory.stacks,isEmpty);
+  store.fail=false;
+  store.gate=Completer<void>();
+  final pending=c.purchaseWorldMaterial(crystalOffer.id,0,expectedGeneration:c.restoreGeneration);
+  await tester.pumpWidget(MaterialApp(home:AbyssShopScreen(key:const ValueKey('reentry'),controller:c)));
+  expect(find.text('所持品処理中'),findsWidgets);
+  expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton,'購入')).onPressed,isNull);
+  expect(find.text('魔晶石：6'),findsOneWidget);
+  store.gate!.complete();
+  await pending;
+  store.gate=null;
+  await tester.pumpAndSettle();
+  expect(find.text('魔晶石：3'),findsOneWidget);
+  expect(c.state.inventory.stacks['item:alloy'],1);
+  await c.startWorldBattle('p01_main');
+  await tester.pumpAndSettle();
+  expect(find.text('戦闘中は購入できません'),findsOneWidget);
+  expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton,'購入')).onPressed,isNull);
+ });
+ testWidgets('確認中に取引番号が変化した場合は確定を拒否する',(tester) async {
+  final c=AppController(_Store(),shopCatalog:ShopCatalog(const [offer]));
+  addTearDown(c.dispose);
+  await c.initialize();
+  c.state.world.gold=20;
+  await tester.pumpWidget(MaterialApp(home:AbyssShopScreen(controller:c)));
+  await tester.tap(find.widgetWithText(FilledButton,'購入'));
+  await tester.pumpAndSettle();
+  await c.purchaseWorldMaterial(offer.id,0,expectedGeneration:c.restoreGeneration);
+  await tester.tap(find.text('購入を確定'));
+  await tester.pumpAndSettle();
+  expect(c.state.world.gold,10);
+  expect(c.state.world.shopSequence,1);
+  expect(c.state.inventory.stacks['item:iron'],2);
+  expect(find.textContaining('購入できませんでした'),findsOneWidget);
  });
 }

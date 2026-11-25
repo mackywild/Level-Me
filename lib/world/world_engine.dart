@@ -223,7 +223,8 @@ class WorldEngine {
   final b=w.battle!;
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
   if(!skipEnemy){
-   final defense=b._buffs.containsKey(BattleBuff.defense)?s.defense+(s.defense~/100)*40+(s.defense%100)*40~/100:s.defense;
+   final extra=(s.defense~/100)*40+(s.defense%100)*40~/100;
+   final defense=b._buffs.containsKey(BattleBuff.defense)?s.defense+min(extra,max(0,0x7fffffffffffff9b-s.defense)):s.defense;
    final attack=damage(e.attack,defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
    w.hp=max(0,w.hp-attack);
    b.log.add('敵の反撃 — HP -$attack');

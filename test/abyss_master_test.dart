@@ -1,11 +1,28 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+import 'package:flutter/services.dart';
+import 'package:level_me/main.dart';
+import 'package:level_me/controllers/app_controller.dart';
+import 'package:level_me/models/app_state.dart';
+import 'package:level_me/services/local_store.dart';
+import 'package:level_me/services/portable_backup.dart';
+import 'package:level_me/world/world_catalog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/world/abyss_inventory.dart';
 import 'package:level_me/world/abyss_master.dart';
 import 'package:level_me/world/abyss_summon.dart';
 
+class _CountingRandom implements Random {
+ int calls=0;
+ @override int nextInt(int max){calls++;return 0;}
+ @override double nextDouble()=>0.5;
+ @override bool nextBool()=>false;
+}
+
 void main(){
+ TestWidgetsFlutterBinding.ensureInitialized();
+ setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
  Map<String,dynamic> source()=>jsonDecode(File(AbyssMaster.assetPath).readAsStringSync()) as Map<String,dynamic>;
  test('同梱マスターは承認前のため排出無効',(){
   final json=source();
@@ -54,5 +71,97 @@ void main(){
   final json=source()..['enabled']=true;
   (json['summon'] as List).removeWhere((e)=>e['pool']=='relic');
   expect(()=>AbyssMaster.fromJson(jsonEncode(json)),throwsFormatException);
+ });
+ test('未承認でもプール欠落・手部武器・UR以上を拒否する',(){
+  final missing=source();
+  (missing['summon'] as List).removeWhere((e)=>e['pool']=='relic');
+  expect(()=>AbyssMaster.fromJson(jsonEncode(missing)),throwsFormatException);
+  final weapon=source();
+  (weapon['equipment'] as List).first['slot']='hands';
+  expect(()=>AbyssMaster.fromJson(jsonEncode(weapon)),throwsFormatException);
+  final high=source();
+  (high['equipment'] as List).first['rarity']='ur';
+  expect(()=>AbyssMaster.fromJson(jsonEncode(high)),throwsFormatException);
+  final supply=source();
+  (supply['supplies'] as List).first['rarity']='ur';
+  expect(()=>AbyssMaster.fromJson(jsonEncode(supply)),throwsFormatException);
+ });
+ test('同梱アセットを本番ローダーで読み込める',() async {
+  expect(await rootBundle.loadString(AbyssMaster.assetPath),isNotEmpty);
+  final master=await loadProductionMasters();
+  expect(master.enabled,false);
+ });
+ test('無効マスターは全プールを拒否し有効マスターは名称付きで付与する',() async {
+  final dir=await Directory.systemTemp.createTemp('abyss-master-');
+  addTearDown(()=>dir.delete(recursive:true));
+  final store=LocalStore(directory:dir);
+  final random=_CountingRandom();
+  final disabled=AppController(store,loadAbyssMaster:() async=>AbyssMaster.fromJson(jsonEncode(source())),summonRandom:random);
+  addTearDown(disabled.dispose);
+  await disabled.initialize();
+  disabled.state.world.summonTickets=20;
+  disabled.state.world.supplyTickets=10;
+  await store.save(disabled.state);
+  final before=jsonEncode(disabled.state.toJson());
+  for(final pool in SummonPool.values){
+   expect(disabled.summonUnavailable(pool,1),'排出マスター未整備');
+   await expectLater(disabled.summonWorldItems(pool,1,0),throwsStateError);
+   expect(jsonEncode(disabled.state.toJson()),before);
+  }
+  expect(random.calls,0);
+  expect(()=>disabled.configureAbyssMaster(AbyssMaster.fromJson(jsonEncode(source()))),throwsStateError);
+  final enabled=AppController(store,loadAbyssMaster:() async=>AbyssMaster.fromJson(jsonEncode(source()..['enabled']=true)),summonRandom:random);
+  addTearDown(enabled.dispose);
+  await enabled.initialize();
+  for(final pool in SummonPool.values){
+   expect(enabled.summonUnavailable(pool,1),isNull);
+   final receipt=await enabled.summonWorldItems(pool,1,enabled.state.summon.sequence);
+   expect(enabled.summonRewardName(receipt.rewards.single.masterId),isNot(receipt.rewards.single.masterId));
+  }
+  expect(enabled.state.world.summonTickets,14);
+  expect(enabled.state.world.supplyTickets,9);
+  expect(enabled.state.inventory.equipment.length,2);
+  expect(enabled.state.inventory.stacks['item:iron'],1);
+  expect(random.calls,6);
+ });
+ test('マスター読込失敗時は起動・両復元とも原本を保護し再試行できる',() async {
+  final dir=await Directory.systemTemp.createTemp('abyss-master-recovery-');
+  addTearDown(()=>dir.delete(recursive:true));
+  final store=LocalStore(directory:dir);
+  final backup=PortableBackup(directory:dir);
+  final initial=AppStateData.initial();
+  await store.save(initial);
+  initial.world.gold=10;
+  await store.save(initial);
+  final exported=await backup.export();
+  Future<Map<String,String>> snapshot() async=>{for(final entry in await dir.list().toList())if(entry is File)entry.path:await entry.readAsString()};
+  final original=await snapshot();
+  bool fail=true;
+  int loads=0;
+  final c=AppController(store,portableBackup:backup,loadAbyssMaster:() async {
+   loads++;
+   if(fail)throw const FormatException('Invalid asset');
+   return AbyssMaster.fromJson(jsonEncode(source()));
+  });
+  addTearDown(c.dispose);
+  await expectLater(c.initialize(),throwsFormatException);
+  expect(c.ready,false);
+  expect(c.hasAbyssMaster,false);
+  expect(await c.hasBackup(),false);
+  await expectLater(c.restoreBackup(),throwsFormatException);
+  await expectLater(c.importPortableBackup(exported),throwsFormatException);
+  expect(await snapshot(),original);
+  expect(loads,3);
+  fail=false;
+  await c.initialize();
+  expect(c.ready,true);
+  expect(c.hasAbyssMaster,true);
+  expect(loads,4);
+  await c.importPortableBackup(exported);
+  expect(c.ready,true);
+  expect(loads,4);
+  await c.restoreBackup();
+  expect(c.ready,true);
+  expect(loads,4);
  });
 }

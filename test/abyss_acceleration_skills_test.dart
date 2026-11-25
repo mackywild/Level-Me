@@ -8,6 +8,7 @@ import 'package:level_me/world/abyss_acceleration_candidates.dart';
 import 'package:level_me/world/abyss_master.dart';
 import 'package:level_me/world/abyss_skill.dart';
 import 'package:level_me/world/world_catalog.dart';
+import 'helpers/extended_world_catalog.dart';
 import 'package:level_me/world/world_engine.dart';
 
 class _Store extends LocalStore {
@@ -28,7 +29,7 @@ void main(){
  late SkillCatalog catalog;
  const stats=WorldStats(hp:100,physical:2,magic:1,defense:10,physicalMax:27,magicMax:38,crit:0);
  setUpAll((){
-  WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync());
+  loadExtendedWorldCatalog(6);
   catalog=SkillCatalog(defs);
  });
  WorldState world(ActiveSkillSpec spec,{int life=45,int enemyHp=10,bool unlocked=true,int hp=100})=>WorldState(
@@ -36,6 +37,12 @@ void main(){
   battle:WorldBattle(id:1,encounterId:'p01_main',stats:stats,enemyHp:enemyHp,rngState:1,activeSkills:[spec],
    acceleratedClaws:2,stopCooldown:3,buffs:{BattleBuff.energyDiscount:2}),
  );
+ test('未公開ST06を実マスターのまま習得カタログに登録できない',(){
+  try{
+   WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync());
+   expect(()=>SkillCatalog(defs),throwsFormatException);
+  }finally{loadExtendedWorldCatalog(6);}
+ });
  test('設計候補値とST06習得条件・本番無効',(){
   expect((speed.id,speed.powerPercent,speed.hits,speed.lifeCost),('skill:speed_claw',250,1,10));
   expect((gale.id,gale.powerPercent,gale.hits,gale.lifeCost),('skill:gale_claws',50,8,45));

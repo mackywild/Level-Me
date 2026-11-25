@@ -10,6 +10,7 @@ import 'package:level_me/world/abyss_compendium.dart';
 import 'package:level_me/world/abyss_inventory.dart';
 import 'package:level_me/world/abyss_master.dart';
 import 'package:level_me/world/world_catalog.dart';
+import 'helpers/memory_local_store.dart';
 
 void main(){
  const now=1700000000000;
@@ -86,9 +87,7 @@ void main(){
   expect(restored.compendiumView.discoveredCount,0);
  });
  testWidgets('匿名枠と検索結果から未発見情報を公開しない',(tester) async{
-  final dir=await Directory.systemTemp.createTemp('compendium-ui-');
-  addTearDown(()=>dir.delete(recursive:true));
-  final c=AppController(LocalStore(directory:dir),loadAbyssMaster:() async=>master(enabled:true),clockMs:()=>now);
+  final c=AppController(MemoryLocalStore(),loadAbyssMaster:() async=>master(enabled:true),clockMs:()=>now);
   addTearDown(c.dispose);
   await c.initialize();
   c.state.inventory.addStack('item:iron',1);

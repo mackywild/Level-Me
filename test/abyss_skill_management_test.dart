@@ -8,6 +8,7 @@ import 'package:level_me/services/local_store.dart';
 import 'package:level_me/world/abyss_master.dart';
 import 'package:level_me/world/abyss_skill.dart';
 import 'package:level_me/world/world_catalog.dart';
+import 'helpers/memory_local_store.dart';
 import 'package:level_me/world/world_engine.dart';
 import 'package:level_me/screens/abyss_skill_screen.dart';
 
@@ -77,9 +78,8 @@ void main(){
   expect(restored.state.skills.active,[def.id]);
  });
  testWidgets('習得確認取消と確定、装着可能表示',(tester) async{
-  final dir=await Directory.systemTemp.createTemp('skill-ui-');
-  addTearDown(()=>dir.delete(recursive:true));
-  final c=AppController(LocalStore(directory:dir),skillCatalog:catalog,clockMs:()=>now);
+  final store=MemoryLocalStore();
+  final c=AppController(store,skillCatalog:catalog,clockMs:()=>now);
   addTearDown(c.dispose);
   await c.initialize();
   await tester.pumpWidget(MaterialApp(home:AbyssSkillScreen(controller:c)));
@@ -91,13 +91,11 @@ void main(){
   expect(c.state.skills.revision,0);
   await tester.tap(target);await tester.pumpAndSettle();
   await tester.tap(find.text('確定'));
-  await tester.runAsync(() async{
-   for(var i=0;i<200&&c.inventoryBusy;i++){await Future<void>.delayed(const Duration(milliseconds:10));}
-   expect(c.inventoryBusy,false);
-  });
   await tester.pumpAndSettle();
+  expect(c.inventoryBusy,false);
   expect(c.state.skills.learned.containsKey(def.id),true);
   expect(c.state.skills.revision,1);
   expect(find.text('装着'),findsOneWidget);
+  expect((await store.load()).skills.learned.containsKey(def.id),true);
  });
 }

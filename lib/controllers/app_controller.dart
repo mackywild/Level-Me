@@ -67,6 +67,7 @@ class AppController extends ChangeNotifier {
   if(_buffCatalog.items.isNotEmpty)throw const FormatException('Buff master not enabled');
   if(_purificationCatalog.items.isNotEmpty)throw const FormatException('Purification master not enabled');
   if(_skillCatalog.definitions.isNotEmpty)throw const FormatException('Skill master not enabled');
+  _skillCatalog=master.skills;
   _purificationCatalog=master.purification;
   _consumableCatalog=master.recovery;
   _buffCatalog=master.buffs;
@@ -239,7 +240,7 @@ class AppController extends ChangeNotifier {
   _state=working;
   return count;
  });
- final SkillCatalog _skillCatalog;
+ SkillCatalog _skillCatalog;
  List<SkillDefinition> get skillDefinitions=>_skillCatalog.definitions;
  Future<void> _changeSkill(String id,int expectedGeneration,int expectedRevision,void Function(WorldState,SkillState,String) change)=>_inventoryTransaction(() async {
   if(!_ready)throw StateError('Player not ready');

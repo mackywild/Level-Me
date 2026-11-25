@@ -29,6 +29,7 @@ class AppController extends ChangeNotifier {
  void _validateEquipment(AppStateData state){
   equipmentCatalog.validateLoadout(state.inventory);
   _summonEngine.validatePending(state.world,state.summon);
+  _buffCatalog.validateSavedEffects(state.world);
  }
  EquipmentCatalog _equipmentCatalog;
  EquipmentCatalog get equipmentCatalog=>_equipmentCatalog;

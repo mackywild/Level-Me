@@ -2,11 +2,15 @@ import 'dart:convert';
 
 class WorldEncounter {
  const WorldEncounter(this.id,this.stage,this.title,this.enemy,this.hp,this.attack,this.defense,this.gold,
-  {this.main=false,this.lifeDays=0,this.rank='F',this.timeResistant=false});
+  {this.main=false,this.lifeDays=0,this.rank='F',this.timeResistant=false,this.regenerationPercent=0});
  final String id,title,enemy,rank;
- final int stage,hp,attack,defense,gold,lifeDays;
+ final int stage,hp,attack,defense,gold,lifeDays,regenerationPercent;
  final bool main,timeResistant;
- factory WorldEncounter.fromJson(Map<String,dynamic> j)=>WorldEncounter(j['id'] as String,j['stage'] as int,j['title'] as String,j['enemy'] as String,j['hp'] as int,j['attack'] as int,j['defense'] as int,j['gold'] as int,main:j['main'] as bool,lifeDays:j['lifeDays'] as int,rank:j['rank'] as String,timeResistant:j['timeResistant'] as bool? ?? false);
+ factory WorldEncounter.fromJson(Map<String,dynamic> j){
+  final regeneration=j.containsKey('regenerationPercent')?j['regenerationPercent']:0;
+  if(regeneration is! int||regeneration<0||regeneration>100)throw const FormatException('Invalid enemy regeneration');
+  return WorldEncounter(j['id'] as String,j['stage'] as int,j['title'] as String,j['enemy'] as String,j['hp'] as int,j['attack'] as int,j['defense'] as int,j['gold'] as int,main:j['main'] as bool,lifeDays:j['lifeDays'] as int,rank:j['rank'] as String,timeResistant:j['timeResistant'] as bool? ?? false,regenerationPercent:regeneration);
+ }
 }
 class WorldCatalog {
  static const assetPath='assets/master/world_encounters.json';

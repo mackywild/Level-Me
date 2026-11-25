@@ -12,11 +12,12 @@ import '../services/portable_backup.dart';
 import '../world/world_engine.dart';
 import '../world/abyss_inventory.dart';
 import '../world/abyss_equipment.dart';
+import '../world/abyss_enhancement.dart';
 import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster}):_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy}):_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -95,6 +96,16 @@ class AppController extends ChangeNotifier {
    notifyListeners();
   }
  }
+ final EnhancementPolicy _enhancementPolicy;
+ Future<EquipmentInstance> enhanceWorldItem(String id,int expectedLevel)=>_transaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final result=_enhancementPolicy.enhance(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel);
+  await _store.save(working);
+  _state=working;
+  notifyListeners();
+  return result;
+ },keepPublishedState:true);
  final PortableBackup? _portableBackup;
  final LocalStore _store;
  final WorldEngine worldEngine=WorldEngine();

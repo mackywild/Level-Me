@@ -26,6 +26,17 @@ class AbyssInventory {
   _equipped[item.slot]=id;
  }
  void unequip(EquipmentSlot slot){_equipped.remove(slot);}
+ /// 強化値を一段階進める。個体ID・装着状態・お気に入りを保持する。
+ EquipmentInstance enhance(String id,int expectedLevel){
+  final item=_equipment[id];
+  if(item==null)throw StateError('Equipment not owned');
+  if(item.enhancement!=expectedLevel)throw StateError('Stale enhancement request');
+  if(item.enhancement>=20)throw StateError('Enhancement limit reached');
+  final next=EquipmentInstance(id:item.id,masterId:item.masterId,slot:item.slot,rarity:item.rarity,enhancement:item.enhancement+1,favorite:item.favorite);
+  _equipment[id]=next;
+  return next;
+ }
+
  int _sequence=0;
  Map<String,int> get stacks=>Map.unmodifiable(_stacks);
  Map<String,EquipmentInstance> get equipment=>Map.unmodifiable(_equipment);

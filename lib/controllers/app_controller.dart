@@ -106,23 +106,52 @@ class AppController extends ChangeNotifier {
   }
  }
  final DismantlePolicy _dismantlePolicy;
- Future<void> setWorldEquipmentFavorite(String id,bool favorite)=>_transaction(() async {
+ bool _inventoryBusy=false;
+ bool get inventoryBusy=>_inventoryBusy;
+ DismantleRecipe? dismantleRecipe(EquipmentRarity rarity)=>_dismantlePolicy.recipe(rarity);
+ String? dismantleUnavailable(String id,int expectedLevel){
+  if(!_ready)return '初期化中';
+  if(_inventoryBusy)return '所持品処理中';
+  try {
+   _dismantlePolicy.validate(world:_state.world,inventory:_state.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel);
+   return null;
+  } on StateError catch(error){
+   return switch(error.message){
+    'Dismantle unavailable in battle'=>'戦闘中は分解できません',
+    'Equipment protected'=>'装着中・お気に入りの装備は分解できません',
+    'Enhanced equipment protected'=>'強化済み装備は分解できません',
+    'Dismantle recipe unavailable'=>'分解報酬未承認',
+    'Stack overflow'=>'素材所持数の上限です',
+    _=>'分解できません',
+   };
+  }
+ }
+ Future<T> _inventoryTransaction<T>(Future<T> Function() action) async {
+  if(_inventoryBusy)throw StateError('Inventory operation in progress');
+  _inventoryBusy=true;
+  notifyListeners();
+  try {
+   return await _transaction(action,keepPublishedState:true);
+  }finally{
+   _inventoryBusy=false;
+   notifyListeners();
+  }
+ }
+ Future<void> setWorldEquipmentFavorite(String id,bool favorite)=>_inventoryTransaction(() async {
   if(!_ready||_state.world.battle!=null)throw StateError('Equipment protection unavailable');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   working.inventory.setFavorite(id,favorite);
   await _store.save(working);
   _state=working;
-  notifyListeners();
- },keepPublishedState:true);
- Future<DismantleRecipe> dismantleWorldItem(String id,int expectedLevel)=>_transaction(() async {
+ });
+ Future<DismantleRecipe> dismantleWorldItem(String id,int expectedLevel)=>_inventoryTransaction(() async {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final reward=_dismantlePolicy.dismantle(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel);
   await _store.save(working);
   _state=working;
-  notifyListeners();
   return reward;
- },keepPublishedState:true);
+ });
  final EnhancementPolicy _enhancementPolicy;
  final EnhancementScaling enhancementScaling;
  EnhancementRecipe? enhancementRecipe(EquipmentRarity rarity)=>_enhancementPolicy.recipe(rarity);

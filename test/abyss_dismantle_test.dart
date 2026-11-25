@@ -132,4 +132,18 @@ void main(){
   await expectLater(restarted.setWorldEquipmentFavorite(next.id,true),throwsStateError);
   expect(jsonEncode(restarted.state.toJson()),battleBefore);
  });
+ test('低レベル削除でも装着・お気に入り・強化済み装備を保護する',(){
+  final inv=AbyssInventory();
+  final item=inv.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.n);
+  inv.equip(item.id);
+  expect(()=>inv.removeEquipment(item.id,0),throwsStateError);
+  inv.unequip(item.slot);
+  inv.setFavorite(item.id,true);
+  expect(()=>inv.removeEquipment(item.id,0),throwsStateError);
+  inv.setFavorite(item.id,false);
+  inv.enhance(item.id,0);
+  expect(()=>inv.removeEquipment(item.id,1),throwsStateError);
+  expect(inv.equipment[item.id]!.enhancement,1);
+  expect(inv.discovered,contains(item.masterId));
+ });
 }

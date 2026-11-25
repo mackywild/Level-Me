@@ -175,7 +175,10 @@ class AppController extends ChangeNotifier {
   await _store.save(working);
   _state=working;
  });
- Future<DismantleRecipe> dismantleWorldItem(String id,int expectedLevel)=>_inventoryTransaction(() async {
+ Future<DismantleRecipe> dismantleWorldItem(String id,int expectedLevel,{int? expectedGeneration,EquipmentInstance? expectedItem})=>_inventoryTransaction(() async {
+  if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final current=_state.inventory.equipment[id];
+  if(expectedItem!=null&&(current==null||current.id!=expectedItem.id||current.masterId!=expectedItem.masterId||current.slot!=expectedItem.slot||current.rarity!=expectedItem.rarity||current.enhancement!=expectedItem.enhancement))throw StateError('Stale equipment confirmation');
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final reward=_dismantlePolicy.dismantle(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel);

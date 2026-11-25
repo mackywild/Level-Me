@@ -34,6 +34,7 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
   final recipe=c.dismantleRecipe(item.rarity);
   if(recipe==null)return;
   final name=c.summonRewardName(item.masterId);
+  final generation=c.restoreGeneration;
   setState(()=>_confirming=true);
   try {
    final confirmed=await showDialog<bool>(context:context,builder:(dialogContext)=>AlertDialog(
@@ -45,7 +46,7 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
     ],
    ));
    if(!mounted||confirmed!=true)return;
-   final reward=await c.dismantleWorldItem(item.id,item.enhancement);
+   final reward=await c.dismantleWorldItem(item.id,item.enhancement,expectedGeneration:generation,expectedItem:item);
    if(mounted)setState(()=>_message='分解完了：${_rewardText(reward)}');
   }catch(_){
    if(mounted)setState(()=>_message='分解できませんでした。装備・保護状態を確認してください。');

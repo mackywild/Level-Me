@@ -73,6 +73,8 @@ void main(){
    (j){(j['buffs'] as List).first['id']='item:iron';},
    (j){(j['buffs'] as List).first['id']=(j['recovery'] as List).first['id'];},
    (j){(j['buffs'] as List).first['percent']=999;},
+   (j){(j['buffs'] as List).first['percent']=25.0;},
+   (j){(j['buffs'] as List).first['duration']=3.0;},
    (j){(j['buffs'] as List).first['kind']='unknown';},
    (j){(j['summon'] as List).add({'pool':'supplies','masterId':(j['buffs'] as List).first['id']});},
   ]){

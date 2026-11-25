@@ -528,6 +528,15 @@
       "kind": "evasion",
       "percent": 20,
       "duration": 2
+    },
+    {
+      "id": "item:buff_energy_discount",
+      "name": "省力薬",
+      "rarity": "sr",
+      "category": "buff",
+      "kind": "energyDiscount",
+      "percent": 30,
+      "duration": 3
     }
   ]
 }

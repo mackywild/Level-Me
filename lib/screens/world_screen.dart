@@ -51,9 +51,9 @@ class _WorldScreenState extends State<WorldScreen>{
   WorldCommand.retreat=>'撤退',
  };
  String cost(WorldCommand command,WorldState w)=>switch(command){
-  WorldCommand.claw=>w.physical>=4?'物理 4':'消費なし・威力25%',
-  WorldCommand.heavyClaw=>'物理 9',
-  WorldCommand.magic=>'魔法 6',
+  WorldCommand.claw=>w.physical>=widget.controller.worldEngine.energyCost(w,command)?'物理 ${widget.controller.worldEngine.energyCost(w,command)}':'消費なし・威力25%',
+  WorldCommand.heavyClaw=>'物理 ${widget.controller.worldEngine.energyCost(w,command)}',
+  WorldCommand.magic=>'魔法 ${widget.controller.worldEngine.energyCost(w,command)}',
   WorldCommand.guard=>'被ダメージ半減',
   WorldCommand.slow=>'寿命 3日',
   WorldCommand.accelerate=>'寿命 7日 / 紅爪2回強化',

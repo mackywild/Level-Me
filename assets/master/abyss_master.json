@@ -473,5 +473,53 @@
       "target": "magic",
       "percent": 50
     }
+  ],
+  "buffEnabled": false,
+  "buffs": [
+    {
+      "id": "item:buff_attack",
+      "name": "攻撃強化薬",
+      "rarity": "r",
+      "category": "buff",
+      "kind": "attack",
+      "percent": 25,
+      "duration": 3
+    },
+    {
+      "id": "item:buff_defense",
+      "name": "防御強化薬",
+      "rarity": "r",
+      "category": "buff",
+      "kind": "defense",
+      "percent": 40,
+      "duration": 3
+    },
+    {
+      "id": "item:buff_regeneration",
+      "name": "再生薬",
+      "rarity": "sr",
+      "category": "buff",
+      "kind": "regeneration",
+      "percent": 5,
+      "duration": 5
+    },
+    {
+      "id": "item:buff_critical",
+      "name": "会心強化薬",
+      "rarity": "sr",
+      "category": "buff",
+      "kind": "critical",
+      "percent": 25,
+      "duration": 3
+    },
+    {
+      "id": "item:buff_evasion",
+      "name": "回避強化薬",
+      "rarity": "sr",
+      "category": "buff",
+      "kind": "evasion",
+      "percent": 20,
+      "duration": 2
+    }
   ]
 }

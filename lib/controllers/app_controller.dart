@@ -60,6 +60,7 @@ class AppController extends ChangeNotifier {
   if(_consumableCatalog.items.isNotEmpty)throw const FormatException('Recovery master not enabled');
   if(_buffCatalog.items.isNotEmpty)throw const FormatException('Buff master not enabled');
   _consumableCatalog=master.recovery;
+  _buffCatalog=master.buffs;
   _abyssMaster=master;
   _equipmentCatalog=master.equipment;
   _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment,random:_summonRandom);
@@ -173,8 +174,23 @@ class AppController extends ChangeNotifier {
   _state=working;
   return amount;
  });
- final BuffCatalog _buffCatalog;
+ BuffCatalog _buffCatalog;
  List<BuffItem> get buffItems=>_buffCatalog.items;
+ String? battleBuffUnavailable(String id){
+  if(!_ready||_inventoryBusy)return '所持品処理中';
+  final w=_state.world,b=w.battle;
+  if(b==null)return '戦闘中ではありません';
+  try{
+   _buffCatalog.validate(world:w,inventory:_state.inventory,id:id,expectedSequence:w.itemUseSequence,battleId:b.id,turn:b.turn,engine:worldEngine);
+   return null;
+  }on StateError catch(error){
+   return switch(error.message){
+    'Buff already active'=>'効果発動中',
+    'Insufficient items'=>'所持数不足',
+    _=>'使用できません',
+   };
+  }
+ }
  Future<void> useBattleBuffItem(String id,int battleId,int turn,int expectedSequence,{required int expectedGeneration})=>_inventoryTransaction(() async {
   if(!_ready)throw StateError('Player not ready');
   if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');

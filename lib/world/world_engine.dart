@@ -113,16 +113,19 @@ enum LifeRewardBonus {
  static void validate(List<LifeRewardBonus> bonuses){
   if(bonuses.length>2||bonuses.toSet().length!=bonuses.length)throw const FormatException('Invalid life reward bonuses');
  }
- static BigInt reward(int base,List<LifeRewardBonus> bonuses){
+ static int totalPercent(List<LifeRewardBonus> bonuses){
   validate(bonuses);
-  if(base<0)throw const FormatException('Invalid life reward');
-  final percent=bonuses.fold<int>(100,(sum,b)=>sum+b.percent);
+  return bonuses.fold<int>(100,(sum,b)=>sum+b.percent);
+ }
+ static BigInt reward(int base,List<LifeRewardBonus> bonuses)=>rewardAtPercent(base,totalPercent(bonuses));
+ static BigInt rewardAtPercent(int base,int percent){
+  if(base<0||percent<100||percent>130)throw const FormatException('Invalid life reward');
   return BigInt.from(base)*BigInt.from(percent)~/BigInt.from(100);
  }
 }
 
 class WorldBattle {
- WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses,List<ActiveSkillSpec> activeSkills=const [],Map<String,int>? skillCooldowns,int? rngState,({int startHp,int? previousHp})? rewindHistory,List<LifeRewardBonus> lifeRewardBonuses=const [],int awakeningTurns=0}):_awakeningTurns=awakeningTurns,lifeRewardBonuses=List.unmodifiable(lifeRewardBonuses),_rewindHistory=rewindHistory,log=log??[],_buffs=Map.of(buffs??{}),_statuses=Map.of(statuses??{}),activeSkills=List.unmodifiable(activeSkills),_skillCooldowns=Map.of(skillCooldowns??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
+ WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses,List<ActiveSkillSpec> activeSkills=const [],Map<String,int>? skillCooldowns,int? rngState,({int startHp,int? previousHp})? rewindHistory,List<LifeRewardBonus> lifeRewardBonuses=const [],int awakeningTurns=0,this.executionVersion,int? lifeRewardPercent}):_lifeRewardPercent=lifeRewardPercent,_awakeningTurns=awakeningTurns,lifeRewardBonuses=List.unmodifiable(lifeRewardBonuses),_rewindHistory=rewindHistory,log=log??[],_buffs=Map.of(buffs??{}),_statuses=Map.of(statuses??{}),activeSkills=List.unmodifiable(activeSkills),_skillCooldowns=Map.of(skillCooldowns??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
  final int id;
  final String encounterId;
  final WorldStats stats;
@@ -140,12 +143,29 @@ class WorldBattle {
  final Map<BattleStatus,int> _statuses;
  final List<ActiveSkillSpec> activeSkills;
  final List<LifeRewardBonus> lifeRewardBonuses;
+ /// v1は現在の実行規則。nullは版番号導入前の戦闘。
+ static const currentExecutionVersion=1;
+ final int? executionVersion;
+ final int? _lifeRewardPercent;
+ int get lifeRewardPercent=>_lifeRewardPercent??LifeRewardBonus.totalPercent(lifeRewardBonuses);
  final Map<String,int> _skillCooldowns;
  Map<String,int> get skillCooldowns=>Map.unmodifiable(_skillCooldowns);
  Map<BattleStatus,int> get statuses=>Map.unmodifiable(_statuses);
  Map<BattleBuff,int> get buffs=>Map.unmodifiable(_buffs);
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),if(activeSkills.any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening))'awakeningTurns':_awakeningTurns,if(lifeRewardBonuses.isNotEmpty)'lifeRewardBonuses':lifeRewardBonuses.map((b)=>b.name).toList(),if(_rewindHistory case final history?)'rewindHistory':{'turn':turn,'startHp':history.startHp,'previousHp':history.previousHp},'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
- factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:_decodeActiveSkills(j),skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j),awakeningTurns:_decodeAwakeningTurns(j));
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),if(executionVersion!=null)'executionVersion':executionVersion,if(executionVersion!=null)'lifeRewardPercent':lifeRewardPercent,if(activeSkills.any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening))'awakeningTurns':_awakeningTurns,if(executionVersion!=null||lifeRewardBonuses.isNotEmpty)'lifeRewardBonuses':lifeRewardBonuses.map((b)=>b.name).toList(),if(_rewindHistory case final history?)'rewindHistory':{'turn':turn,'startHp':history.startHp,'previousHp':history.previousHp},'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
+ factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:_decodeActiveSkills(j),skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j),awakeningTurns:_decodeAwakeningTurns(j),executionVersion:_decodeExecutionVersion(j),lifeRewardPercent:j.containsKey('executionVersion')?j['lifeRewardPercent'] as int:null);
+ static int? _decodeExecutionVersion(Map<String,dynamic> j){
+  if(!j.containsKey('executionVersion')){
+   if(j.containsKey('lifeRewardPercent'))throw const FormatException('Missing execution version');
+   return null;
+  }
+  final version=j['executionVersion'];
+  if(version is! int||version!=currentExecutionVersion)throw const FormatException('Unsupported battle execution version');
+  if(!j.containsKey('activeSkills')||!j.containsKey('skillCooldowns')||!j.containsKey('lifeRewardBonuses'))throw const FormatException('Incomplete versioned battle snapshot');
+  final raw=j['lifeRewardPercent'];
+  if(raw is! int||raw!=LifeRewardBonus.totalPercent(_decodeLifeRewardBonuses(j)))throw const FormatException('Invalid life reward percent snapshot');
+  return version;
+ }
  static int _decodeAwakeningTurns(Map<String,dynamic> j){
   final equipped=_decodeActiveSkills(j).any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening);
   if(!j.containsKey('awakeningTurns')){
@@ -161,7 +181,7 @@ class WorldBattle {
  static List<LifeRewardBonus> _decodeLifeRewardBonuses(Map<String,dynamic> j){
   if(!j.containsKey('lifeRewardBonuses'))return const [];
   final raw=j['lifeRewardBonuses'];
-  if(raw is! List||raw.isEmpty||raw.length>2)throw const FormatException('Invalid life reward bonuses');
+  if(raw is! List||(raw.isEmpty&&!j.containsKey('executionVersion'))||raw.length>2)throw const FormatException('Invalid life reward bonuses');
   final bonuses=<LifeRewardBonus>[];
   for(final value in raw){
    final matches=LifeRewardBonus.values.where((b)=>b.name==value);
@@ -195,6 +215,7 @@ class WorldBattle {
   final ids=<String>{};
   return raw.map((row){
    if(row is! Map<String,dynamic>)throw const FormatException('Invalid active skill snapshot');
+   if(j.containsKey('executionVersion')&&const ['id','name','powerPercent','physicalCost','cooldown','hits','effect','lifeCost'].any((key)=>!row.containsKey(key)))throw const FormatException('Incomplete versioned skill definition');
    final spec=ActiveSkillSpec.fromJson(row);
    if(!ids.add(spec.id))throw const FormatException('Duplicate active skill snapshot');
    return spec;
@@ -329,7 +350,7 @@ class WorldEngine {
   if(w.sequence==0x7fffffffffffffff)throw StateError('Battle sequence overflow');
   final seed=_seedRandom.nextInt(BattleRandom.modulus-1)+1;
   w.sequence++;
-  w.battle=WorldBattle(activeSkills:activeSkills,lifeRewardBonuses:lifeRewardBonuses,rewindHistory:activeSkills.any((s)=>s.effect==ActiveSkillEffect.rewindHp)?(startHp:w.hp,previousHp:null):null,rngState:seed,id:w.sequence,encounterId:id,stats:s,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
+  w.battle=WorldBattle(executionVersion:WorldBattle.currentExecutionVersion,lifeRewardPercent:LifeRewardBonus.totalPercent(lifeRewardBonuses),activeSkills:activeSkills,lifeRewardBonuses:lifeRewardBonuses,rewindHistory:activeSkills.any((s)=>s.effect==ActiveSkillEffect.rewindHp)?(startHp:w.hp,previousHp:null):null,rngState:seed,id:w.sequence,encounterId:id,stats:s,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
   w.lastResult='';
  }
  /// 単一の消費計算を可否・実行・画面で共有する。寿命には適用しない。
@@ -412,7 +433,7 @@ class WorldEngine {
  bool _victory(WorldState w,int now){
   final b=w.battle!,e=WorldCatalog.byId(w.battle!.encounterId);
   if(b.enemyHp==0){
-   final life=LifeRewardBonus.reward(e.lifeDays,b.lifeRewardBonuses);
+   final life=LifeRewardBonus.rewardAtPercent(e.lifeDays,b.lifeRewardPercent);
    final first=w.cleared.add(e.id);
    final gold=e.gold;
    w.gold+=gold;

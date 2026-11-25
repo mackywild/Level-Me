@@ -78,7 +78,7 @@ class _AbyssSummonScreenState extends State<AbyssSummonScreen>{
     if(latest==null)const Text('召喚履歴なし')else...[
      Text('${_label(latest.pool)} / 取引 ${latest.sequence}'),
      for(final reward in latest.rewards)
-      ListTile(dense:true,title:Text(c.equipmentCatalog.find(reward.masterId)?.name??reward.masterId),subtitle:reward.instanceId==null?null:Text(reward.instanceId!),trailing:Text(reward.rarity.name.toUpperCase())),
+      ListTile(dense:true,title:Text(c.summonRewardName(reward.masterId)),subtitle:reward.instanceId==null?null:Text(reward.instanceId!),trailing:Text(reward.rarity.name.toUpperCase())),
     ],
    ]);
   }),

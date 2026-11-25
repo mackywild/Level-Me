@@ -1,12 +1,12 @@
 import 'dart:math';
 import 'world_catalog.dart';
 
-enum BattleBuff { attack, defense, regeneration, critical, evasion }
+enum BattleBuff { attack, defense, regeneration, critical, evasion, energyDiscount }
 
 extension BattleBuffRules on BattleBuff {
- int get percent=>switch(this){BattleBuff.attack=>25,BattleBuff.defense=>40,BattleBuff.regeneration=>5,BattleBuff.critical=>25,BattleBuff.evasion=>20};
+ int get percent=>switch(this){BattleBuff.attack=>25,BattleBuff.defense=>40,BattleBuff.regeneration=>5,BattleBuff.critical=>25,BattleBuff.evasion=>20,BattleBuff.energyDiscount=>30};
  int get duration=>switch(this){BattleBuff.regeneration=>5,BattleBuff.evasion=>2,_=>3};
- String get label=>switch(this){BattleBuff.attack=>'攻撃強化',BattleBuff.defense=>'防御強化',BattleBuff.regeneration=>'継続回復',BattleBuff.critical=>'会心率上昇',BattleBuff.evasion=>'回避率上昇'};
+ String get label=>switch(this){BattleBuff.attack=>'攻撃強化',BattleBuff.defense=>'防御強化',BattleBuff.regeneration=>'継続回復',BattleBuff.critical=>'会心率上昇',BattleBuff.evasion=>'回避率上昇',BattleBuff.energyDiscount=>'エネルギー消費軽減'};
 }
 
 enum WorldCommand { claw, heavyClaw, magic, guard, slow, retreat, accelerate, stopTime, compositeClaw }
@@ -152,11 +152,17 @@ class WorldEngine {
   w.battle=WorldBattle(rngState:seed,id:w.sequence,encounterId:id,stats:s,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
   w.lastResult='';
  }
+ /// 単一の消費計算を可否・実行・画面で共有する。寿命には適用しない。
+ int energyCost(WorldState w,WorldCommand command){
+  final base=switch(command){WorldCommand.claw=>4,WorldCommand.heavyClaw=>9,WorldCommand.magic=>6,_=>0};
+  if(!(w.battle?.buffs.containsKey(BattleBuff.energyDiscount)??false))return base;
+  return (base*(100-BattleBuff.energyDiscount.percent)+99)~/100;
+ }
  String? unavailable(WorldState w,WorldCommand command){
   if(w.battle==null)return '戦闘中ではありません';
   return switch(command){
-   WorldCommand.heavyClaw=>w.physical<9?'物理エネルギー不足':null,
-   WorldCommand.magic=>w.magic<6?'魔法エネルギー不足':null,
+   WorldCommand.heavyClaw=>w.physical<energyCost(w,command)?'物理エネルギー不足':null,
+   WorldCommand.magic=>w.magic<energyCost(w,command)?'魔法エネルギー不足':null,
    WorldCommand.slow=>!w.cleared.contains('p03_main')?'STAGE 03クリアで解放':w.lifespan<BigInt.from(3)?'寿命不足':w.battle!.slowTurns>0?'効果発動中':null,
    WorldCommand.accelerate=>!w.cleared.contains(WorldCatalog.mainId(6))?'STAGE 06クリアで解放':w.lifespan<BigInt.from(7)?'寿命不足':w.battle!.acceleratedClaws>0?'効果発動中':null,
    WorldCommand.stopTime=>!w.cleared.contains(WorldCatalog.mainId(12))?'STAGE 12クリアで解放':w.lifespan<BigInt.from(30)?'寿命不足':w.battle!.stopCooldown>0?'クールダウン中':null,
@@ -197,12 +203,13 @@ class WorldEngine {
    final variance=0.95+_roll(b)*0.10;
    switch(command){
     case WorldCommand.claw:
-     final strong=w.physical>=4;
-     if(strong)w.physical-=4;
+     final cost=energyCost(w,command);
+     final strong=w.physical>=cost;
+     if(strong)w.physical-=cost;
      dealt=damage(s.physical,e.defense,(strong?1.0:0.25)*(b.acceleratedClaws>0?2.0:1.0)*attackBonus,critical:critical,variance:variance);
      if(b.acceleratedClaws>0)b.acceleratedClaws--;
     case WorldCommand.heavyClaw:
-     w.physical-=9;dealt=damage(s.physical,e.defense,1.8*attackBonus,critical:critical,variance:variance);
+     w.physical-=energyCost(w,command);dealt=damage(s.physical,e.defense,1.8*attackBonus,critical:critical,variance:variance);
     case WorldCommand.compositeClaw:
      w.lifespan-=BigInt.from(90);
      b.stopCooldown=5;
@@ -210,7 +217,7 @@ class WorldEngine {
      b.log.add(skipEnemy?'複合爪撃 — 時間停止・自己加速・爪撃':'複合爪撃 — 時間停止は無効化された。');
      dealt=damage(s.physical,e.defense,4.0*attackBonus,critical:critical,variance:variance);
     case WorldCommand.magic:
-     w.magic-=6;dealt=damage(s.magic,e.defense,1.2*attackBonus,critical:critical,variance:variance);
+     w.magic-=energyCost(w,command);dealt=damage(s.magic,e.defense,1.2*attackBonus,critical:critical,variance:variance);
     default:break;
    }
    b.enemyHp=max(0,b.enemyHp-dealt);

@@ -153,7 +153,10 @@ class WorldBattle {
  Map<BattleStatus,int> get statuses=>Map.unmodifiable(_statuses);
  Map<BattleBuff,int> get buffs=>Map.unmodifiable(_buffs);
  Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),if(executionVersion!=null)'executionVersion':executionVersion,if(executionVersion!=null)'lifeRewardPercent':lifeRewardPercent,if(activeSkills.any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening))'awakeningTurns':_awakeningTurns,if(executionVersion!=null||lifeRewardBonuses.isNotEmpty)'lifeRewardBonuses':lifeRewardBonuses.map((b)=>b.name).toList(),if(_rewindHistory case final history?)'rewindHistory':{'turn':turn,'startHp':history.startHp,'previousHp':history.previousHp},'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
- factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:_decodeActiveSkills(j),skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j),awakeningTurns:_decodeAwakeningTurns(j),executionVersion:_decodeExecutionVersion(j),lifeRewardPercent:j.containsKey('executionVersion')?j['lifeRewardPercent'] as int:null);
+ factory WorldBattle.fromJson(Map<String,dynamic> j){
+  final version=_decodeExecutionVersion(j);
+  return WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:_decodeActiveSkills(j),skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j),awakeningTurns:_decodeAwakeningTurns(j),executionVersion:version,lifeRewardPercent:version!=null?j['lifeRewardPercent'] as int:null);
+ }
  static int? _decodeExecutionVersion(Map<String,dynamic> j){
   if(!j.containsKey('executionVersion')){
    if(j.containsKey('lifeRewardPercent'))throw const FormatException('Missing execution version');
@@ -161,7 +164,24 @@ class WorldBattle {
   }
   final version=j['executionVersion'];
   if(version is! int||version!=currentExecutionVersion)throw const FormatException('Unsupported battle execution version');
-  if(!j.containsKey('activeSkills')||!j.containsKey('skillCooldowns')||!j.containsKey('lifeRewardBonuses'))throw const FormatException('Incomplete versioned battle snapshot');
+  // v1は全ての非条件付き出力項目を必須とする。旧形式の補完はここを通らない。
+  for(final key in const ['id','enemyHp','turn','slowTurns','acceleratedClaws','stopCooldown','energyRemainder','hpRemainder','rngVersion','rngState','lifeRewardPercent']){
+   if(j[key] is! int)throw FormatException('Invalid versioned battle integer: $key');
+  }
+  if(j['encounterId'] is! String)throw const FormatException('Invalid versioned encounter ID');
+  final stats=j['stats'],log=j['log'];
+  if(stats is! Map<String,dynamic>||log is! List||log.any((entry)=>entry is! String))throw const FormatException('Invalid versioned battle stats or log');
+  for(final key in const ['hp','physical','magic','defense','physicalMax','magicMax']){
+   if(stats[key] is! int)throw FormatException('Invalid versioned battle stat: $key');
+  }
+  final crit=stats['crit'];
+  if(crit is! num||!crit.isFinite||crit<0||crit>1)throw const FormatException('Invalid versioned battle critical rate');
+  for(final key in const ['skillCooldowns','buffs','statuses']){
+   if(j[key] is! Map<String,dynamic>)throw FormatException('Invalid versioned battle map: $key');
+  }
+  for(final key in const ['activeSkills','lifeRewardBonuses']){
+   if(j[key] is! List)throw FormatException('Invalid versioned battle list: $key');
+  }
   final raw=j['lifeRewardPercent'];
   if(raw is! int||raw!=LifeRewardBonus.totalPercent(_decodeLifeRewardBonuses(j)))throw const FormatException('Invalid life reward percent snapshot');
   return version;

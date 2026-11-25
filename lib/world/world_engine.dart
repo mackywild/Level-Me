@@ -1,6 +1,13 @@
 import 'dart:math';
 import 'world_catalog.dart';
 
+enum BattleBuff { attack, defense, regeneration }
+
+extension BattleBuffRules on BattleBuff {
+ int get percent=>switch(this){BattleBuff.attack=>25,BattleBuff.defense=>40,BattleBuff.regeneration=>5};
+ int get duration=>this==BattleBuff.regeneration?5:3;
+}
+
 enum WorldCommand { claw, heavyClaw, magic, guard, slow, retreat, accelerate, stopTime, compositeClaw }
 
 class WorldStats {
@@ -21,15 +28,31 @@ class WorldStats {
 }
 
 class WorldBattle {
- WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log}):log=log??[];
+ WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs}):log=log??[],_buffs=Map.of(buffs??{});
  final int id;
  final String encounterId;
  final WorldStats stats;
  final int energyRemainder,hpRemainder;
  int enemyHp,turn,slowTurns,acceleratedClaws,stopCooldown;
  final List<String> log;
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log};
- factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List));
+ final Map<BattleBuff,int> _buffs;
+ Map<BattleBuff,int> get buffs=>Map.unmodifiable(_buffs);
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
+ factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j));
+ static Map<BattleBuff,int> _decodeBuffs(Map<String,dynamic> j){
+  if(!j.containsKey('buffs'))return {};
+  final raw=j['buffs'];
+  if(raw is! Map<String,dynamic>)throw const FormatException('Invalid battle buffs');
+  final result=<BattleBuff,int>{};
+  for(final entry in raw.entries){
+   final matches=BattleBuff.values.where((kind)=>kind.name==entry.key);
+   if(matches.isEmpty)throw const FormatException('Unknown battle buff');
+   final kind=matches.first,value=entry.value;
+   if(value is! int||value<1||value>kind.duration)throw const FormatException('Invalid buff duration');
+   result[kind]=value;
+  }
+  return result;
+ }
 }
 
 class WorldState {
@@ -121,6 +144,7 @@ class WorldEngine {
   final unavailableReason=unavailable(w,command);
   if(unavailableReason!=null)throw StateError(unavailableReason);
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
+  final attackBonus=b._buffs.containsKey(BattleBuff.attack)?1+BattleBuff.attack.percent/100:1.0;
   if(command==WorldCommand.retreat){_end(w,now,'撤退 — 消費済み資源は返還されません');return;}
   var dealt=0;
   var skipEnemy=false;
@@ -146,18 +170,18 @@ class WorldEngine {
     case WorldCommand.claw:
      final strong=w.physical>=4;
      if(strong)w.physical-=4;
-     dealt=damage(s.physical,e.defense,(strong?1.0:0.25)*(b.acceleratedClaws>0?2.0:1.0),critical:critical,variance:variance);
+     dealt=damage(s.physical,e.defense,(strong?1.0:0.25)*(b.acceleratedClaws>0?2.0:1.0)*attackBonus,critical:critical,variance:variance);
      if(b.acceleratedClaws>0)b.acceleratedClaws--;
     case WorldCommand.heavyClaw:
-     w.physical-=9;dealt=damage(s.physical,e.defense,1.8,critical:critical,variance:variance);
+     w.physical-=9;dealt=damage(s.physical,e.defense,1.8*attackBonus,critical:critical,variance:variance);
     case WorldCommand.compositeClaw:
      w.lifespan-=BigInt.from(90);
      b.stopCooldown=5;
      skipEnemy=!e.timeResistant;
      b.log.add(skipEnemy?'複合爪撃 — 時間停止・自己加速・爪撃':'複合爪撃 — 時間停止は無効化された。');
-     dealt=damage(s.physical,e.defense,4.0,critical:critical,variance:variance);
+     dealt=damage(s.physical,e.defense,4.0*attackBonus,critical:critical,variance:variance);
     case WorldCommand.magic:
-     w.magic-=6;dealt=damage(s.magic,e.defense,1.2,critical:critical,variance:variance);
+     w.magic-=6;dealt=damage(s.magic,e.defense,1.2*attackBonus,critical:critical,variance:variance);
     default:break;
    }
    b.enemyHp=max(0,b.enemyHp-dealt);
@@ -182,17 +206,42 @@ class WorldEngine {
   b.log.add('$itemName — $amount 回復');
   _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false);
  }
- void _finishTurn(WorldState w,int now,{required bool skipEnemy,required bool guarding,required bool castingStop}){
+ void validateBuff(WorldState w,BattleBuff kind,int battleId,int expectedTurn){
+  final b=w.battle;
+  if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
+  if(b._buffs.containsKey(kind))throw StateError('Buff already active');
+  if(b.turn==0x7fffffffffffffff)throw StateError('Battle turn overflow');
+ }
+ void finishBuffTurn(WorldState w,BattleBuff kind,int battleId,int expectedTurn,int now,String name){
+  validateBuff(w,kind,battleId,expectedTurn);
+  final b=w.battle!;
+  b._buffs[kind]=kind.duration;
+  b.log.add('$name — 効果発動');
+  _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,newBuff:kind);
+ }
+ void _finishTurn(WorldState w,int now,{required bool skipEnemy,required bool guarding,required bool castingStop,BattleBuff? newBuff}){
   final b=w.battle!;
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
   if(!skipEnemy){
-   final attack=damage(e.attack,s.defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
+   final int extra=(s.defense~/100)*BattleBuff.defense.percent+(s.defense%100)*BattleBuff.defense.percent~/100;
+   final defense=b._buffs.containsKey(BattleBuff.defense)?s.defense+min<int>(extra,max<int>(0,0x7fffffffffffff9b-s.defense)):s.defense;
+   final attack=damage(e.attack,defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
    w.hp=max(0,w.hp-attack);
    b.log.add('敵の反撃 — HP -$attack');
    if(b.slowTurns>0)b.slowTurns--;
   }
   if(!castingStop&&b.stopCooldown>0)b.stopCooldown--;
   if(w.hp==0){_end(w,now,'敗北 — 回復後に再挑戦できます');return;}
+  if(b._buffs.containsKey(BattleBuff.regeneration)&&newBuff!=BattleBuff.regeneration){
+   final amount=min(s.hp-w.hp,max(1,(s.hp~/100)*BattleBuff.regeneration.percent+(s.hp%100)*BattleBuff.regeneration.percent~/100));
+   w.hp+=amount;
+   if(amount>0)b.log.add('継続回復 — HP +$amount');
+  }
+  for(final kind in b._buffs.keys.toList()){
+   if(kind==newBuff)continue;
+   final remaining=b._buffs[kind]!-1;
+   if(remaining==0){b._buffs.remove(kind);}else{b._buffs[kind]=remaining;}
+  }
   b.turn++;
   if(b.log.length>12)b.log.removeRange(0,b.log.length-12);
  }

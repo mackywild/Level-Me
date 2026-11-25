@@ -16,11 +16,12 @@ import '../world/abyss_enhancement.dart';
 import '../world/abyss_dismantle.dart';
 import '../world/abyss_shop.dart';
 import '../world/abyss_consumable.dart';
+import '../world/abyss_buff.dart';
 import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,BuffCatalog? buffCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_buffCatalog=buffCatalog??BuffCatalog.production,_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -28,6 +29,7 @@ class AppController extends ChangeNotifier {
  void _validateEquipment(AppStateData state){
   equipmentCatalog.validateLoadout(state.inventory);
   _summonEngine.validatePending(state.world,state.summon);
+  _buffCatalog.validateSavedEffects(state.world);
  }
  EquipmentCatalog _equipmentCatalog;
  EquipmentCatalog get equipmentCatalog=>_equipmentCatalog;
@@ -56,6 +58,7 @@ class AppController extends ChangeNotifier {
   _shopCatalog.validateMaterials((offer)=>master.supply(offer.materialId)?.category=='material');
   // 現行の素材マスターに回復品を混入させない。正式統合は別PR。
   if(_consumableCatalog.items.isNotEmpty)throw const FormatException('Recovery master not enabled');
+  if(_buffCatalog.items.isNotEmpty)throw const FormatException('Buff master not enabled');
   _consumableCatalog=master.recovery;
   _abyssMaster=master;
   _equipmentCatalog=master.equipment;
@@ -169,6 +172,18 @@ class AppController extends ChangeNotifier {
   await _store.save(working);
   _state=working;
   return amount;
+ });
+ final BuffCatalog _buffCatalog;
+ List<BuffItem> get buffItems=>_buffCatalog.items;
+ Future<void> useBattleBuffItem(String id,int battleId,int turn,int expectedSequence,{required int expectedGeneration})=>_inventoryTransaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final now=_nowMs;
+  _buffCatalog.use(world:working.world,inventory:working.inventory,id:id,expectedSequence:expectedSequence,battleId:battleId,turn:turn,engine:worldEngine,now:now);
+  worldEngine.refresh(working.world,worldStats,now);
+  await _store.save(working);
+  _state=working;
  });
  final ShopCatalog _shopCatalog;
  List<ShopOffer> get shopOffers=>_shopCatalog.offers;

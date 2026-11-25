@@ -18,11 +18,11 @@ void main(){
  setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
  test('変更番号の旧形式・不正値・上限と熟練度予約値を検証',(){
   final raw=SkillState().toJson();
-  expect(SkillState.fromJson(Map<String,dynamic>.of(raw)..remove('revision')).revision,0);
+  expect(SkillState.fromJson({...raw,'version':1}..remove('revision')).revision,0);
   for(final bad in [null,-1,0.0,'0']){
    expect(()=>SkillState.fromJson({...raw,'revision':bad}),throwsFormatException);
   }
-  expect(()=>SkillState.fromJson({...raw,'learned':{def.id:1}}),throwsFormatException);
+  expect(()=>SkillState.fromJson({...raw,'version':1,'learned':{def.id:1}}),throwsFormatException);
   for(final bad in [null,[],1]){
    expect(()=>AppStateData.fromJson({...AppStateData.initial().toJson(),'skills':bad}),throwsFormatException);
   }

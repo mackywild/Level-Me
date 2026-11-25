@@ -402,6 +402,8 @@ class WorldEngine {
   if(w.battle!=null)throw StateError('A battle is already active');
   final e=WorldCatalog.byId(id);
   if(!isUnlocked(w,e))throw StateError('Encounter locked or completed');
+  final rewardReason=victoryRewardUnavailable(w,e);
+  if(rewardReason!=null)throw StateError(rewardReason);
   refresh(w,s,now);
   if(w.hp<=0)throw StateError('HP recovery required');
   if(w.sequence==0x7fffffffffffffff)throw StateError('Battle sequence overflow');
@@ -416,8 +418,33 @@ class WorldEngine {
   if(!(w.battle?.buffs.containsKey(BattleBuff.energyDiscount)??false))return base;
   return (base*(100-BattleBuff.energyDiscount.percent)+99)~/100;
  }
+ /// 勝利時の整数資源を加算前に検査する。寿命はBigIntのため別上限を設けない。
+ static const maxRewardResource=0x7fffffffffffffff;
+ static const mainFirstTickets=3,freeFirstTickets=1;
+ static bool _fitsReward(int balance,int reward)=>balance>=0&&reward>=0&&balance<=maxRewardResource-reward;
+ String? victoryRewardUnavailable(WorldState w,WorldEncounter e){
+  if(!_fitsReward(w.gold,e.gold))return 'ゴールド報酬が所持上限を超えます';
+  if(!w.cleared.contains(e.id)){
+   if(e.main&&!_fitsReward(w.summonTickets,mainFirstTickets))return '召喚券報酬が所持上限を超えます';
+   if(!e.main&&!_fitsReward(w.supplyTickets,freeFirstTickets))return '補給券報酬が所持上限を超えます';
+  }
+  return null;
+ }
+ bool _canDamage(WorldCommand command)=>switch(command){
+  WorldCommand.claw||WorldCommand.heavyClaw||WorldCommand.magic||WorldCommand.compositeClaw=>true,
+  _=>false,
+ };
+ bool _activeCanDamage(ActiveSkillSpec spec)=>switch(spec.effect){
+  ActiveSkillEffect.physical||ActiveSkillEffect.accelerationAttack||ActiveSkillEffect.stopAttack||ActiveSkillEffect.ultimateAttack=>true,
+  _=>false,
+ };
  String? unavailable(WorldState w,WorldCommand command){
-  if(w.battle==null)return '戦闘中ではありません';
+  final b=w.battle;
+  if(b==null)return '戦闘中ではありません';
+  if(_canDamage(command)){
+   final reason=victoryRewardUnavailable(w,b.encounter);
+   if(reason!=null)return reason;
+  }
   return switch(command){
    WorldCommand.heavyClaw=>w.physical<energyCost(w,command)?'物理エネルギー不足':null,
    WorldCommand.magic=>w.magic<energyCost(w,command)?'魔法エネルギー不足':null,
@@ -490,12 +517,14 @@ class WorldEngine {
  bool _victory(WorldState w,int now){
   final b=w.battle!,e=w.battle!.encounter;
   if(b.enemyHp==0){
+   final reason=victoryRewardUnavailable(w,e);
+   if(reason!=null)throw StateError(reason);
    final life=LifeRewardBonus.rewardAtPercent(e.lifeDays,b.lifeRewardPercent);
    final first=w.cleared.add(e.id);
    final gold=e.gold;
    w.gold+=gold;
    w.lifespan+=life;
-   if(first){if(e.main){w.summonTickets+=3;}else{w.supplyTickets++;}}
+   if(first){if(e.main){w.summonTickets+=mainFirstTickets;}else{w.supplyTickets+=freeFirstTickets;}}
    _end(w,now,'勝利 — $gold G / 寿命 +$life日${first?' / 初回報酬獲得':''}');
    return true;
   }
@@ -545,6 +574,7 @@ class WorldEngine {
   }
   if(w.lifespan<BigInt.from(spec.lifeCost))return '寿命不足';
   if(w.physical<activeSkillCost(w,spec))return '物理エネルギー不足';
+  if(_activeCanDamage(spec))return victoryRewardUnavailable(w,b.encounter);
   return null;
  }
  void actActiveSkill(WorldState w,String id,int battleId,int expectedTurn,int now){

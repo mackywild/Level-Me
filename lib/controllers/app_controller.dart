@@ -15,11 +15,12 @@ import '../world/abyss_equipment.dart';
 import '../world/abyss_enhancement.dart';
 import '../world/abyss_dismantle.dart';
 import '../world/abyss_shop.dart';
+import '../world/abyss_consumable.dart';
 import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,this.enhancementScaling=const EnhancementScaling.disabled()}):_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,this.enhancementScaling=const EnhancementScaling.disabled()}):_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -53,6 +54,8 @@ class AppController extends ChangeNotifier {
    return material!=null&&material.category=='material'&&material.rarity==recipe.rarity;
   });
   _shopCatalog.validateMaterials((offer)=>master.supply(offer.materialId)?.category=='material');
+  // 現行の素材マスターに回復品を混入させない。正式統合は別PR。
+  if(_consumableCatalog.items.isNotEmpty)throw const FormatException('Recovery master not enabled');
   _abyssMaster=master;
   _equipmentCatalog=master.equipment;
   _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment,random:_summonRandom);
@@ -107,6 +110,20 @@ class AppController extends ChangeNotifier {
    notifyListeners();
   }
  }
+ final ConsumableCatalog _consumableCatalog;
+ List<RecoveryItem> get recoveryItems=>_consumableCatalog.items;
+ Future<int> useWorldRecoveryItem(String id,int expectedSequence,{required int expectedGeneration})=>_inventoryTransaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  // 自然回復を先に反映し、満タンなら消費しない。失敗時は作業用状態を破棄。
+  final stats=worldStats;
+  worldEngine.refresh(working.world,stats,_nowMs);
+  final amount=_consumableCatalog.use(world:working.world,stats:stats,inventory:working.inventory,id:id,expectedSequence:expectedSequence);
+  await _store.save(working);
+  _state=working;
+  return amount;
+ });
  final ShopCatalog _shopCatalog;
  List<ShopOffer> get shopOffers=>_shopCatalog.offers;
  int _restoreGeneration=0;

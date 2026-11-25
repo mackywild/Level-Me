@@ -70,6 +70,19 @@ void main(){
   expect(engine.energyCost(s.world,WorldCommand.claw),4);
   expect(s.inventory.stacks[item.id],1);
  });
+ test('複合爪撃の寿命90日とエネルギー残高を維持する',(){
+  final engine=WorldEngine();
+  final w=state();
+  w.cleared.addAll(['p06_main','p12_main']);
+  w.lifespan=BigInt.from(90);
+  final physical=w.physical,magic=w.magic;
+  expect(engine.energyCost(w,WorldCommand.compositeClaw),0);
+  engine.act(w,WorldCommand.compositeClaw,1,1,now);
+  expect(w.lifespan,BigInt.zero);
+  expect(w.physical,physical);
+  expect(w.magic,magic);
+  expect(w.battle!.buffs[BattleBuff.energyDiscount],2);
+ });
  test('実ファイル保存失敗と再試行、再起動、未承認効果拒否',() async {
   final dir=await Directory.systemTemp.createTemp('energy-discount-');
   addTearDown(()=>dir.delete(recursive:true));

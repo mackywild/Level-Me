@@ -62,12 +62,17 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
  };
  Future<void> _recover(RecoveryItem item) async {
   final c=widget.controller;
-  if(_confirming||c.recoveryUnavailable(item.id)!=null)return;
-  final sequence=c.state.world.itemUseSequence;
-  final generation=c.restoreGeneration;
-  final amount=c.recoveryPreview(item.id);
-  setState(()=>_confirming=true);
+  if(_confirming)return;
   try{
+   final evaluation=c.evaluateRecovery(item.id);
+   final amount=evaluation.amount;
+   if(amount==null){
+    if(mounted)setState(()=>_message=evaluation.reason);
+    return;
+   }
+   final sequence=c.state.world.itemUseSequence;
+   final generation=c.restoreGeneration;
+   setState(()=>_confirming=true);
    final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
     title:const Text('回復アイテムを使用しますか？'),
     content:Text('${item.name} × 1\n${_target(item.target)}：回復予定 $amount\n自然回復により確定時の回復量が変わる場合があります。'),
@@ -112,13 +117,16 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
      if(stacks.isEmpty)const Text('該当する素材なし'),
      for(final entry in stacks)
       if(c.recoveryItem(entry.key) case final item?)
-       Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+       Builder(builder:(context){
+        final evaluation=c.evaluateRecovery(item.id);
+        return Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Text('${item.name} × ${entry.value}'),
         Text('${_target(item.target)} 最大値の${item.percent}%回復'),
-        if(c.recoveryUnavailable(item.id) case final reason?)Text(reason)
-        else Text('回復予定：${c.recoveryPreview(item.id)}'),
-        FilledButton(onPressed:locked||c.recoveryUnavailable(item.id)!=null?null:()=>_recover(item),child:const Text('使用')),
-       ])))
+        if(evaluation.reason case final reason?)Text(reason)
+        else Text('回復予定：${evaluation.amount}'),
+        FilledButton(onPressed:locked||evaluation.amount==null?null:()=>_recover(item),child:const Text('使用')),
+       ])));
+       })
       else ListTile(title:Text(c.summonRewardName(entry.key)),subtitle:Text(entry.key),trailing:Text('× ${entry.value}')),
     ]else...[
      FilterChip(label:const Text('お気に入りのみ'),selected:_favoritesOnly,onSelected:(value)=>setState(()=>_favoritesOnly=value)),

@@ -16,7 +16,7 @@ import '../world/abyss_master.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom}):_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster}):_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -25,13 +25,22 @@ class AppController extends ChangeNotifier {
  EquipmentCatalog _equipmentCatalog;
  EquipmentCatalog get equipmentCatalog=>_equipmentCatalog;
  late SummonEngine _summonEngine;
+ final Future<AbyssMaster> Function()? _loadAbyssMaster;
+ final Random? _summonRandom;
+ Future<void>? _masterLoading;
  AbyssMaster? _abyssMaster;
+ Future<void> _ensureAbyssMaster() async {
+  final loader=_loadAbyssMaster;
+  if(loader==null||hasAbyssMaster)return;
+  final loading=_masterLoading??=() async {configureAbyssMaster(await loader());}();
+  try {await loading;} finally {if(identical(_masterLoading,loading))_masterLoading=null;}
+ }
  bool get hasAbyssMaster=>_abyssMaster!=null;
  void configureAbyssMaster(AbyssMaster master){
   if(_ready||_summonBusy||_abyssMaster!=null)throw StateError('Cannot replace master while active');
   _abyssMaster=master;
   _equipmentCatalog=master.equipment;
-  _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment);
+  _summonEngine=SummonEngine(catalog:master.summon,equipmentCatalog:master.equipment,random:_summonRandom);
  }
  String summonRewardName(String id)=>equipmentCatalog.find(id)?.name??_abyssMaster?.supply(id)?.name??id;
  EquipmentRarity get summonHighestUnlocked=>_summonEngine.highestUnlocked(_state.world);
@@ -138,6 +147,7 @@ class AppController extends ChangeNotifier {
  bool get ready=>_ready;
  Future<void> initialize() async {
   _ready=false;
+  await _ensureAbyssMaster();
   await _portableBackup?.resumePendingRestore();
   final loaded=await _store.load();
   _validateEquipment(loaded);
@@ -155,6 +165,7 @@ class AppController extends ChangeNotifier {
   return backup.export();
  });
  Future<void> importPortableBackup(String raw) async {
+  await _ensureAbyssMaster();
   PortableBackup.validate(raw,validatePlayer:_validateEquipment);
   final backup=_portableBackup;
   if(backup==null)throw StateError('Backup unavailable');
@@ -164,10 +175,17 @@ class AppController extends ChangeNotifier {
    await initialize();
   });
  }
- Future<bool> hasBackup()=>_store.hasBackup();
+ Future<bool> hasBackup() async {
+  // 起動失敗画面の確認処理で暗黙にマスターを再読込しない。
+  if(_loadAbyssMaster!=null&&!hasAbyssMaster)return false;
+  return _store.hasBackup();
+ }
  Future<void> restoreBackup() async {
-  await _store.restoreBackup();
-  await initialize();
+  await _ensureAbyssMaster();
+  await _transaction(() async {
+   await _store.restoreBackup();
+   await initialize();
+  });
  }
  Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime,List<String> reviewQuestionIds=const []}) => _transaction(() async {
   if(title.trim().isEmpty||rewards.isEmpty||rewards.any((r)=>r.exp<=0))throw ArgumentError('Invalid quest');

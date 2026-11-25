@@ -12,13 +12,23 @@ import '../services/portable_backup.dart';
 import '../world/world_engine.dart';
 import '../world/abyss_inventory.dart';
 import '../world/abyss_equipment.dart';
+import '../world/abyss_summon.dart';
+import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog}):_portableBackup=portableBackup,equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom}):_portableBackup=portableBackup,equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+  _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
  }
  void _validateEquipment(AppStateData state)=>equipmentCatalog.validateLoadout(state.inventory);
  final EquipmentCatalog equipmentCatalog;
+ late final SummonEngine _summonEngine;
+ Future<SummonReceipt> summonWorldItems(SummonPool pool,int count,int expectedSequence)=>_transaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  final receipt=_summonEngine.draw(world:_state.world,inventory:_state.inventory,state:_state.summon,pool:pool,count:count,expectedSequence:expectedSequence);
+  await _persist();
+  return receipt;
+ });
  final PortableBackup? _portableBackup;
  final LocalStore _store;
  final WorldEngine worldEngine=WorldEngine();

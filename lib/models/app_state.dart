@@ -4,12 +4,14 @@ import 'quest.dart';
 import 'stat_type.dart';
 import '../world/world_engine.dart';
 import '../world/abyss_inventory.dart';
+import '../world/abyss_skill.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppStateData {
- AppStateData({required this.totalExp,required this.stats,required this.quests,required this.achievements,required this.activeDates,required this.boss,required this.completionCount,this.playerHp=100,this.maxPlayerHp=100,this.attackEnergy=0,this.gachaTickets=0,this.lastRecoveryDate='',this.lastKnownLevel=1, Map<String,dynamic>? sessions, List<Map<String,dynamic>>? sessionHistory,WorldState? world,AbyssInventory? inventory,SummonState? summon}):sessions=sessions??{},sessionHistory=sessionHistory??[],world=world??WorldState(),inventory=inventory??AbyssInventory(),summon=summon??SummonState();
+ AppStateData({required this.totalExp,required this.stats,required this.quests,required this.achievements,required this.activeDates,required this.boss,required this.completionCount,this.playerHp=100,this.maxPlayerHp=100,this.attackEnergy=0,this.gachaTickets=0,this.lastRecoveryDate='',this.lastKnownLevel=1, Map<String,dynamic>? sessions, List<Map<String,dynamic>>? sessionHistory,WorldState? world,AbyssInventory? inventory,SummonState? summon,SkillState? skills}):sessions=sessions??{},sessionHistory=sessionHistory??[],world=world??WorldState(),inventory=inventory??AbyssInventory(),summon=summon??SummonState(),skills=skills??SkillState();
  final WorldState world;
  final AbyssInventory inventory;
  final SummonState summon;
+ final SkillState skills;
  int totalExp,completionCount;
  int playerHp,maxPlayerHp,attackEnergy,gachaTickets,lastKnownLevel;
  String lastRecoveryDate;
@@ -33,13 +35,14 @@ class AppStateData {
   'achievements':achievements.map((e)=>e.toJson()).toList(),
   'activeDates':activeDates,'boss':boss.toJson(),
   'playerHp':playerHp,'maxPlayerHp':maxPlayerHp,'attackEnergy':attackEnergy,'gachaTickets':gachaTickets,
-  'world':world.toJson(),'inventory':inventory.toJson(),'summon':summon.toJson(),'sessions':sessions,'sessionHistory':sessionHistory,'lastRecoveryDate':lastRecoveryDate,'lastKnownLevel':lastKnownLevel};
+  'world':world.toJson(),'inventory':inventory.toJson(),'summon':summon.toJson(),'skills':skills.toJson(),'sessions':sessions,'sessionHistory':sessionHistory,'lastRecoveryDate':lastRecoveryDate,'lastKnownLevel':lastKnownLevel};
  factory AppStateData.fromJson(Map<String,dynamic> j) {
   final raw=j['stats'] as Map<String,dynamic>? ?? {};
   return AppStateData(totalExp:j['totalExp'] as int? ?? 0,
    world:j.containsKey('world')?WorldState.fromJson(j['world'] as Map<String,dynamic>):null,
    inventory:j.containsKey('inventory')?AbyssInventory.fromJson(j['inventory'] as Map<String,dynamic>):null,
    summon:j.containsKey('summon')?SummonState.fromJson(j['summon'] as Map<String,dynamic>):null,
+   skills:j.containsKey('skills')?SkillState.fromJson(j['skills'] as Map<String,dynamic>):null,
    completionCount:j['completionCount'] as int? ?? 0,
    sessions:Map<String,dynamic>.from(j['sessions'] as Map? ?? {}),
    sessionHistory:(j['sessionHistory'] as List? ?? []).map((e)=>Map<String,dynamic>.from(e as Map)).toList(),

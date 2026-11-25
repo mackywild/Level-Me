@@ -89,7 +89,7 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
         title:Text(def.name),subtitle:Text([
          equipped?'装着中':learned?'習得済み':'未習得',
          if(!learned)_requirements(def),
-         if(reason!=null)reason,
+         ?reason,
          if(learned&&def.execution!=null)'Lv.${SkillMastery.level(state.learned[def.id]!)} / 熟練度 ${state.learned[def.id]} / ${SkillMastery.maxUses}',
          if(def.passiveBonus case final bonus?)'物攻 +${bonus.physical} / 魔攻 +${bonus.magic} / 防御 +${bonus.defense}',
         ].join('\n')),

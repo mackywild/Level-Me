@@ -19,6 +19,7 @@ import '../world/abyss_consumable.dart';
 import '../world/abyss_buff.dart';
 import '../world/abyss_purification.dart';
 import '../world/abyss_master.dart';
+import '../world/abyss_compendium.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
@@ -47,6 +48,7 @@ class AppController extends ChangeNotifier {
   try {await loading;} finally {if(identical(_masterLoading,loading))_masterLoading=null;}
  }
  bool get hasAbyssMaster=>_abyssMaster!=null;
+ CompendiumView get compendiumView=>(_abyssMaster?.compendium??CompendiumCatalog.production).view(_state.inventory);
  void configureAbyssMaster(AbyssMaster master){
   if(_ready||_summonBusy||_abyssMaster!=null)throw StateError('Cannot replace master while active');
   _enhancementPolicy.validateMaterials((recipe){

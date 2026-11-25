@@ -128,13 +128,13 @@ class _WorldScreenState extends State<WorldScreen>{
     panel([const Text('BUFF / 状態効果',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),
      if(b.buffs.isEmpty)const Text('発動中のバフなし'),
      for(final entry in b.buffs.entries)
-      Text('${entry.key.label}：残り ${entry.value} ターン'),
+      Text(entry.key.isCharge?'${entry.key.label}：残り ${entry.value} 回（戦闘終了まで）':'${entry.key.label}：残り ${entry.value} ターン'),
      if(!c.buffItems.any((item)=>(c.state.inventory.stacks[item.id]??0)>0))const Text('所持バフアイテムなし'),
      for(final item in c.buffItems.where((item)=>(c.state.inventory.stacks[item.id]??0)>0))
       Builder(builder:(context){
        final reason=c.battleBuffUnavailable(item.id);
        final sequence=w.itemUseSequence,generation=c.restoreGeneration,battleId=b.id,turn=b.turn;
-       final effect='${item.kind.label} ${item.kind.percent}% / ${item.kind.duration}ターン';
+       final effect=item.kind.description;
        return OutlinedButton(
         key:ValueKey('buff-${item.id}'),
         onPressed:busy||c.inventoryBusy||reason!=null?null:()=>run(() async {

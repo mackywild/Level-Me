@@ -65,4 +65,24 @@ void main(){
   expect(()=>AbyssInventory.fromJson(duplicate),throwsFormatException);
   expect(()=>AbyssInventory.fromJson(inventory.toJson()..['version']=2),throwsFormatException);
  });
+ test('invalid equipment identifiers, sequence, enhancement and enums are rejected',(){
+  final inventory=AbyssInventory();
+  inventory.addEquipment('test_ring',EquipmentSlot.ring,EquipmentRarity.r);
+  for(final id in ['wrong','eq_0','eq_01','eq_2']){
+   final raw=inventory.toJson();
+   (raw['equipment'] as List).first['id']=id;
+   expect(()=>AbyssInventory.fromJson(raw),throwsFormatException);
+  }
+  expect(()=>AbyssInventory.fromJson(inventory.toJson()..['sequence']=-1),throwsFormatException);
+  for(final level in [-1,21]){
+   final raw=inventory.toJson();
+   (raw['equipment'] as List).first['enhancement']=level;
+   expect(()=>AbyssInventory.fromJson(raw),throwsFormatException);
+  }
+  for(final key in ['slot','rarity']){
+   final raw=inventory.toJson();
+   (raw['equipment'] as List).first[key]='unknown';
+   expect(()=>AbyssInventory.fromJson(raw),throwsArgumentError);
+  }
+ });
 }

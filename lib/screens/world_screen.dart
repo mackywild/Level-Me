@@ -154,6 +154,33 @@ class _WorldScreenState extends State<WorldScreen>{
        );
       }),
     ]),
+    panel([const Text('STATUS / 状態異常',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),
+     if(b.statuses.isEmpty)const Text('状態異常なし'),
+     for(final entry in b.statuses.entries)
+      Text('${entry.key.label}：残り ${entry.value} ターン'),
+     for(final item in c.purificationItems.where((item)=>(c.state.inventory.stacks[item.id]??0)>0))
+      Builder(builder:(context){
+       final reason=c.battlePurificationUnavailable(item.id);
+       final sequence=w.itemUseSequence,generation=c.restoreGeneration,battleId=b.id,turn=b.turn;
+       final targets=b.statuses.keys.map((kind)=>kind.label).join('・');
+       return OutlinedButton(
+        key:ValueKey('purification-${item.id}'),
+        onPressed:busy||c.inventoryBusy||reason!=null?null:()=>run(() async {
+         final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+          title:const Text('浄化アイテムを使用しますか？'),
+          content:Text('${item.name} × 1\n解除対象：$targets\n1ターンを消費し、敵の反撃を受けます。'),
+          actions:[
+           TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('キャンセル')),
+           FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('使用を確定')),
+          ],
+         ));
+         if(!mounted||confirmed!=true)return;
+         await c.useBattlePurificationItem(item.id,battleId,turn,sequence,expectedGeneration:generation);
+        }),
+        child:Text('${item.name} × ${c.state.inventory.stacks[item.id]} / ${reason??targets}'),
+       );
+      }),
+    ]),
     panel([const Text('BATTLE LOG',style:TextStyle(color:gold,letterSpacing:2)),const SizedBox(height:8),for(final line in b.log)Padding(padding:const EdgeInsets.symmetric(vertical:3),child:Text(line))]),
    ]else...[
     panel([const Text('ABYSS SUMMON',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),

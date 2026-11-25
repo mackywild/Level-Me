@@ -63,6 +63,7 @@ class _WorldScreenState extends State<WorldScreen>{
  };
  @override Widget build(BuildContext context)=>ListenableBuilder(listenable:widget.controller,builder:(context,child){
   final c=widget.controller,w=c.state.world,b=w.battle,s=b?.stats??c.worldStats;
+  final generation=c.restoreGeneration;
   final stage=selectedStage??WorldCatalog.titles.keys.firstWhere((i)=>!w.cleared.contains(WorldCatalog.mainId(i)),orElse:()=>WorldCatalog.titles.keys.last);
   final enemy=b==null?null:WorldCatalog.byId(b.encounterId);
   return ListView(padding:const EdgeInsets.fromLTRB(16,16,16,32),children:[
@@ -94,7 +95,7 @@ class _WorldScreenState extends State<WorldScreen>{
      const SizedBox(height:8),
      for(final command in WorldCommand.values)
       Padding(padding:const EdgeInsets.only(bottom:6),child:OutlinedButton(
-       onPressed:busy||c.inventoryBusy||c.worldEngine.unavailable(w,command)!=null?null:()=>run(()=>c.worldCommand(command,b.id,b.turn)),
+       onPressed:busy||c.inventoryBusy||c.worldEngine.unavailable(w,command)!=null?null:()=>run(()=>c.worldCommand(command,b.id,b.turn,expectedGeneration:generation)),
        child:Padding(padding:const EdgeInsets.symmetric(vertical:8),child:Row(children:[
         Expanded(child:Text(label(command))),Flexible(child:Text(c.worldEngine.unavailable(w,command)??cost(command,w),textAlign:TextAlign.end,style:const TextStyle(fontSize:11))),
        ])),

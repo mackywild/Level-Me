@@ -1,12 +1,14 @@
 import 'dart:math';
 import 'world_catalog.dart';
 
-enum BattleBuff { attack, defense, regeneration, critical, evasion, energyDiscount }
+enum BattleBuff { attack, defense, regeneration, critical, evasion, energyDiscount, lethalProtection }
 
 extension BattleBuffRules on BattleBuff {
- int get percent=>switch(this){BattleBuff.attack=>25,BattleBuff.defense=>40,BattleBuff.regeneration=>5,BattleBuff.critical=>25,BattleBuff.evasion=>20,BattleBuff.energyDiscount=>30};
- int get duration=>switch(this){BattleBuff.regeneration=>5,BattleBuff.evasion=>2,_=>3};
- String get label=>switch(this){BattleBuff.attack=>'攻撃強化',BattleBuff.defense=>'防御強化',BattleBuff.regeneration=>'継続回復',BattleBuff.critical=>'会心率上昇',BattleBuff.evasion=>'回避率上昇',BattleBuff.energyDiscount=>'エネルギー消費軽減'};
+ int get percent=>switch(this){BattleBuff.attack=>25,BattleBuff.defense=>40,BattleBuff.regeneration=>5,BattleBuff.critical=>25,BattleBuff.evasion=>20,BattleBuff.energyDiscount=>30,BattleBuff.lethalProtection=>100};
+ int get duration=>switch(this){BattleBuff.regeneration=>5,BattleBuff.evasion=>2,BattleBuff.lethalProtection=>1,_=>3};
+ String get label=>switch(this){BattleBuff.attack=>'攻撃強化',BattleBuff.defense=>'防御強化',BattleBuff.regeneration=>'継続回復',BattleBuff.critical=>'会心率上昇',BattleBuff.evasion=>'回避率上昇',BattleBuff.energyDiscount=>'エネルギー消費軽減',BattleBuff.lethalProtection=>'致死耐性'};
+ bool get isCharge=>this==BattleBuff.lethalProtection;
+ String get description=>isCharge?'致死ダメージ1回をHP1で耐える（戦闘終了まで）':'$label $percent% / $durationターン';
 }
 
 enum WorldCommand { claw, heavyClaw, magic, guard, slow, retreat, accelerate, stopTime, compositeClaw }
@@ -266,8 +268,15 @@ class WorldEngine {
    if(b._buffs.containsKey(BattleBuff.evasion)&&_roll(b)<BattleBuff.evasion.percent/100){
     b.log.add('敵の反撃を回避した。');
    }else{
-    w.hp=max(0,w.hp-attack);
-    b.log.add('敵の反撃 — HP -$attack');
+    if(attack>=w.hp&&b._buffs.remove(BattleBuff.lethalProtection)!=null){
+     final lost=w.hp-1;
+     w.hp=1;
+     b.log.add('敵の反撃 — HP -$lost');
+     b.log.add('致死耐性発動 — HP1で生存');
+    }else{
+     w.hp=max(0,w.hp-attack);
+     b.log.add('敵の反撃 — HP -$attack');
+    }
    }
    if(b.slowTurns>0)b.slowTurns--;
   }
@@ -279,7 +288,7 @@ class WorldEngine {
    if(amount>0)b.log.add('継続回復 — HP +$amount');
   }
   for(final kind in b._buffs.keys.toList()){
-   if(kind==newBuff)continue;
+   if(kind==newBuff||kind.isCharge)continue;
    final remaining=b._buffs[kind]!-1;
    if(remaining==0){b._buffs.remove(kind);}else{b._buffs[kind]=remaining;}
   }

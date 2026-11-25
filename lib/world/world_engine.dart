@@ -52,7 +52,7 @@ class BattleRandom {
 }
 
 /// 戦闘開始時に固定する、承認済み能動スキルの実行定義。
-enum ActiveSkillEffect { physical, foresight, accelerationAttack }
+enum ActiveSkillEffect { physical, foresight, accelerationAttack, repairHp, timeCleanse }
 
 class ActiveSkillSpec {
  const ActiveSkillSpec({required this.id,required this.name,required this.powerPercent,required this.physicalCost,required this.cooldown,this.hits=1,this.effect=ActiveSkillEffect.physical,this.lifeCost=0});
@@ -62,10 +62,20 @@ class ActiveSkillSpec {
  void validate(){
   if(!id.startsWith('skill:')||id.length<=6||name.trim().isEmpty||cooldown<0||cooldown>20||!_validEffect)throw const FormatException('Invalid active skill spec');
  }
+ /// 試験候補の回復割合。実行定義のIDと効果種別から固定する。
+ int get repairPercent=>effect!=ActiveSkillEffect.repairHp?0:switch(id){
+  'skill:wound_repair'=>10,
+  'skill:body_repair'=>25,
+  'skill:life_rewind'=>50,
+  'skill:full_repair'=>100,
+  _=>0,
+ };
  bool get _validEffect=>switch(effect){
   ActiveSkillEffect.physical=>powerPercent>=1&&powerPercent<=500&&hits>=1&&hits<=10&&powerPercent*hits<=500&&physicalCost>=1&&physicalCost<=100&&lifeCost==0,
   ActiveSkillEffect.foresight=>powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==14&&cooldown>=1,
   ActiveSkillEffect.accelerationAttack=>physicalCost==0&&cooldown>=1&&((id=='skill:speed_claw'&&powerPercent==250&&hits==1&&lifeCost==10)||(id=='skill:gale_claws'&&powerPercent==50&&hits==8&&lifeCost==45)),
+  ActiveSkillEffect.repairHp=>powerPercent==0&&physicalCost==0&&hits==1&&cooldown>=1&&repairPercent>0&&lifeCost==(switch(repairPercent){10=>7,25=>21,50=>180,100=>365,_=>0}),
+  ActiveSkillEffect.timeCleanse=>id=='skill:time_cleanse'&&powerPercent==0&&physicalCost==0&&hits==1&&lifeCost==30&&cooldown>=1,
  };
  Map<String,dynamic> toJson()=>{'id':id,'name':name,'powerPercent':powerPercent,'physicalCost':physicalCost,'cooldown':cooldown,'hits':hits,'effect':effect.name,'lifeCost':lifeCost};
  factory ActiveSkillSpec.fromJson(Map<String,dynamic> j){
@@ -323,6 +333,12 @@ class WorldEngine {
   }
   return false;
  }
+ /// 回復アイテムと共通の上限・切り捨て・最小1の計算。
+ static int recoveryAmount(int current,int maximum,int percent){
+  if(maximum<=0||current<0||current>maximum||percent<1||percent>100)throw StateError('Invalid recovery resource');
+  if(current==maximum)return 0;
+  return min<int>(maximum-current,max<int>(1,(maximum~/100)*percent+(maximum%100)*percent~/100));
+ }
  int activeSkillCost(WorldState w,ActiveSkillSpec spec)=>w.battle?.buffs.containsKey(BattleBuff.energyDiscount)==true?(spec.physicalCost*(100-BattleBuff.energyDiscount.percent)+99)~/100:spec.physicalCost;
  String? activeSkillUnavailable(WorldState w,String id){
   final b=w.battle;
@@ -334,6 +350,12 @@ class WorldEngine {
   final spec=matches.first;
   if(spec.effect==ActiveSkillEffect.foresight&&!w.cleared.contains(WorldCatalog.mainId(9)))return 'STAGE 09クリアが必要';
   if(spec.effect==ActiveSkillEffect.accelerationAttack&&!w.cleared.contains(WorldCatalog.mainId(6)))return 'STAGE 06クリアが必要';
+  if((spec.effect==ActiveSkillEffect.repairHp||spec.effect==ActiveSkillEffect.timeCleanse)&&!w.cleared.contains(WorldCatalog.mainId(3)))return 'STAGE 03クリアが必要';
+  if(spec.effect==ActiveSkillEffect.repairHp){
+   if(w.hp<=0||w.hp>b.stats.hp||b.stats.hp<=0)return 'HP状態が不正です';
+   if(w.hp==b.stats.hp)return 'HPは満タンです';
+  }
+  if(spec.effect==ActiveSkillEffect.timeCleanse&&!b._statuses.containsKey(BattleStatus.poison))return '解除可能な状態異常なし';
   if(w.lifespan<BigInt.from(spec.lifeCost))return '寿命不足';
   if(w.physical<activeSkillCost(w,spec))return '物理エネルギー不足';
   return null;
@@ -351,6 +373,20 @@ class WorldEngine {
    b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
    b._skillCooldowns[id]=spec.cooldown;
    _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id,foresight:true);
+   return;
+  }
+  if(spec.effect==ActiveSkillEffect.repairHp||spec.effect==ActiveSkillEffect.timeCleanse){
+   b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');
+   if(spec.effect==ActiveSkillEffect.repairHp){
+    final amount=recoveryAmount(w.hp,s.hp,spec.repairPercent);
+    w.hp+=amount;
+    b.log.add('${spec.name} — HP +$amount');
+   }else{
+    b._statuses.remove(BattleStatus.poison);
+    b.log.add('${spec.name} — 毒を浄化');
+   }
+   b._skillCooldowns[id]=spec.cooldown;
+   _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false,castSkill:id);
    return;
   }
   if(spec.effect==ActiveSkillEffect.accelerationAttack)b.log.add('${spec.name} — 寿命 ${spec.lifeCost}日消費');

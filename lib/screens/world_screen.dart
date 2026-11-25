@@ -10,6 +10,17 @@ import 'abyss_shop_screen.dart';
 import 'abyss_compendium_screen.dart';
 import 'abyss_skill_screen.dart';
 
+String _activeSkillDescription(AppController c,WorldState w,ActiveSkillSpec spec){
+ final cost=spec.lifeCost>0?'寿命 ${spec.lifeCost}日':'物理 ${c.worldEngine.activeSkillCost(w,spec)}';
+ final effect=switch(spec.effect){
+  ActiveSkillEffect.foresight=>'次の反撃無効',
+  ActiveSkillEffect.repairHp=>'HP ${spec.repairPercent}%回復',
+  ActiveSkillEffect.timeCleanse=>'毒を浄化',
+  ActiveSkillEffect.physical||ActiveSkillEffect.accelerationAttack=>'威力${spec.powerPercent}%${spec.hits==1?'':' × ${spec.hits}'}',
+ };
+ return '$cost / $effect';
+}
+
 class WorldScreen extends StatefulWidget {
  const WorldScreen({super.key,required this.controller});
  final AppController controller;
@@ -113,7 +124,7 @@ class _WorldScreenState extends State<WorldScreen>{
        return OutlinedButton(
         key:ValueKey('active-skill-${spec.id}'),
         onPressed:busy||c.inventoryBusy||reason!=null?null:()=>run(()=>c.useBattleActiveSkill(spec.id,battleId,turn,expectedGeneration:generation)),
-        child:Text('${spec.name} / ${spec.effect==ActiveSkillEffect.foresight?'寿命 ${spec.lifeCost}日 / 次の反撃無効':'${spec.lifeCost>0?'寿命 ${spec.lifeCost}日':'物理 ${c.worldEngine.activeSkillCost(w,spec)}'} / 威力${spec.powerPercent}%${spec.hits==1?'':' × ${spec.hits}'}'} / CD ${b.skillCooldowns[spec.id]??0}${reason==null?'':' / $reason'}'),
+        child:Text('${spec.name} / ${_activeSkillDescription(c,w,spec)} / CD ${b.skillCooldowns[spec.id]??0}${reason==null?'':' / $reason'}'),
        );
       }),
     ]),

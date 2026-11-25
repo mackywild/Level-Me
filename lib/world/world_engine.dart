@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'world_catalog.dart';
 
-enum WorldCommand { claw, heavyClaw, magic, guard, slow, retreat, accelerate, stopTime }
+enum WorldCommand { claw, heavyClaw, magic, guard, slow, retreat, accelerate, stopTime, compositeClaw }
 
 class WorldStats {
  const WorldStats({required this.hp,required this.physical,required this.magic,required this.defense,required this.physicalMax,required this.magicMax,required this.crit});
@@ -110,6 +110,7 @@ class WorldEngine {
    WorldCommand.slow=>!w.cleared.contains('p03_main')?'STAGE 03クリアで解放':w.lifespan<BigInt.from(3)?'寿命不足':w.battle!.slowTurns>0?'効果発動中':null,
    WorldCommand.accelerate=>!w.cleared.contains(WorldCatalog.mainId(6))?'STAGE 06クリアで解放':w.lifespan<BigInt.from(7)?'寿命不足':w.battle!.acceleratedClaws>0?'効果発動中':null,
    WorldCommand.stopTime=>!w.cleared.contains(WorldCatalog.mainId(12))?'STAGE 12クリアで解放':w.lifespan<BigInt.from(30)?'寿命不足':w.battle!.stopCooldown>0?'クールダウン中':null,
+   WorldCommand.compositeClaw=>!w.cleared.contains(WorldCatalog.mainId(6))||!w.cleared.contains(WorldCatalog.mainId(12))?'STAGE 06・12クリアで解放':w.lifespan<BigInt.from(90)?'寿命不足':w.battle!.stopCooldown>0?'クールダウン中':null,
    _=>null,
   };
  }
@@ -123,7 +124,7 @@ class WorldEngine {
   if(command==WorldCommand.retreat){_end(w,now,'撤退 — 消費済み資源は返還されません');return;}
   var dealt=0;
   var skipEnemy=false;
-  final castingStop=command==WorldCommand.stopTime;
+  final castingStop=command==WorldCommand.stopTime||command==WorldCommand.compositeClaw;
   final guarding=command==WorldCommand.guard;
   if(command==WorldCommand.slow){
    w.lifespan-=BigInt.from(3);
@@ -132,7 +133,7 @@ class WorldEngine {
    w.lifespan-=BigInt.from(7);
    b.acceleratedClaws=2;
    b.log.add('自己加速 — 次の紅爪2回の威力2倍');
-  }else if(castingStop){
+  }else if(command==WorldCommand.stopTime){
    w.lifespan-=BigInt.from(30);
    b.stopCooldown=5;
    skipEnemy=!e.timeResistant;
@@ -149,6 +150,12 @@ class WorldEngine {
      if(b.acceleratedClaws>0)b.acceleratedClaws--;
     case WorldCommand.heavyClaw:
      w.physical-=9;dealt=damage(s.physical,e.defense,1.8,critical:critical,variance:variance);
+    case WorldCommand.compositeClaw:
+     w.lifespan-=BigInt.from(90);
+     b.stopCooldown=5;
+     skipEnemy=!e.timeResistant;
+     b.log.add(skipEnemy?'複合爪撃 — 時間停止・自己加速・爪撃':'複合爪撃 — 時間停止は無効化された。');
+     dealt=damage(s.physical,e.defense,4.0,critical:critical,variance:variance);
     case WorldCommand.magic:
      w.magic-=6;dealt=damage(s.magic,e.defense,1.2,critical:critical,variance:variance);
     default:break;

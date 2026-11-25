@@ -6,6 +6,12 @@ import 'package:level_me/models/app_state.dart';
 import 'package:level_me/world/world_catalog.dart';
 import 'package:level_me/world/world_engine.dart';
 
+class _FixedRandom implements Random {
+ @override double nextDouble()=>0.5;
+ @override bool nextBool()=>false;
+ @override int nextInt(int max)=>0;
+}
+
 void main(){
  setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
  final stats=WorldStats.fromRanks(level:1,fitness:1,intelligence:1,discipline:1,creativity:1);
@@ -115,5 +121,77 @@ void main(){
   entries.add(entries.first);
   expect(()=>WorldCatalog.loadJson(jsonEncode(raw)),throwsFormatException);
   expect(WorldCatalog.encounters.length,12);
+ });
+ test('chrono unlocks and insufficient lifespan reject without mutation',(){
+  engine.start(w,stats,'p01_main',now);
+  expect(engine.unavailable(w,WorldCommand.accelerate),isNotNull);
+  expect(engine.unavailable(w,WorldCommand.stopTime),isNotNull);
+  w.cleared.addAll(['p06_main','p12_main']);
+  expect(engine.unavailable(w,WorldCommand.accelerate),'寿命不足');
+  expect(()=>act(WorldCommand.stopTime),throwsStateError);
+  expect(w.lifespan,BigInt.zero);
+  expect(w.battle!.turn,1);
+ });
+ test('time stop skips one enemy action and persists cooldown',(){
+  w.cleared.add('p12_main');w.lifespan=BigInt.from(100);
+  const durable=WorldStats(hp:10000,physical:1,magic:1,defense:1000,physicalMax:27,magicMax:38,crit:0);
+  engine.start(w,durable,'p01_main',now);
+  expect(WorldCatalog.byId('p01_main').timeResistant,false);
+  final hp=w.hp;
+  act(WorldCommand.stopTime);
+  expect(w.hp,hp);expect(w.lifespan,BigInt.from(70));
+  expect(w.battle!.stopCooldown,5);
+  w=WorldState.fromJson(jsonDecode(jsonEncode(w.toJson())) as Map<String,dynamic>);
+  for(var i=5;i>0;i--){
+   expect(w.battle!.stopCooldown,i);
+   expect(engine.unavailable(w,WorldCommand.stopTime),isNotNull);
+   act(WorldCommand.guard);
+  }
+  expect(w.battle!.stopCooldown,0);
+  expect(engine.unavailable(w,WorldCommand.stopTime),isNull);
+ });
+ test('self acceleration doubles two claws, then returns to normal after reload',(){
+  engine=WorldEngine(random:_FixedRandom());
+  w.cleared.addAll(['p01_main','p06_main']);w.lifespan=BigInt.from(100);
+  const durable=WorldStats(hp:10000,physical:11,magic:1,defense:1000,physicalMax:27,magicMax:38,crit:0);
+  engine.start(w,durable,'p01_elite',now);
+  act(WorldCommand.accelerate);
+  expect(w.lifespan,BigInt.from(93));expect(w.battle!.acceleratedClaws,2);
+  expect(engine.unavailable(w,WorldCommand.accelerate),isNotNull);
+  w=WorldState.fromJson(jsonDecode(jsonEncode(w.toJson())) as Map<String,dynamic>);
+  act(WorldCommand.guard);expect(w.battle!.acceleratedClaws,2);
+  for(final expected in [20,20,10]){
+   final before=w.battle!.enemyHp;
+   act(WorldCommand.claw);
+   expect(w.battle,isNotNull);
+   expect(before-w.battle!.enemyHp,expected);
+   expect(w.battle!.acceleratedClaws,expected==10?0:(before==75?1:0));
+  }
+  expect(w.physical,15);
+  expect(engine.unavailable(w,WorldCommand.accelerate),isNull);
+ });
+ test('time resistance blocks stop but consumes lifespan and starts cooldown',(){
+  final raw=jsonDecode(File(WorldCatalog.assetPath).readAsStringSync()) as Map<String,dynamic>;
+  final entries=raw['encounters'] as List;
+  final enemy=entries.firstWhere((e)=>e['id']=='p01_main') as Map<String,dynamic>;
+  enemy['timeResistant']=true;
+  addTearDown(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
+  WorldCatalog.loadJson(jsonEncode(raw));
+  w.cleared.add('p12_main');w.lifespan=BigInt.from(100);
+  engine.start(w,stats,'p01_main',now);
+  final before=w.hp;
+  act(WorldCommand.stopTime);
+  expect(w.hp,lessThan(before));
+  expect(w.lifespan,BigInt.from(70));
+  expect(w.battle!.stopCooldown,5);
+  expect(w.battle!.log,contains('時間停止は無効化された。'));
+ });
+ test('old active battle save defaults chrono state to zero',(){
+  engine.start(w,stats,'p01_main',now);
+  final raw=jsonDecode(jsonEncode(w.toJson())) as Map<String,dynamic>;
+  (raw['battle'] as Map)..remove('acceleratedClaws')..remove('stopCooldown');
+  final restored=WorldState.fromJson(raw);
+  expect(restored.battle!.acceleratedClaws,0);
+  expect(restored.battle!.stopCooldown,0);
  });
 }

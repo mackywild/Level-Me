@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'world_catalog.dart';
 
-enum WorldCommand { claw, heavyClaw, magic, guard, slow, retreat }
+enum WorldCommand { claw, heavyClaw, magic, guard, slow, retreat, accelerate, stopTime }
 
 class WorldStats {
  const WorldStats({required this.hp,required this.physical,required this.magic,required this.defense,required this.physicalMax,required this.magicMax,required this.crit});
@@ -21,15 +21,15 @@ class WorldStats {
 }
 
 class WorldBattle {
- WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log}):log=log??[];
+ WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log}):log=log??[];
  final int id;
  final String encounterId;
  final WorldStats stats;
  final int energyRemainder,hpRemainder;
- int enemyHp,turn,slowTurns;
+ int enemyHp,turn,slowTurns,acceleratedClaws,stopCooldown;
  final List<String> log;
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log};
- factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List));
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log};
+ factory WorldBattle.fromJson(Map<String,dynamic> j)=>WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List));
 }
 
 class WorldState {
@@ -45,7 +45,7 @@ class WorldState {
   if(j['version']!=1)throw const FormatException('Unsupported world save version');
   final w=WorldState(hp:j['hp'] as int,physical:j['physical'] as int,magic:j['magic'] as int,gold:j['gold'] as int,summonTickets:j['summonTickets'] as int,supplyTickets:j['supplyTickets'] as int,sequence:j['sequence'] as int,energyAt:j['energyAt'] as int,hpAt:j['hpAt'] as int,pendingPhysical:j['pendingPhysical'] as int? ?? 0,pendingMagic:j['pendingMagic'] as int? ?? 0,pendingLevelUp:j['pendingLevelUp'] as bool? ?? false,lifespan:BigInt.parse(j['lifespanDays'] as String),cleared:List<String>.from(j['cleared'] as List).toSet(),battle:j['battle']==null?null:WorldBattle.fromJson(j['battle'] as Map<String,dynamic>),lastResult:j['lastResult'] as String);
   if([w.hp,w.physical,w.magic,w.gold,w.summonTickets,w.supplyTickets,w.sequence,w.energyAt,w.hpAt,w.pendingPhysical,w.pendingMagic].any((v)=>v<0)||w.lifespan<BigInt.zero)throw const FormatException('Negative world resource');
-  if(w.battle!=null){final b=w.battle!;if(b.id!=w.sequence||b.turn<1||b.enemyHp<1||b.enemyHp>WorldCatalog.byId(b.encounterId).hp||b.stats.hp<1||b.stats.physicalMax<1||b.stats.magicMax<1||b.stats.defense<0||b.stats.physical<1||b.stats.magic<1||!b.stats.crit.isFinite||b.stats.crit<0||b.stats.crit>1||w.hp<1||w.hp>b.stats.hp||w.physical>b.stats.physicalMax||w.magic>b.stats.magicMax||b.slowTurns<0||b.slowTurns>2||b.energyRemainder<0||b.energyRemainder>=WorldEngine.energyInterval||b.hpRemainder<0||b.hpRemainder>=WorldEngine.hpInterval)throw const FormatException('Invalid active battle');}
+  if(w.battle!=null){final b=w.battle!;if(b.id!=w.sequence||b.turn<1||b.enemyHp<1||b.enemyHp>WorldCatalog.byId(b.encounterId).hp||b.stats.hp<1||b.stats.physicalMax<1||b.stats.magicMax<1||b.stats.defense<0||b.stats.physical<1||b.stats.magic<1||!b.stats.crit.isFinite||b.stats.crit<0||b.stats.crit>1||w.hp<1||w.hp>b.stats.hp||w.physical>b.stats.physicalMax||w.magic>b.stats.magicMax||b.slowTurns<0||b.slowTurns>2||b.acceleratedClaws<0||b.acceleratedClaws>2||b.stopCooldown<0||b.stopCooldown>5||b.energyRemainder<0||b.energyRemainder>=WorldEngine.energyInterval||b.hpRemainder<0||b.hpRemainder>=WorldEngine.hpInterval)throw const FormatException('Invalid active battle');}
   return w;
  }
 }
@@ -108,6 +108,8 @@ class WorldEngine {
    WorldCommand.heavyClaw=>w.physical<9?'物理エネルギー不足':null,
    WorldCommand.magic=>w.magic<6?'魔法エネルギー不足':null,
    WorldCommand.slow=>!w.cleared.contains('p03_main')?'STAGE 03クリアで解放':w.lifespan<BigInt.from(3)?'寿命不足':w.battle!.slowTurns>0?'効果発動中':null,
+   WorldCommand.accelerate=>!w.cleared.contains(WorldCatalog.mainId(6))?'STAGE 06クリアで解放':w.lifespan<BigInt.from(7)?'寿命不足':w.battle!.acceleratedClaws>0?'効果発動中':null,
+   WorldCommand.stopTime=>!w.cleared.contains(WorldCatalog.mainId(12))?'STAGE 12クリアで解放':w.lifespan<BigInt.from(30)?'寿命不足':w.battle!.stopCooldown>0?'クールダウン中':null,
    _=>null,
   };
  }
@@ -120,10 +122,21 @@ class WorldEngine {
   final e=WorldCatalog.byId(b.encounterId),s=b.stats;
   if(command==WorldCommand.retreat){_end(w,now,'撤退 — 消費済み資源は返還されません');return;}
   var dealt=0;
+  var skipEnemy=false;
+  final castingStop=command==WorldCommand.stopTime;
   final guarding=command==WorldCommand.guard;
   if(command==WorldCommand.slow){
    w.lifespan-=BigInt.from(3);
    if(e.timeResistant){b.log.add('時間遅延は無効化された。');}else{b.slowTurns=2;b.log.add('時間遅延 — 敵攻撃力30%低下');}
+  }else if(command==WorldCommand.accelerate){
+   w.lifespan-=BigInt.from(7);
+   b.acceleratedClaws=2;
+   b.log.add('自己加速 — 次の紅爪2回の威力2倍');
+  }else if(castingStop){
+   w.lifespan-=BigInt.from(30);
+   b.stopCooldown=5;
+   skipEnemy=!e.timeResistant;
+   b.log.add(skipEnemy?'時間停止 — 敵の行動停止':'時間停止は無効化された。');
   }else if(guarding){b.log.add('防御態勢');}
   else{
    final critical=_random.nextDouble()<s.crit?1.5:1.0;
@@ -132,7 +145,8 @@ class WorldEngine {
     case WorldCommand.claw:
      final strong=w.physical>=4;
      if(strong)w.physical-=4;
-     dealt=damage(s.physical,e.defense,strong?1.0:0.25,critical:critical,variance:variance);
+     dealt=damage(s.physical,e.defense,(strong?1.0:0.25)*(b.acceleratedClaws>0?2.0:1.0),critical:critical,variance:variance);
+     if(b.acceleratedClaws>0)b.acceleratedClaws--;
     case WorldCommand.heavyClaw:
      w.physical-=9;dealt=damage(s.physical,e.defense,1.8,critical:critical,variance:variance);
     case WorldCommand.magic:
@@ -151,10 +165,13 @@ class WorldEngine {
    _end(w,now,'勝利 — $gold G / 寿命 +${e.lifeDays}日${first?' / 初回報酬獲得':''}');
    return;
   }
-  final attack=damage(e.attack,s.defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
-  w.hp=max(0,w.hp-attack);
-  b.log.add('敵の反撃 — HP -$attack');
-  if(b.slowTurns>0)b.slowTurns--;
+  if(!skipEnemy){
+   final attack=damage(e.attack,s.defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
+   w.hp=max(0,w.hp-attack);
+   b.log.add('敵の反撃 — HP -$attack');
+   if(b.slowTurns>0)b.slowTurns--;
+  }
+  if(!castingStop&&b.stopCooldown>0)b.stopCooldown--;
   if(w.hp==0){_end(w,now,'敗北 — 回復後に再挑戦できます');return;}
   b.turn++;
   if(b.log.length>12)b.log.removeRange(0,b.log.length-12);

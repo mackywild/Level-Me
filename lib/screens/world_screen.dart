@@ -40,6 +40,8 @@ class _WorldScreenState extends State<WorldScreen>{
   WorldCommand.magic=>'魔力撃',
   WorldCommand.guard=>'防御',
   WorldCommand.slow=>'時間遅延',
+  WorldCommand.accelerate=>'自己加速',
+  WorldCommand.stopTime=>'時間停止',
   WorldCommand.retreat=>'撤退',
  };
  String cost(WorldCommand command,WorldState w)=>switch(command){
@@ -48,6 +50,8 @@ class _WorldScreenState extends State<WorldScreen>{
   WorldCommand.magic=>'魔法 6',
   WorldCommand.guard=>'被ダメージ半減',
   WorldCommand.slow=>'寿命 3日',
+  WorldCommand.accelerate=>'寿命 7日 / 紅爪2回強化',
+  WorldCommand.stopTime=>'寿命 30日 / 敵行動停止',
   WorldCommand.retreat=>'報酬なし',
  };
  @override Widget build(BuildContext context)=>ListenableBuilder(listenable:widget.controller,builder:(context,child){
@@ -75,6 +79,8 @@ class _WorldScreenState extends State<WorldScreen>{
      const SizedBox(height:8),Center(child:Icon(Icons.security,size:76,color:crimson.withValues(alpha:0.85))),
      Center(child:Text(enemy.enemy,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:21))),
      meter('ENEMY HP',b.enemyHp,enemy.hp,Colors.deepPurpleAccent),
+     if(b.acceleratedClaws>0)Text('自己加速：紅爪 残り ${b.acceleratedClaws} 回'),
+     if(b.stopCooldown>0)Text('時間停止：CD ${b.stopCooldown}'),
      if(b.slowTurns>0)Text('時間遅延：残り ${b.slowTurns} ターン'),
      const SizedBox(height:8),const Text('次の行動：通常攻撃',style:TextStyle(color:gold))]),
     panel([const Text('COMMAND / 1ターン1コマンド',style:TextStyle(fontWeight:FontWeight.bold)),

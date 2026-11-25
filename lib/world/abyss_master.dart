@@ -72,7 +72,7 @@ class AbyssMaster {
    final kinds=BattleBuff.values.where((k)=>k.name==j['kind']);
    if(j['category']!='buff'||supplies.containsKey(id)||recoveryIds.contains(id)||!buffIds.add(id)||rarity.isEmpty||rarity.first.index>EquipmentRarity.ssr.index||kinds.isEmpty)throw const FormatException('Invalid buff master');
    final kind=kinds.first;
-   if(j['percent']!=kind.percent||j['duration']!=kind.duration)throw const FormatException('Buff rules mismatch');
+   if(j['percent'] is! int||j['duration'] is! int||j['percent']!=kind.percent||j['duration']!=kind.duration)throw const FormatException('Buff rules mismatch');
    buffItems.add(BuffItem(id:id,name:j['name'] as String,kind:kind));
   }
   BuffCatalog(buffItems);

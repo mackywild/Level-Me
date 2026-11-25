@@ -62,10 +62,10 @@ void main(){
   engine.act(s.world,WorldCommand.guard,b.id,b.turn,now);
   expect(rng.reads,3);
  });
- test('候補7種は非公開、無断有効化・ID衝突・性能不一致を拒否',(){
+ test('候補8種は非公開、無断有効化・ID衝突・性能不一致を拒否',(){
   Map<String,dynamic> raw()=>jsonDecode(File(AbyssMaster.assetPath).readAsStringSync()) as Map<String,dynamic>;
   final root=raw();
-  expect((root['buffs'] as List).length,7);
+  expect((root['buffs'] as List).length,8);
   root['enabled']=true;
   expect(AbyssMaster.fromJson(jsonEncode(root)).buffs.items,isEmpty);
   for(final change in <void Function(Map<String,dynamic>)>[

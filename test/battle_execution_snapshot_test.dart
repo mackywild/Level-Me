@@ -58,6 +58,64 @@ void main(){
   expect(()=>WorldBattle.fromJson({...raw,'skillCooldowns':null}),throwsFormatException);
   expect(()=>WorldBattle.fromJson({...raw,'activeSkills':null}),throwsFormatException);
  });
+ test('RV-130: v1の全非条件付き項目の欠落・null・誤型を拒否する',(){
+  final engine=WorldEngine(),w=world(),s=loadout(w);
+  engine.start(w,stats,'p03_hunt',now,activeSkills:catalog.snapshot(s),lifeRewardBonuses:catalog.rewardSnapshot(s));
+  final raw=w.battle!.toJson();
+  // 装着依存フィールドのない戦闘では出力される全項目が必須。
+  for(final key in raw.keys){
+   expect(()=>WorldBattle.fromJson({...raw}..remove(key)),throwsFormatException,reason:'欠落: $key');
+   expect(()=>WorldBattle.fromJson({...raw,key:null}),throwsFormatException,reason:'null: $key');
+  }
+  for(final key in ['id','enemyHp','turn','slowTurns','acceleratedClaws','stopCooldown','energyRemainder','hpRemainder','rngVersion','rngState','lifeRewardPercent']){
+   expect(()=>WorldBattle.fromJson({...raw,key:1.0}),throwsFormatException,reason:'小数: $key');
+   expect(()=>WorldBattle.fromJson({...raw,key:'1'}),throwsFormatException,reason:'文字列: $key');
+  }
+  for(final key in ['buffs','statuses','skillCooldowns','stats']){
+   expect(()=>WorldBattle.fromJson({...raw,key:[]}),throwsFormatException,reason:key);
+  }
+  for(final key in ['log','activeSkills','lifeRewardBonuses']){
+   expect(()=>WorldBattle.fromJson({...raw,key:<String,dynamic>{}}),throwsFormatException,reason:key);
+  }
+  expect(()=>WorldBattle.fromJson({...raw,'encounterId':1}),throwsFormatException);
+  expect(()=>WorldBattle.fromJson({...raw,'log':['戦闘開始',1]}),throwsFormatException);
+  expect(()=>WorldBattle.fromJson({...raw}..remove('rngVersion')..remove('rngState')),throwsFormatException);
+  final baseStats=stats.toJson();
+  for(final key in baseStats.keys){
+   expect(()=>WorldBattle.fromJson({...raw,'stats':{...baseStats}..remove(key)}),throwsFormatException,reason:'能力値欠落: $key');
+   expect(()=>WorldBattle.fromJson({...raw,'stats':{...baseStats,key:null}}),throwsFormatException,reason:'能力値null: $key');
+   expect(()=>WorldBattle.fromJson({...raw,'stats':{...baseStats,key:'1'}}),throwsFormatException,reason:'能力値誤型: $key');
+   if(key!='crit'){
+    expect(()=>WorldBattle.fromJson({...raw,'stats':{...baseStats,key:1.0}}),throwsFormatException,reason:'能力値小数: $key');
+   }
+  }
+  for(final crit in [double.nan,double.infinity,-0.1,1.1]){
+   expect(()=>WorldBattle.fromJson({...raw,'stats':{...baseStats,'crit':crit}}),throwsFormatException);
+  }
+ });
+ test('RV-130: v1の進行中状態を維持し、旧形式だけ補完を許容する',(){
+  final w=world(),engine=WorldEngine();
+  engine.start(w,stats,'p03_hunt',now);
+  final raw=w.battle!.toJson();
+  final progressed={...raw,'turn':4,'rngState':182605794,'acceleratedClaws':2,'stopCooldown':3,
+   'slowTurns':1,'energyRemainder':123,'hpRemainder':456,'buffs':{'attack':2},'statuses':{'poison':1}};
+  final restored=WorldState.fromJson({...w.toJson(),'battle':progressed});
+  expect(restored.battle!.toJson(),progressed);
+  final legacy={...progressed}..remove('executionVersion')..remove('lifeRewardPercent')..remove('lifeRewardBonuses')
+   ..remove('rngVersion')..remove('rngState')..remove('buffs')..remove('statuses')
+   ..remove('acceleratedClaws')..remove('stopCooldown')..remove('energyRemainder')..remove('hpRemainder');
+  final old=WorldState.fromJson({...w.toJson(),'battle':legacy}).battle!;
+  expect(old.executionVersion,isNull);
+  expect(old.rngState,BattleRandom.legacySeed(old.id,old.turn));
+  expect(old.buffs,isEmpty);
+  expect(old.statuses,isEmpty);
+  expect([old.acceleratedClaws,old.stopCooldown,old.energyRemainder,old.hpRemainder],[0,0,0,0]);
+  final nullable={...legacy,'acceleratedClaws':null,'stopCooldown':null,'energyRemainder':null,'hpRemainder':null};
+  expect(WorldBattle.fromJson(nullable).toJson(),old.toJson());
+  expect(()=>WorldBattle.fromJson({...legacy,'rngVersion':BattleRandom.version}),throwsFormatException);
+  expect(()=>WorldBattle.fromJson({...legacy,'buffs':null}),throwsFormatException);
+  expect(()=>WorldBattle.fromJson({...legacy,'statuses':null}),throwsFormatException);
+ });
  test('版付きの空能動snapshotと空報酬snapshotを装着済み状態に照合して拒否',(){
   final engine=WorldEngine(),w=world(),s=loadout(w);
   engine.start(w,stats,'p03_hunt',now,activeSkills:catalog.snapshot(s),lifeRewardBonuses:catalog.rewardSnapshot(s));

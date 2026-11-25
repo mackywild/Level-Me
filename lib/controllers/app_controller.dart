@@ -23,6 +23,28 @@ class AppController extends ChangeNotifier {
  void _validateEquipment(AppStateData state)=>equipmentCatalog.validateLoadout(state.inventory);
  final EquipmentCatalog equipmentCatalog;
  late final SummonEngine _summonEngine;
+ EquipmentRarity get summonHighestUnlocked=>_summonEngine.highestUnlocked(_state.world);
+ List<int> get summonWeights=>const SummonPolicy().effectiveWeights(summonHighestUnlocked);
+ String? summonUnavailable(SummonPool pool,int count){
+  if(!_ready)return '初期化中';
+  final pending=_state.summon.pending;
+  if(_state.world.battle!=null)return '戦闘中は召喚できません';
+  if(pending!=null&&(pending.pool!=pool||pending.rewards.length!=count))return '保留中の召喚を先に確定してください';
+  if(count!=1&&count!=10)return '召喚回数が不正です';
+  try {
+   _summonEngine.validateRequest(world:_state.world,state:_state.summon,pool:pool,count:count,expectedSequence:_state.summon.sequence);
+   return null;
+  } on StateError catch(error){
+   return switch(error.message){
+    'Insufficient tickets'=>'召喚券不足',
+    'Summon pool incomplete'=>'排出マスター未整備',
+    'Summon equipment master mismatch'=>'排出マスター不整合',
+    'Pending summon master mismatch'=>'保留中の召喚とマスターが不整合',
+    _=>'召喚できません',
+   };
+  }
+ }
+
  Future<SummonReceipt> summonWorldItems(SummonPool pool,int count,int expectedSequence) {
   String? checkpoint;
   return _transaction(() async {

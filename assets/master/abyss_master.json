@@ -546,6 +546,15 @@
       "kind": "lethalProtection",
       "percent": 100,
       "duration": 1
+    },
+    {
+      "id": "item:buff_regeneration_suppression",
+      "name": "再生封じ薬",
+      "rarity": "sr",
+      "category": "buff",
+      "kind": "regenerationSuppression",
+      "percent": 50,
+      "duration": 3
     }
   ]
 }

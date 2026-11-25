@@ -172,6 +172,19 @@ class WorldEngine {
    _end(w,now,'勝利 — $gold G / 寿命 +${e.lifeDays}日${first?' / 初回報酬獲得':''}');
    return;
   }
+  _finishTurn(w,now,skipEnemy:skipEnemy,guarding:guarding,castingStop:castingStop);
+ }
+ /// 回復行動後も通常行動と同じ敵反撃・効果経過を適用する。
+ void finishRecoveryTurn(WorldState w,int battleId,int expectedTurn,int now,String itemName,int amount){
+  final b=w.battle;
+  if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
+  if(amount<=0)throw StateError('Invalid recovery amount');
+  b.log.add('$itemName — $amount 回復');
+  _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false);
+ }
+ void _finishTurn(WorldState w,int now,{required bool skipEnemy,required bool guarding,required bool castingStop}){
+  final b=w.battle!;
+  final e=WorldCatalog.byId(b.encounterId),s=b.stats;
   if(!skipEnemy){
    final attack=damage(e.attack,s.defense,(b.slowTurns>0?0.7:1.0)*(guarding?0.5:1.0));
    w.hp=max(0,w.hp-attack);

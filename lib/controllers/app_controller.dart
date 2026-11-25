@@ -144,6 +144,32 @@ class AppController extends ChangeNotifier {
   _state=working;
   return amount;
  });
+ ({int? amount,String? reason}) evaluateBattleRecovery(String id){
+  if(!_ready||_inventoryBusy)return (amount:null,reason:'所持品処理中');
+  final w=_state.world,b=w.battle;
+  if(b==null)return (amount:null,reason:'戦闘中ではありません');
+  try{
+   final amount=_consumableCatalog.previewInBattle(world:w,inventory:_state.inventory,id:id,expectedSequence:w.itemUseSequence,battleId:b.id,expectedTurn:b.turn);
+   return (amount:amount,reason:null);
+  }on StateError catch(error){
+   return (amount:null,reason:switch(error.message){
+    'Recovery not needed'=>'回復不要',
+    'Insufficient items'=>'所持数不足',
+    _=>'使用できません',
+   });
+  }
+ }
+ Future<int> useBattleRecoveryItem(String id,int battleId,int turn,int expectedSequence,{required int expectedGeneration})=>_inventoryTransaction(() async {
+  if(!_ready)throw StateError('Player not ready');
+  if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final now=_nowMs;
+  final amount=_consumableCatalog.useInBattle(world:working.world,inventory:working.inventory,id:id,expectedSequence:expectedSequence,battleId:battleId,expectedTurn:turn,engine:worldEngine,now:now);
+  worldEngine.refresh(working.world,worldStats,now);
+  await _store.save(working);
+  _state=working;
+  return amount;
+ });
  final ShopCatalog _shopCatalog;
  List<ShopOffer> get shopOffers=>_shopCatalog.offers;
  int _restoreGeneration=0;

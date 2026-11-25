@@ -26,6 +26,14 @@ class ConsumableCatalog {
 
  int preview({required WorldState world,required WorldStats stats,required AbyssInventory inventory,required String id,required int expectedSequence}){
   if(world.battle!=null)throw StateError('Consumable unavailable in battle');
+  return _preview(world:world,stats:stats,inventory:inventory,id:id,expectedSequence:expectedSequence);
+ }
+ int previewInBattle({required WorldState world,required AbyssInventory inventory,required String id,required int expectedSequence,required int battleId,required int expectedTurn}){
+  final battle=world.battle;
+  if(battle==null||battle.id!=battleId||battle.turn!=expectedTurn)throw StateError('Stale battle command');
+  return _preview(world:world,stats:battle.stats,inventory:inventory,id:id,expectedSequence:expectedSequence);
+ }
+ int _preview({required WorldState world,required WorldStats stats,required AbyssInventory inventory,required String id,required int expectedSequence}){
   if(world.itemUseSequence!=expectedSequence)throw StateError('Stale item use request');
   final next=world.itemUseSequence+1;
   if(next<=world.itemUseSequence)throw StateError('Item use sequence overflow');
@@ -44,6 +52,16 @@ class ConsumableCatalog {
  }
  int use({required WorldState world,required WorldStats stats,required AbyssInventory inventory,required String id,required int expectedSequence}){
   final amount=preview(world:world,stats:stats,inventory:inventory,id:id,expectedSequence:expectedSequence);
+  _apply(world,inventory,id,amount);
+  return amount;
+ }
+ int useInBattle({required WorldState world,required AbyssInventory inventory,required String id,required int expectedSequence,required int battleId,required int expectedTurn,required WorldEngine engine,required int now}){
+  final amount=previewInBattle(world:world,inventory:inventory,id:id,expectedSequence:expectedSequence,battleId:battleId,expectedTurn:expectedTurn);
+  _apply(world,inventory,id,amount);
+  engine.finishRecoveryTurn(world,battleId,expectedTurn,now,find(id)!.name,amount);
+  return amount;
+ }
+ void _apply(WorldState world,AbyssInventory inventory,String id,int amount){
   final item=find(id)!;
   inventory.removeStack(id,1);
   switch(item.target){
@@ -52,6 +70,5 @@ class ConsumableCatalog {
    case RecoveryTarget.magic:world.magic+=amount;
   }
   world.itemUseSequence++;
-  return amount;
  }
 }

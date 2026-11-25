@@ -94,11 +94,35 @@ class _WorldScreenState extends State<WorldScreen>{
      const SizedBox(height:8),
      for(final command in WorldCommand.values)
       Padding(padding:const EdgeInsets.only(bottom:6),child:OutlinedButton(
-       onPressed:busy||c.worldEngine.unavailable(w,command)!=null?null:()=>run(()=>c.worldCommand(command,b.id,b.turn)),
+       onPressed:busy||c.inventoryBusy||c.worldEngine.unavailable(w,command)!=null?null:()=>run(()=>c.worldCommand(command,b.id,b.turn)),
        child:Padding(padding:const EdgeInsets.symmetric(vertical:8),child:Row(children:[
         Expanded(child:Text(label(command))),Flexible(child:Text(c.worldEngine.unavailable(w,command)??cost(command,w),textAlign:TextAlign.end,style:const TextStyle(fontSize:11))),
        ])),
       )),
+    ]),
+    panel([const Text('ITEM / 回復アイテム',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),
+     if(c.inventoryBusy)const LinearProgressIndicator(),
+     if(!c.recoveryItems.any((item)=>(c.state.inventory.stacks[item.id]??0)>0))const Text('使用可能な回復アイテムなし'),
+     for(final item in c.recoveryItems.where((item)=>(c.state.inventory.stacks[item.id]??0)>0))
+      Builder(builder:(context){
+       final evaluation=c.evaluateBattleRecovery(item.id);
+       final sequence=w.itemUseSequence,generation=c.restoreGeneration,battleId=b.id,turn=b.turn;
+       return OutlinedButton(
+        onPressed:busy||c.inventoryBusy||evaluation.amount==null?null:()=>run(() async {
+         final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
+          title:const Text('回復アイテムを使用しますか？'),
+          content:Text('${item.name} × 1 / 回復予定：${evaluation.amount}\\n1ターンを消費し、敵の反撃を受けます。'),
+          actions:[
+           TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('キャンセル')),
+           FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('使用を確定')),
+          ],
+         ));
+         if(!mounted||confirmed!=true)return;
+         await c.useBattleRecoveryItem(item.id,battleId,turn,sequence,expectedGeneration:generation);
+        }),
+        child:Text('${item.name} × ${c.state.inventory.stacks[item.id]} / ${evaluation.reason??'回復予定：${evaluation.amount}'}'),
+       );
+      }),
     ]),
     panel([const Text('BATTLE LOG',style:TextStyle(color:gold,letterSpacing:2)),const SizedBox(height:8),for(final line in b.log)Padding(padding:const EdgeInsets.symmetric(vertical:3),child:Text(line))]),
    ]else...[

@@ -145,10 +145,8 @@ class WorldBattle {
   }
   final raw=j['awakeningTurns'];
   if(!equipped||raw is! int||raw<0||raw>awakeningDuration)throw const FormatException('Invalid awakening state');
-  if(raw>0){
-   final cd=_decodeSkillCooldowns(j)['skill:crimson_awakening'];
-   if(j['turn'] is! int||(j['turn'] as int)<2||cd!=raw+2)throw const FormatException('Invalid awakening cooldown');
-  }
+  final cd=_decodeSkillCooldowns(j)['skill:crimson_awakening']??0;
+  if(raw!=max(0,cd-2)||(cd>0&&(j['turn'] is! int||(j['turn'] as int)<2)))throw const FormatException('Invalid awakening cooldown');
   return raw;
  }
  static List<LifeRewardBonus> _decodeLifeRewardBonuses(Map<String,dynamic> j){

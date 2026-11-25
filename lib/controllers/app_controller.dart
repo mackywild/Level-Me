@@ -381,7 +381,7 @@ class AppController extends ChangeNotifier {
  Future<void> startWorldBattle(String id)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
-  worldEngine.start(working.world,_worldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills));
+  worldEngine.start(working.world,_worldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills));
   await _store.save(working);
   _state=working;
   notifyListeners();

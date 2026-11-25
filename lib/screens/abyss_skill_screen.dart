@@ -91,6 +91,7 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
          if(!learned)_requirements(def),
          ?reason,
          if(learned&&def.execution!=null)'Lv.${SkillMastery.level(state.learned[def.id]!)} / 熟練度 ${state.learned[def.id]} / ${SkillMastery.maxUses}',
+         if(def.lifeRewardBonus case final reward?)'戦闘勝利時の寿命報酬 +${reward.percent}%',
          if(def.passiveBonus case final bonus?)'物攻 +${bonus.physical} / 魔攻 +${bonus.magic} / 防御 +${bonus.defense}',
         ].join('\n')),
         trailing:OutlinedButton(key:ValueKey('skill-${def.id}'),onPressed:locked||full||reason!=null?null:()=>_change(def,action,revision,generation),child:Text(full?'枠満杯':action)),

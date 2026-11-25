@@ -244,20 +244,25 @@ class AppController extends ChangeNotifier {
  });
  SkillCatalog _skillCatalog;
  List<SkillDefinition> get skillDefinitions=>_skillCatalog.definitions;
- Future<void> _changeSkill(String id,int expectedGeneration,int expectedRevision,void Function(WorldState,SkillState,String) change)=>_inventoryTransaction(() async {
+ Future<void> _changeSkill(String id,int expectedGeneration,int expectedRevision,void Function(AppStateData,String) change)=>_inventoryTransaction(() async {
   if(!_ready)throw StateError('Player not ready');
   if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   if(working.skills.revision!=expectedRevision)throw StateError('Stale skill revision');
-  change(working.world,working.skills,id);
+  change(working,id);
   // 保存前に変更後の補正値も検証し、計算不能な構成を確定しない。
   _worldStatsFor(working);
   await _store.save(working);
   _state=working;
  });
- Future<void> learnWorldSkill(String id,{required int expectedGeneration,required int expectedRevision})=>_changeSkill(id,expectedGeneration,expectedRevision,_skillCatalog.learn);
- Future<void> equipWorldSkill(String id,{required int expectedGeneration,required int expectedRevision})=>_changeSkill(id,expectedGeneration,expectedRevision,_skillCatalog.equip);
- Future<void> unequipWorldSkill(String id,{required int expectedGeneration,required int expectedRevision})=>_changeSkill(id,expectedGeneration,expectedRevision,_skillCatalog.unequip);
+ String? skillLearnUnavailable(String id){
+  if(!_ready)return '初期化中';
+  if(_inventoryBusy)return '処理中';
+  return _skillCatalog.learnUnavailable(_state.world,_state.skills,id,playerLevel:LevelCalculator.fromTotalExp(_state.totalExp).level);
+ }
+ Future<void> learnWorldSkill(String id,{required int expectedGeneration,required int expectedRevision})=>_changeSkill(id,expectedGeneration,expectedRevision,(state,id)=>_skillCatalog.learn(state.world,state.skills,id,playerLevel:LevelCalculator.fromTotalExp(state.totalExp).level));
+ Future<void> equipWorldSkill(String id,{required int expectedGeneration,required int expectedRevision})=>_changeSkill(id,expectedGeneration,expectedRevision,(state,id)=>_skillCatalog.equip(state.world,state.skills,id));
+ Future<void> unequipWorldSkill(String id,{required int expectedGeneration,required int expectedRevision})=>_changeSkill(id,expectedGeneration,expectedRevision,(state,id)=>_skillCatalog.unequip(state.world,state.skills,id));
  final ShopCatalog _shopCatalog;
  List<ShopOffer> get shopOffers=>_shopCatalog.offers;
  int _restoreGeneration=0;

@@ -1,4 +1,5 @@
 import 'world_engine.dart';
+import 'world_catalog.dart';
 
 enum SkillKind { active, passive }
 
@@ -11,12 +12,28 @@ class PassiveStatBonus {
  }
 }
 
+/// 未承認の習得条件を試験カタログでのみ評価する。
+class SkillAcquisition {
+ const SkillAcquisition({this.playerLevel=1,this.clearedStage=0,this.prerequisiteId,this.prerequisiteLevel=1,this.gold=0,this.magicCrystals=0});
+ final int playerLevel,clearedStage,prerequisiteLevel,gold,magicCrystals;
+ final String? prerequisiteId;
+ void validate(){
+  if(playerLevel<1||playerLevel>1000000||clearedStage<0||clearedStage>1000000||
+   prerequisiteLevel<1||prerequisiteLevel>SkillMastery.maxLevel||
+   (prerequisiteId==null&&prerequisiteLevel!=1)||
+   gold<0||gold>1000000||magicCrystals<0||magicCrystals>1000000){
+   throw const FormatException('Invalid skill acquisition');
+  }
+ }
+}
+
 class SkillDefinition {
- const SkillDefinition({required this.id,required this.name,required this.kind,this.execution,this.passiveBonus});
+ const SkillDefinition({required this.id,required this.name,required this.kind,this.execution,this.passiveBonus,this.acquisition=const SkillAcquisition()});
  final String id,name;
  final SkillKind kind;
  final ActiveSkillSpec? execution;
  final PassiveStatBonus? passiveBonus;
+ final SkillAcquisition acquisition;
 }
 
 /// 試験用成長規則。性能への反映は行わない。
@@ -88,7 +105,23 @@ class SkillCatalog {
     bonus.validate();
     if(def.kind!=SkillKind.passive)throw const FormatException('Invalid passive skill mapping');
    }
+   def.acquisition.validate();
    _definitions[def.id]=def;
+  }
+  for(final def in _definitions.values){
+   final rule=def.acquisition;
+   if(rule.clearedStage>0&&!WorldCatalog.titles.containsKey(rule.clearedStage))throw const FormatException('Unknown skill unlock stage');
+   final parent=rule.prerequisiteId;
+   if(parent!=null){
+    final prior=_definitions[parent];
+    if(prior==null||parent==def.id||(rule.prerequisiteLevel>1&&prior.execution==null))throw const FormatException('Invalid skill prerequisite');
+   }
+   final seen=<String>{def.id};
+   var next=parent;
+   while(next!=null){
+    if(!seen.add(next))throw const FormatException('Cyclic skill prerequisite');
+    next=_definitions[next]?.acquisition.prerequisiteId;
+   }
   }
  }
  final _definitions=<String,SkillDefinition>{};
@@ -153,11 +186,33 @@ class SkillCatalog {
   if(def==null)throw StateError('Skill unavailable');
   return def;
  }
- // 習得条件・通貨消費は未承認。本番空カタログのため使用不可。
- void learn(WorldState world,SkillState state,String id){
-  _require(world,id);
-  if(state._learned.containsKey(id))throw StateError('Skill already learned');
-  state._checkRevision();
+ /// 表示と実行で同じ条件判定を使用する。
+ String? learnUnavailable(WorldState world,SkillState state,String id,{required int playerLevel}){
+  if(world.battle!=null)return '戦闘中は習得できません';
+  final def=find(id);
+  if(def==null)return '未公開スキル';
+  if(state._learned.containsKey(id))return '習得済み';
+  if(state.revision==0x7fffffffffffffff)return '変更番号上限';
+  final rule=def.acquisition;
+  if(playerLevel<rule.playerLevel)return 'プレイヤーLv.${rule.playerLevel}が必要';
+  if(rule.clearedStage>0&&!world.cleared.contains(WorldCatalog.mainId(rule.clearedStage)))return 'STAGE ${rule.clearedStage}クリアが必要';
+  final parent=rule.prerequisiteId;
+  if(parent!=null){
+   final count=state._learned[parent];
+   if(count==null)return '${find(parent)!.name}の習得が必要';
+   if(SkillMastery.level(count)<rule.prerequisiteLevel)return '${find(parent)!.name} Lv.${rule.prerequisiteLevel}が必要';
+  }
+  if(world.gold<rule.gold)return 'ゴールド不足';
+  if(world.magicCrystals<rule.magicCrystals)return '魔晶石不足';
+  return null;
+ }
+ // デフォルト無料は既存試験専用。本番は空カタログを維持する。
+ void learn(WorldState world,SkillState state,String id,{int playerLevel=1}){
+  final reason=learnUnavailable(world,state,id,playerLevel:playerLevel);
+  if(reason!=null)throw StateError(reason);
+  final rule=find(id)!.acquisition;
+  world.gold-=rule.gold;
+  world.magicCrystals-=rule.magicCrystals;
   state._learned[id]=0;
   state._revision++;
  }

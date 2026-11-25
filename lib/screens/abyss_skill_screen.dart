@@ -18,7 +18,7 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
   try{
    final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
     title:Text('${def.name}を$actionしますか？'),
-    content:const Text('スキル構成の変更を保存します。'),
+    content:Text(action=='習得'?'${_requirements(def)}\n習得費用と習得記録を保存します。':'スキル構成の変更を保存します。'),
     actions:[
      TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('キャンセル')),
      FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('確定')),
@@ -36,6 +36,17 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
   }finally{
    if(mounted)setState(()=>_confirming=false);
   }
+ }
+ String _requirements(SkillDefinition def){
+  final rule=def.acquisition;
+  final parent=rule.prerequisiteId;
+  final parentName=parent==null?null:widget.controller.skillDefinitions.firstWhere((d)=>d.id==parent).name;
+  return [
+   '必要プレイヤーLv.${rule.playerLevel}',
+   if(rule.clearedStage>0)'STAGE ${rule.clearedStage}クリア',
+   if(parentName!=null)'$parentName Lv.${rule.prerequisiteLevel}',
+   '費用：${rule.gold} G / 魔晶石 ${rule.magicCrystals}',
+  ].join(' / ');
  }
  String _label(SkillKind kind)=>kind==SkillKind.active?'能動':'パッシブ';
  @override Widget build(BuildContext context)=>Scaffold(
@@ -58,6 +69,7 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
     if(defs.any((def)=>def.passiveBonus!=null))
      Text('現在の能力値：物攻 ${c.worldStats.physical} / 魔攻 ${c.worldStats.magic} / 防御 ${c.worldStats.defense}'),
     if(c.state.world.battle!=null)const Text('戦闘中は変更できません'),
+    if(defs.isNotEmpty)Text('所持：${c.state.world.gold} G / 魔晶石 ${c.state.world.magicCrystals}'),
     if(c.inventoryBusy)const LinearProgressIndicator(),
     if(_message!=null)Text(_message!),
     if(defs.isEmpty)const Text('公開済みスキルなし')
@@ -72,13 +84,16 @@ class _AbyssSkillScreenState extends State<AbyssSkillScreen>{
        final equipped=slots.contains(def.id);
        final action=equipped?'解除':learned?'装着':'習得';
        final full=learned&&!equipped&&slots.length>=SkillState.limit(def.kind);
+       final reason=learned?null:c.skillLearnUnavailable(def.id);
        return Card(child:ListTile(
         title:Text(def.name),subtitle:Text([
          equipped?'装着中':learned?'習得済み':'未習得',
+         if(!learned)_requirements(def),
+         ?reason,
          if(learned&&def.execution!=null)'Lv.${SkillMastery.level(state.learned[def.id]!)} / 熟練度 ${state.learned[def.id]} / ${SkillMastery.maxUses}',
          if(def.passiveBonus case final bonus?)'物攻 +${bonus.physical} / 魔攻 +${bonus.magic} / 防御 +${bonus.defense}',
         ].join('\n')),
-        trailing:OutlinedButton(key:ValueKey('skill-${def.id}'),onPressed:locked||full?null:()=>_change(def,action,revision,generation),child:Text(full?'枠満杯':action)),
+        trailing:OutlinedButton(key:ValueKey('skill-${def.id}'),onPressed:locked||full||reason!=null?null:()=>_change(def,action,revision,generation),child:Text(full?'枠満杯':action)),
        ));
       }),
     ],

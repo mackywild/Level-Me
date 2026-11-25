@@ -124,9 +124,7 @@ void main(){
   final fragile=WorldState(hp:1,energyAt:now,hpAt:now);
   engine.start(fragile,regular,'p01_main',now);
   final low=fragile.battle!;
-  final protected=WorldState.fromJson({...fragile.toJson(),'battle':{...low.toJson(),'buffs':{'lethalProtection':1}}});
-  engine.act(protected,WorldCommand.claw,low.id,1,now);
-  // 通常攻撃で敵を倒した場合は反撃しないため、防御で致死耐性を検証する。
+  // 防御で極端な反撃を受け、致死耐性の消費と次ターンの敗北を検証する。
   final guarded=WorldState.fromJson({...fragile.toJson(),'battle':{...low.toJson(),'buffs':{'lethalProtection':1}}});
   engine.act(guarded,WorldCommand.guard,low.id,1,now);
   expect(guarded.hp,1);

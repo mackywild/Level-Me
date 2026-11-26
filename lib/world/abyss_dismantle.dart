@@ -3,16 +3,17 @@ import 'abyss_equipment.dart';
 import 'world_engine.dart';
 
 class DismantleRecipe {
- const DismantleRecipe({required this.rarity,required this.materialId,required this.quantity,this.magicCrystals=0});
+ const DismantleRecipe({required this.rarity,required this.materialId,required this.quantity,this.magicCrystals=0,this.refundedMaterials=const {}});
  final EquipmentRarity rarity;
  final String materialId;
  final int quantity,magicCrystals;
+ final Map<String,int> refundedMaterials;
 }
 
 class DismantlePolicy {
  DismantlePolicy(Iterable<DismantleRecipe> recipes){
   for(final recipe in recipes){
-   if((recipe.quantity>0?(!recipe.materialId.startsWith('item:')||recipe.materialId.length<=5):recipe.materialId.isNotEmpty)||recipe.quantity<0||recipe.quantity>1000000||recipe.magicCrystals<0||recipe.magicCrystals>1000000||(recipe.quantity==0&&recipe.magicCrystals==0)||_recipes.containsKey(recipe.rarity))throw const FormatException('Invalid dismantle recipe');
+   if(recipe.refundedMaterials.isNotEmpty||(recipe.quantity>0?(!recipe.materialId.startsWith('item:')||recipe.materialId.length<=5):recipe.materialId.isNotEmpty)||recipe.quantity<0||recipe.quantity>1000000||recipe.magicCrystals<0||recipe.magicCrystals>1000000||(recipe.quantity==0&&recipe.magicCrystals==0)||_recipes.containsKey(recipe.rarity))throw const FormatException('Invalid dismantle recipe');
    _recipes[recipe.rarity]=recipe;
   }
  }
@@ -29,15 +30,20 @@ class DismantlePolicy {
   catalog.require(item);
   final reward=recipe(item.rarity);
   if(reward==null)throw StateError('Dismantle recipe unavailable');
-  final current=inventory.stacks[reward.materialId]??0;
-  final next=current+reward.quantity;
-  if(reward.quantity>0&&next<=current)throw StateError('Stack overflow');
+  final refund=inventory.enhancementRefund(item);
+  final totals=Map<String,int>.of(refund);
+  if(reward.quantity>0)totals.update(reward.materialId,(n)=>n+reward.quantity,ifAbsent:()=>reward.quantity);
+  for(final entry in totals.entries){
+   final current=inventory.stacks[entry.key]??0;
+   if(current+entry.value<=current)throw StateError('Stack overflow');
+  }
   if(reward.magicCrystals>0&&world.magicCrystals+reward.magicCrystals<=world.magicCrystals)throw StateError('Crystal overflow');
-  return reward;
+  return DismantleRecipe(rarity:reward.rarity,materialId:reward.materialId,quantity:reward.quantity,magicCrystals:reward.magicCrystals,refundedMaterials:refund);
  }
  DismantleRecipe dismantle({required WorldState world,required AbyssInventory inventory,required EquipmentCatalog catalog,required String id,required int expectedLevel}){
   final reward=validate(world:world,inventory:inventory,catalog:catalog,id:id,expectedLevel:expectedLevel);
   if(reward.quantity>0)inventory.addStack(reward.materialId,reward.quantity);
+  for(final entry in reward.refundedMaterials.entries){inventory.addStack(entry.key,entry.value);}
   world.magicCrystals+=reward.magicCrystals;
   inventory.removeEquipment(id,expectedLevel);
   return reward;

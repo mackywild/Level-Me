@@ -18,6 +18,7 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
  bool _confirming=false;
  String _rewardText(DismantleRecipe recipe)=>[
   if(recipe.quantity>0)'${widget.controller.summonRewardName(recipe.materialId)} × ${recipe.quantity}',
+  for(final entry in recipe.refundedMaterials.entries)'還元：${widget.controller.summonRewardName(entry.key)} × ${entry.value}',
   if(recipe.magicCrystals>0)'魔晶石 × ${recipe.magicCrystals}',
  ].join(' / ');
  Future<void> _favorite(EquipmentInstance item) async {
@@ -32,7 +33,7 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
  Future<void> _dismantle(EquipmentInstance item) async {
   final c=widget.controller;
   if(_confirming||c.dismantleUnavailable(item.id,item.enhancement)!=null)return;
-  final recipe=c.dismantleRecipe(item.rarity);
+  final recipe=c.dismantlePreview(item);
   if(recipe==null)return;
   final name=c.summonRewardName(item.masterId);
   final generation=c.restoreGeneration;
@@ -142,8 +143,8 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
       Text('${item.rarity.name.toUpperCase()} / ${item.slot.name} / ${item.id}'),
       if(inv.equipped.containsValue(item.id))const Text('装着中'),
       if(item.favorite)const Text('お気に入り保護中'),
-      if(item.enhancement>0)const Text('強化済み保護中'),
-      if(c.dismantleRecipe(item.rarity) case final recipe?)
+      if(item.enhancement>0&&!inv.hasCompleteEnhancementHistory(item))const Text('強化済み保護中'),
+      if((c.dismantlePreview(item)??c.dismantleRecipe(item.rarity)) case final recipe?)
        Text('分解報酬：${_rewardText(recipe)}'),
       if(c.dismantleUnavailable(item.id,item.enhancement) case final reason?)Text(reason),
       Wrap(spacing:8,children:[

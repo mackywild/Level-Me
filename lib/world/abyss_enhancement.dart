@@ -64,6 +64,7 @@ class EnhancementPolicy {
   catalog.require(item);
   if(item.enhancement!=expectedLevel)throw StateError('Stale enhancement request');
   if(item.enhancement>=20)throw StateError('Enhancement limit reached');
+  if(!inventory.hasCompleteEnhancementHistory(item))throw StateError('Enhancement history missing');
   final cost=recipeFor(item.rarity,item.enhancement);
   if(cost==null)throw StateError('Enhancement recipe unavailable');
   if(world.gold<cost.gold)throw StateError('Insufficient gold');
@@ -73,8 +74,8 @@ class EnhancementPolicy {
 
  EquipmentInstance enhance({required WorldState world,required AbyssInventory inventory,required EquipmentCatalog catalog,required String id,required int expectedLevel}){
   final cost=validate(world:world,inventory:inventory,catalog:catalog,id:id,expectedLevel:expectedLevel);
-  inventory.removeStack(cost.materialId,cost.quantity);
+  final result=inventory.enhanceWithMaterial(id,expectedLevel,cost.materialId,cost.quantity);
   world.gold-=cost.gold;
-  return inventory.enhance(id,expectedLevel);
+  return result;
  }
 }

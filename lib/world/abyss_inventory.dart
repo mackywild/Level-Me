@@ -19,6 +19,18 @@ class AbyssInventory {
  final Map<String,EquipmentInstance> _equipment={};
  final Set<String> _discovered={};
  final Map<EquipmentSlot,String> _equipped={};
+ // 版1: 実消費履歴を強化段階順に保存。旧履歴欠落は推測しない。
+ final Map<String,List<({String materialId,int quantity})>> _enhancementCosts={};
+ bool hasCompleteEnhancementHistory(EquipmentInstance item)=>
+  (_enhancementCosts[item.id]?.length??0)==item.enhancement;
+ Map<String,int> enhancementRefund(EquipmentInstance item){
+  if(!hasCompleteEnhancementHistory(item))throw StateError('Enhanced equipment protected');
+  final totals=<String,int>{};
+  for(final cost in _enhancementCosts[item.id]??const <({String materialId,int quantity})>[]){
+   totals.update(cost.materialId,(n)=>n+cost.quantity,ifAbsent:()=>cost.quantity);
+  }
+  return Map.unmodifiable({for(final entry in totals.entries)if(entry.value>=10)entry.key:entry.value~/10});
+ }
  Map<EquipmentSlot,String> get equipped=>Map.unmodifiable(_equipped);
  void equip(String id){
   final item=_equipment[id];
@@ -38,12 +50,13 @@ class AbyssInventory {
   if(item==null)throw StateError('Equipment not owned');
   if(item.enhancement!=expectedLevel)throw StateError('Stale dismantle request');
   if(item.favorite||_equipped.containsValue(id))throw StateError('Equipment protected');
-  if(item.enhancement!=0)throw StateError('Enhanced equipment protected');
+  if(!hasCompleteEnhancementHistory(item))throw StateError('Enhanced equipment protected');
   return item;
  }
  EquipmentInstance removeEquipment(String id,int expectedLevel){
   final item=requireDismantleable(id,expectedLevel);
   _equipment.remove(id);
+  _enhancementCosts.remove(id);
   return item;
  }
 
@@ -53,8 +66,25 @@ class AbyssInventory {
   if(item==null)throw StateError('Equipment not owned');
   if(item.enhancement!=expectedLevel)throw StateError('Stale enhancement request');
   if(item.enhancement>=20)throw StateError('Enhancement limit reached');
+  if(_enhancementCosts.containsKey(id))throw StateError('Recorded enhancement history requires paid enhancement');
+  return _advanceEnhancement(item);
+ }
+ EquipmentInstance _advanceEnhancement(EquipmentInstance item){
   final next=EquipmentInstance(id:item.id,masterId:item.masterId,slot:item.slot,rarity:item.rarity,enhancement:item.enhancement+1,favorite:item.favorite);
-  _equipment[id]=next;
+  _equipment[item.id]=next;
+  return next;
+ }
+
+ /// 実消費と強化を同時に記録。旧履歴欠落個体は引き続き還元保護。
+ EquipmentInstance enhanceWithMaterial(String id,int expectedLevel,String materialId,int quantity){
+  final item=_equipment[id];
+  if(item==null||item.enhancement!=expectedLevel||expectedLevel<0||expectedLevel>=20)throw StateError('Invalid enhancement request');
+  if(!materialId.startsWith('item:')||materialId.length<=5||quantity<=0||quantity>1000000)throw ArgumentError('Invalid enhancement cost');
+  if(!hasCompleteEnhancementHistory(item))throw StateError('Enhancement history missing');
+  final history=[...?_enhancementCosts[id],(materialId:materialId,quantity:quantity)];
+  removeStack(materialId,quantity);
+  final next=_advanceEnhancement(item);
+  _enhancementCosts[id]=history;
   return next;
  }
 
@@ -88,7 +118,7 @@ class AbyssInventory {
   _discovered.add(masterId);
   return item;
  }
- Map<String,dynamic> toJson()=>{'version':1,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort()};
+ Map<String,dynamic> toJson()=>{'version':1,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort(),if(_enhancementCosts.isNotEmpty)'enhancementCosts':{'version':1,'items':{for(final e in _enhancementCosts.entries)e.key:[for(final cost in e.value){'materialId':cost.materialId,'quantity':cost.quantity}]}}};
  factory AbyssInventory.fromJson(Map<String,dynamic> j){
   if(j['version']!=1)throw const FormatException('Unsupported inventory version');
   final inventory=AbyssInventory();
@@ -112,6 +142,23 @@ class AbyssInventory {
    inventory._discovered.add(id);
   }
   if(!inventory._discovered.containsAll(inventory._stacks.keys)||!inventory._discovered.containsAll(inventory._equipment.values.map((e)=>e.masterId)))throw const FormatException('Missing discovery record');
+  if(j.containsKey('enhancementCosts')){
+   final history=j['enhancementCosts'];
+   if(history is! Map<String,dynamic>||history['version']!=1||history['items'] is! Map<String,dynamic>)throw const FormatException('Invalid enhancement history');
+   for(final entry in (history['items'] as Map<String,dynamic>).entries){
+    final item=inventory._equipment[entry.key];
+    final costs=entry.value;
+    if(item==null||costs is! List||costs.isEmpty||costs.length!=item.enhancement)throw const FormatException('Invalid enhancement history length');
+    final validated=<({String materialId,int quantity})>[];
+    for(final raw in costs){
+     if(raw is! Map<String,dynamic>)throw const FormatException('Invalid enhancement cost');
+     final materialId=raw['materialId'],quantity=raw['quantity'];
+     if(materialId is! String||!materialId.startsWith('item:')||materialId.length<=5||quantity is! int||quantity<=0||quantity>1000000||!inventory._discovered.contains(materialId))throw const FormatException('Invalid enhancement cost');
+     validated.add((materialId:materialId,quantity:quantity));
+    }
+    inventory._enhancementCosts[entry.key]=validated;
+   }
+  }
   final equipped=j.containsKey('equipped')?j['equipped'] as Map<String,dynamic>:<String,dynamic>{};
   for(final entry in equipped.entries){
    final slot=EquipmentSlot.values.byName(entry.key);

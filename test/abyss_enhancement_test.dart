@@ -60,6 +60,40 @@ void main(){
   for(var i=0;i<20;i++){s.inventory.enhance(item.id,i);}
   reject(policy,item.id,20);
  });
+ test('RV-171: 旧履歴欠落個体の有償強化は原本と資産を変更しない',() async {
+  final dir=await Directory.systemTemp.createTemp('abyss-legacy-enhance-');
+  addTearDown(()=>dir.delete(recursive:true));
+  final store=LocalStore(directory:dir);
+  final c=AppController(store,portableBackup:PortableBackup(directory:dir),equipmentCatalog:catalog,enhancementPolicy:policy);
+  addTearDown(c.dispose);
+  await c.initialize();
+  final item=c.state.inventory.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.n);
+  for(var level=0;level<5;level++){c.state.inventory.enhance(item.id,level);}
+  c.state.inventory.addStack('item:iron',20);
+  c.state.world.gold=100;
+  await store.save(c.state);
+  final before=jsonEncode(c.state.toJson());
+  final primary=File('${dir.path}/${LocalStore.fileName}');
+  final bytes=await primary.readAsBytes();
+  expect(c.enhancementUnavailable(item.id,5),'素材消費履歴がないため強化できません');
+  await expectLater(c.enhanceWorldItem(item.id,5),throwsStateError);
+  expect(jsonEncode(c.state.toJson()),before);
+  expect(await primary.readAsBytes(),bytes);
+  expect(jsonEncode((await store.load()).toJson()),before);
+  expect(()=>c.state.inventory.enhanceWithMaterial(item.id,5,'item:iron',2),throwsStateError);
+  expect(jsonEncode(c.state.toJson()),before);
+ });
+ test('記録済み有償履歴を無料APIで破棄できない',(){
+  final inventory=AbyssInventory();
+  final item=inventory.addEquipment('equipment:ring',EquipmentSlot.ring,EquipmentRarity.n);
+  inventory.addStack('item:iron',20);
+  inventory.enhanceWithMaterial(item.id,0,'item:iron',10);
+  final before=jsonEncode(inventory.toJson());
+  expect(()=>inventory.enhance(item.id,1),throwsStateError);
+  expect(jsonEncode(inventory.toJson()),before);
+  inventory.enhanceWithMaterial(item.id,1,'item:iron',10);
+  expect(inventory.enhancementRefund(inventory.equipment[item.id]!),{'item:iron':2});
+ });
  test('保存完了まで資産を公開せず失敗時は維持し再試行で一度だけ強化する',() async {
   final dir=await Directory.systemTemp.createTemp('abyss-enhance-');
   addTearDown(()=>dir.delete(recursive:true));

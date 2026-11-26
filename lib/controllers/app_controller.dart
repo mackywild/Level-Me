@@ -15,6 +15,7 @@ import '../world/abyss_inventory.dart';
 import '../world/abyss_equipment.dart';
 import '../world/abyss_enhancement.dart';
 import '../world/abyss_equipment_skill_master.dart';
+import '../world/abyss_equipment_effects.dart';
 import '../world/abyss_equipment_skill_policy.dart';
 import '../world/abyss_equipment_enhancement_draw.dart';
 import '../world/abyss_dismantle.dart';
@@ -37,6 +38,11 @@ class AppController extends ChangeNotifier {
   equipmentCatalog.validateLoadout(state.inventory);
   if(state.inventory.equipmentSkillSeed!=null&&_equipmentSkillMaster==null)throw StateError('Equipment skill master unavailable');
   _equipmentSkillMaster?.validateInventory(state.inventory);
+  final battle=state.world.battle;
+  if(battle?.executionVersion==4){
+   final expected=_battleEquipmentEffects(state);
+   if(expected==null||!battle!.equipmentEffects!.sameAs(expected))throw const FormatException('Battle equipment snapshot mismatch');
+  }
   _summonEngine.validatePending(state.world,state.summon);
   _buffCatalog.validateSavedEffects(state.world);
   _purificationCatalog.validateSavedStatuses(state.world);
@@ -417,6 +423,19 @@ class AppController extends ChangeNotifier {
  final PortableBackup? _portableBackup;
  final LocalStore _store;
  final WorldEngine worldEngine=WorldEngine();
+ BattleEquipmentEffects? _battleEquipmentEffects(AppStateData state){
+  final master=_equipmentSkillMaster;
+  if(master==null||state.inventory.equipmentSkillSeed==null)return null;
+  final snapshot=master.effectPolicy.snapshot(state.inventory,[
+   for(final entry in state.inventory.equipmentSkillHistories.entries)
+    for(final grant in entry.value.grants)
+     EquipmentSkillGrant(instanceId:entry.key,milestone:grant.milestone,skillId:grant.skillId,level:grant.level),
+  ]);
+  int v(EquipmentEffect effect)=>snapshot.value(effect);
+  const supported={EquipmentEffect.physicalPercent,EquipmentEffect.magicPercent,EquipmentEffect.defensePercent,EquipmentEffect.criticalChance,EquipmentEffect.evasionChance,EquipmentEffect.damageReduction,EquipmentEffect.energyDiscount};
+  if(snapshot.totals.entries.any((e)=>e.value>0&&!supported.contains(e.key)))throw StateError('Equipment battle effect not connected');
+  return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount));
+ }
  WorldStats get worldStats=>_worldStatsFor(_state);
  WorldStats _worldStatsFor(AppStateData state)=>_skillCatalog.applyPassive(equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(state.totalExp).level,fitness:LevelCalculator.statRankFromExp(state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(state.stats[StatType.creativity]??0)),state.inventory,scaling:enhancementScaling),state.skills);
  final int Function() _clockMs;
@@ -426,7 +445,7 @@ class AppController extends ChangeNotifier {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   _skillCatalog.validateProgress(working.world,working.skills);
-  worldEngine.start(working.world,_worldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills));
+  worldEngine.start(working.world,_worldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills),equipmentEffects:_battleEquipmentEffects(working));
   await _store.save(working);
   _state=working;
   notifyListeners();

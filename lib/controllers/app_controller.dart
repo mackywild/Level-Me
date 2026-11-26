@@ -25,7 +25,7 @@ import '../world/abyss_skill.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,BuffCatalog? buffCatalog,PurificationCatalog? purificationCatalog,SkillCatalog? skillCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_skillCatalog=skillCatalog??SkillCatalog.production,_purificationCatalog=purificationCatalog??PurificationCatalog.production,_buffCatalog=buffCatalog??BuffCatalog.production,_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Random? legacyRewardRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,BuffCatalog? buffCatalog,PurificationCatalog? purificationCatalog,SkillCatalog? skillCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_skillCatalog=skillCatalog??SkillCatalog.production,_purificationCatalog=purificationCatalog??PurificationCatalog.production,_buffCatalog=buffCatalog??BuffCatalog.production,_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_legacyRewardRandom=legacyRewardRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -43,6 +43,7 @@ class AppController extends ChangeNotifier {
  late SummonEngine _summonEngine;
  final Future<AbyssMaster> Function()? _loadAbyssMaster;
  final Random? _summonRandom;
+ final Random? _legacyRewardRandom;
  Future<void>? _masterLoading;
  AbyssMaster? _abyssMaster;
  Future<void> _ensureAbyssMaster() async {
@@ -683,7 +684,7 @@ class AppController extends ChangeNotifier {
  Future<String?> drawBattleReward() => _transaction(() async{
   if(_state.gachaTickets<=0)return null;
   _state.gachaTickets--;
-  final roll=Random.secure().nextInt(100);
+  final roll=(_legacyRewardRandom??Random.secure()).nextInt(100);
   String reward;
   if(roll<15){
    _state.attackEnergy=RewardArithmetic.cappedAdd(_state.attackEnergy,60,9999);

@@ -13,6 +13,7 @@ void main(){
    EquipmentEffect.physicalPercent:30000,EquipmentEffect.magicPercent:30000,EquipmentEffect.defensePercent:30000,
    EquipmentEffect.damageReduction:7000,EquipmentEffect.criticalChance:10000,EquipmentEffect.evasionChance:5000,
    EquipmentEffect.energyDiscount:5000,EquipmentEffect.cooldownReduction:5000,EquipmentEffect.extraAttackChance:5000,
+   EquipmentEffect.hpPercent:30000,EquipmentEffect.penetration:5000,EquipmentEffect.resistance:8000,EquipmentEffect.naturalRecovery:30000,EquipmentEffect.rewardPercent:10000,
   });
   expect(EquipmentSkillMaster.allowedEffects(EquipmentSkillPool.attack).length,5);
   expect(EquipmentSkillMaster.allowedEffects(EquipmentSkillPool.defense).length,5);
@@ -28,12 +29,11 @@ void main(){
   }
   expect(master.effectPolicy.snapshot(inv,[grant(3,10),grant(6,10),grant(9,10),grant(12,10)]).value(EquipmentEffect.physicalPercent),30000);
  });
- test('分類違い・主人公ID・重複・未承認上限・上書きを拒否',(){
+ test('分類違い・主人公ID・重複・上書きを拒否',(){
   EquipmentSkillMasterEntry invalid(String id,EquipmentSkillPool pool,EquipmentEffect effect)=>EquipmentSkillMasterEntry(id:id,rarity:EquipmentSkillRarity.common,pool:pool,effect:effect,perLevel:100);
   for(final e in [
    invalid('skill:time',EquipmentSkillPool.attack,EquipmentEffect.physicalPercent),
    invalid(entry.id,EquipmentSkillPool.defense,EquipmentEffect.physicalPercent),
-   invalid(entry.id,EquipmentSkillPool.attack,EquipmentEffect.penetration),
    invalid(entry.id,EquipmentSkillPool.relic,EquipmentEffect.physicalPercent),
   ]){expect(()=>EquipmentSkillMaster([e]),throwsArgumentError);}
   expect(()=>EquipmentSkillMaster([entry,entry]),throwsArgumentError);

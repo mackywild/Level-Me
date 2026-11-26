@@ -365,6 +365,7 @@ class AppController extends ChangeNotifier {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final result=_enhancementPolicy.enhance(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel);
+  _worldStatsFor(working);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -411,17 +412,25 @@ class AppController extends ChangeNotifier {
  },keepPublishedState:true);
  Future<void> equipWorldItem(String id)=>_transaction(() async {
   if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
-  final item=_state.inventory.equipment[id];
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final item=working.inventory.equipment[id];
   if(item==null)throw StateError('Equipment not owned');
   equipmentCatalog.require(item);
-  _state.inventory.equip(id);
-  await _persist();
- });
+  working.inventory.equip(id);
+  _worldStatsFor(working);
+  await _store.save(working);
+  _state=working;
+  notifyListeners();
+ },keepPublishedState:true);
  Future<void> unequipWorldItem(EquipmentSlot slot)=>_transaction(() async {
   if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
-  _state.inventory.unequip(slot);
-  await _persist();
- });
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  working.inventory.unequip(slot);
+  _worldStatsFor(working);
+  await _store.save(working);
+  _state=working;
+  notifyListeners();
+ },keepPublishedState:true);
  AppStateData _state=AppStateData.initial();
  bool _ready=false;
  Future<void> _queue=Future<void>.value();

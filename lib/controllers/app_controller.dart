@@ -15,6 +15,7 @@ import '../world/abyss_inventory.dart';
 import '../world/abyss_equipment.dart';
 import '../world/abyss_enhancement.dart';
 import '../world/abyss_equipment_skill_master.dart';
+import '../world/abyss_ex_equipment_transaction.dart';
 import '../world/abyss_equipment_effects.dart';
 import '../world/abyss_equipment_skill_policy.dart';
 import '../world/abyss_equipment_enhancement_draw.dart';
@@ -29,7 +30,8 @@ import '../world/abyss_skill.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Random? legacyRewardRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,EquipmentSkillMaster? equipmentSkillMaster,Random? equipmentSkillSeedRandom,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,BuffCatalog? buffCatalog,PurificationCatalog? purificationCatalog,SkillCatalog? skillCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_equipmentSkillMaster=equipmentSkillMaster,_equipmentSkillSeedRandom=equipmentSkillSeedRandom??Random.secure(),_skillCatalog=skillCatalog??SkillCatalog.production,_purificationCatalog=purificationCatalog??PurificationCatalog.production,_buffCatalog=buffCatalog??BuffCatalog.production,_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_legacyRewardRandom=legacyRewardRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Random? legacyRewardRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,EquipmentSkillMaster? equipmentSkillMaster,ExEquipmentTransactionPolicy? exEquipmentPolicy,Random? equipmentSkillSeedRandom,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,BuffCatalog? buffCatalog,PurificationCatalog? purificationCatalog,SkillCatalog? skillCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_exEquipmentPolicy=exEquipmentPolicy,_equipmentSkillMaster=equipmentSkillMaster??exEquipmentPolicy?.master.randomMaster,_equipmentSkillSeedRandom=equipmentSkillSeedRandom??Random.secure(),_skillCatalog=skillCatalog??SkillCatalog.production,_purificationCatalog=purificationCatalog??PurificationCatalog.production,_buffCatalog=buffCatalog??BuffCatalog.production,_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_legacyRewardRandom=legacyRewardRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+  if(exEquipmentPolicy!=null&&(!identical(_equipmentSkillMaster,exEquipmentPolicy.master.randomMaster)||loadAbyssMaster!=null))throw ArgumentError('EX test policy master mismatch');
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
   _portableBackup?.validatePlayer=_validateEquipment;
@@ -37,7 +39,7 @@ class AppController extends ChangeNotifier {
  void _validateEquipment(AppStateData state){
   equipmentCatalog.validateLoadout(state.inventory);
   if(state.inventory.equipmentSkillSeed!=null&&_equipmentSkillMaster==null)throw StateError('Equipment skill master unavailable');
-  _equipmentSkillMaster?.validateInventory(state.inventory);
+  _validateEquipmentSkillInventory(state.inventory);
   final battle=state.world.battle;
   if((battle?.executionVersion??0)>=4){
    final expected=_battleEquipmentEffects(state);
@@ -66,6 +68,7 @@ class AppController extends ChangeNotifier {
  bool get hasAbyssMaster=>_abyssMaster!=null;
  CompendiumView get compendiumView=>(_abyssMaster?.compendium??CompendiumCatalog.production).view(_state.inventory);
  void configureAbyssMaster(AbyssMaster master){
+  if(_exEquipmentPolicy!=null)throw StateError('EX test policy cannot configure production master');
   if(_ready||_summonBusy||_abyssMaster!=null)throw StateError('Cannot replace master while active');
   _enhancementPolicy.validateMaterials((recipe){
    final material=master.supply(recipe.materialId);
@@ -364,6 +367,11 @@ class AppController extends ChangeNotifier {
  });
  final EnhancementPolicy _enhancementPolicy;
  final EquipmentSkillMaster? _equipmentSkillMaster;
+ final ExEquipmentTransactionPolicy? _exEquipmentPolicy;
+ void _validateEquipmentSkillInventory(AbyssInventory inventory){
+  final ex=_exEquipmentPolicy;
+  if(ex==null){_equipmentSkillMaster?.validateInventory(inventory);}else{ex.validateInventory(inventory,equipmentCatalog);}
+ }
  EquipmentSkillMaster? get equipmentSkillMaster=>_equipmentSkillMaster;
  final Random _equipmentSkillSeedRandom;
  void _validateEnhancementSkills(AbyssInventory inventory,String id){
@@ -373,7 +381,7 @@ class AppController extends ChangeNotifier {
   if(item.rarity==EquipmentRarity.ex||(inventory.equipmentSkillSeed==null&&inventory.equipment.values.any((e)=>e.rarity==EquipmentRarity.ex)))throw StateError('EX skill history layout not connected');
   final milestone=EquipmentSkillPolicy.nextGrant(item.rarity,item.enhancement,item.enhancement+1);
   if(milestone!=null&&!master.hasCandidates(item.slot))throw StateError('Equipment skill pool unavailable');
-  master.validateInventory(inventory);
+  _validateEquipmentSkillInventory(inventory);
  }
  final EnhancementScaling enhancementScaling;
  EnhancementRecipe? enhancementRecipe(EquipmentRarity rarity)=>_enhancementPolicy.recipe(rarity);
@@ -381,6 +389,11 @@ class AppController extends ChangeNotifier {
  String? enhancementUnavailable(String id,int expectedLevel){
   if(!_ready)return '初期化中';
   try {
+   final ex=_exEquipmentPolicy;
+   if(_state.inventory.equipment[id]?.rarity==EquipmentRarity.ex&&ex!=null){
+    ex.validateEnhancement(_state.world,_state.inventory,equipmentCatalog,id,expectedLevel);
+    return null;
+   }
    _enhancementPolicy.validate(world:_state.world,inventory:_state.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel);
    _validateEnhancementSkills(_state.inventory,id);
    return null;
@@ -398,9 +411,41 @@ class AppController extends ChangeNotifier {
    };
   }
  }
+ /// Explicit test-injected acquisition; shares the ordinary shop sequence.
+ Future<EquipmentInstance> acquireExWorldItem(String offerId,int expectedSequence,{required int expectedGeneration})=>_transaction(() async {
+  if(!_ready||expectedGeneration!=_restoreGeneration)throw StateError('Stale EX acquisition request');
+  final ex=_exEquipmentPolicy;
+  if(ex==null)throw StateError('EX acquisition unavailable');
+  ex.validateAcquisition(_state.world,equipmentCatalog,offerId,expectedSequence);
+  _validateEquipmentSkillInventory(_state.inventory);
+  if(_state.inventory.equipmentSkillSeed==null){
+   final prepared=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+   prepared.inventory.activateEquipmentSkills(_equipmentSkillSeedRandom.nextInt(0x80000000));
+   await _store.save(prepared);
+   _state=prepared;
+  }
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final item=ex.acquire(working.world,working.inventory,equipmentCatalog,offerId,expectedSequence);
+  _validateEquipment(working);
+  await _store.save(working);
+  _state=working;
+  notifyListeners();
+  return item;
+ },keepPublishedState:true);
  Future<EquipmentInstance> enhanceWorldItem(String id,int expectedLevel,{int? expectedGeneration})=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
   if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final ex=_exEquipmentPolicy;
+  if(_state.inventory.equipment[id]?.rarity==EquipmentRarity.ex&&ex!=null){
+   if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+   final result=ex.enhance(working.world,working.inventory,equipmentCatalog,id,expectedLevel);
+   _validateEquipment(working);
+   await _store.save(working);
+   _state=working;
+   notifyListeners();
+   return result;
+  }
   final master=_equipmentSkillMaster;
   if(master!=null){
    _enhancementPolicy.validate(world:_state.world,inventory:_state.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel);
@@ -439,6 +484,7 @@ class AppController extends ChangeNotifier {
   if(master==null||state.inventory.equipmentSkillSeed==null)return null;
   return master.effectPolicy.snapshot(state.inventory,[
    for(final entry in state.inventory.equipmentSkillHistories.entries)
+    if(state.inventory.equipment[entry.key]!.rarity!=EquipmentRarity.ex)
     for(final grant in entry.value.grants)
      EquipmentSkillGrant(instanceId:entry.key,milestone:grant.milestone,skillId:grant.skillId,level:grant.level),
   ]);

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'abyss_inventory.dart';
 import 'abyss_ex_equipment_master.dart';
+import 'abyss_ex_equipment_skill.dart';
 import 'abyss_equipment_skill_master.dart';
 import 'abyss_equipment_skill_policy.dart';
 
@@ -19,6 +20,18 @@ class EquipmentEnhancementDraw {
   final layout=exMaster?.validateInstance(inventory,item);
   final milestone=layout==null?EquipmentSkillPolicy.nextGrant(item.rarity,item.enhancement,item.enhancement+1):layout.nextRandomGrant(item,item.enhancement+1);
   if(milestone==null)return null;
+  return _draw(seed,item,master,milestone,layout);
+ }
+ static void validateExHistory(AbyssInventory inventory,EquipmentInstance item,ExEquipmentMaster exMaster){
+  final layout=exMaster.validateInstance(inventory,item);
+  final seed=inventory.equipmentSkillSeed;
+  if(seed==null)throw const FormatException('EX draw seed missing');
+  for(final grant in inventory.equipmentSkillHistories[item.id]!.grants){
+   final expected=_draw(seed,item,exMaster.randomMaster,grant.milestone,layout);
+   if(expected.skillId!=grant.skillId||expected.level!=grant.level||expected.ruleVersion!=grant.ruleVersion)throw const FormatException('EX deterministic grant mismatch');
+  }
+ }
+ static StoredEquipmentSkill _draw(int seed,EquipmentInstance item,EquipmentSkillMaster master,int milestone,ExEquipmentSkillLayout? layout){
   final serial=int.parse(item.id.substring(3));
   var purposeIndex=0;
   int nextInt(int bound){

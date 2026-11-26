@@ -364,6 +364,7 @@ class AppController extends ChangeNotifier {
  });
  final EnhancementPolicy _enhancementPolicy;
  final EquipmentSkillMaster? _equipmentSkillMaster;
+ EquipmentSkillMaster? get equipmentSkillMaster=>_equipmentSkillMaster;
  final Random _equipmentSkillSeedRandom;
  void _validateEnhancementSkills(AbyssInventory inventory,String id){
   final master=_equipmentSkillMaster;
@@ -432,8 +433,8 @@ class AppController extends ChangeNotifier {
      EquipmentSkillGrant(instanceId:entry.key,milestone:grant.milestone,skillId:grant.skillId,level:grant.level),
   ]);
   int v(EquipmentEffect effect)=>snapshot.value(effect);
-  const supported={EquipmentEffect.physicalPercent,EquipmentEffect.magicPercent,EquipmentEffect.defensePercent,EquipmentEffect.criticalChance,EquipmentEffect.evasionChance,EquipmentEffect.damageReduction,EquipmentEffect.energyDiscount};
-  if(snapshot.totals.entries.any((e)=>e.value>0&&!supported.contains(e.key)))throw StateError('Equipment battle effect not connected');
+  
+  if(snapshot.totals.entries.any((e)=>e.value>0&&!battleConnectedEquipmentEffects.contains(e.key)))throw StateError('Equipment battle effect not connected');
   return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount));
  }
  WorldStats get worldStats=>_worldStatsFor(_state);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
+import 'equipment_skill_details.dart';
 
 class AbyssForgeScreen extends StatefulWidget {
  const AbyssForgeScreen({super.key,required this.controller});
@@ -56,6 +57,7 @@ class _AbyssForgeScreenState extends State<AbyssForgeScreen>{
         Text('消費G：${recipe.gold}'),
        ],
        if(reason!=null)Text(reason),
+       TextButton(onPressed:()=>EquipmentSkillDetails.show(context,c,item),child:const Text('スキル詳細')),
        FilledButton(onPressed:_busy||reason!=null?null:()=>_enhance(item.id,level),child:Text(level>=20?'最大強化済み':'強化 +${level+1}')),
       ]);
      }))),

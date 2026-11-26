@@ -6,6 +6,7 @@ import '../models/achievement_catalog.dart';
 import '../models/app_state.dart';
 import '../models/quest.dart';
 import '../models/stat_type.dart';
+import '../services/reward_arithmetic.dart';
 import '../services/level_calculator.dart';
 import '../services/local_store.dart';
 import '../services/portable_backup.dart';
@@ -502,8 +503,9 @@ class AppController extends ChangeNotifier {
  }
  Future<void> addQuest({required String title,required List<QuestReward> rewards,QuestCadence cadence=QuestCadence.oneTime,List<String> reviewQuestionIds=const []}) => _transaction(() async {
   if(title.trim().isEmpty||rewards.isEmpty||rewards.any((r)=>r.exp<=0))throw ArgumentError('Invalid quest');
+  rewards.fold<int>(0,(sum,r)=>RewardArithmetic.add(sum,r.exp));
   if(reviewQuestionIds.isEmpty&&title.trim().startsWith('基本情報：見直し'))throw ArgumentError('Reserved title');
-  _state.quests.insert(0,Quest(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title.trim(),rewards:rewards,createdAt:DateTime.now(),cadence:cadence,reviewQuestionIds:List.of(reviewQuestionIds)));
+  _state.quests.insert(0,Quest(id:DateTime.now().microsecondsSinceEpoch.toString(),title:title.trim(),rewards:List.of(rewards),createdAt:DateTime.now(),cadence:cadence,reviewQuestionIds:List.of(reviewQuestionIds)));
   await _persist();
  });
  bool canManageQuest(Quest q)=>!q.id.startsWith('starter-')&&q.reviewQuestionIds.isEmpty&&!q.title.startsWith('基本情報：見直し');
@@ -564,17 +566,17 @@ class AppController extends ChangeNotifier {
   }
   _state.quests[index]=current.completed(now);
   _recoverForNewDay();
-  _state.completionCount++;
+  _state.completionCount=RewardArithmetic.add(_state.completionCount,1);
   final beforeLevel=LevelCalculator.fromTotalExp(_state.totalExp).level;
   final multiplier = activeSeconds == null ? 1 : (activeSeconds ~/ 60).clamp(1, 120);
-  final rewards = activeSeconds == null ? current.rewards : current.rewards.map((r) => QuestReward(stat:r.stat, exp:max(1, (r.exp * multiplier / 25).round()))).toList();
+  final rewards = activeSeconds == null ? current.rewards : current.rewards.map((r) => QuestReward(stat:r.stat, exp:RewardArithmetic.timedExp(r.exp,multiplier))).toList();
   _addReview(current,now,reviewIds);
   _grantRewards(rewards);
-  _state.attackEnergy=(_state.attackEnergy+rewards.fold<int>(0,(sum,r)=>sum+r.exp)).clamp(0,9999);
-  _state.gachaTickets++;
+  _state.attackEnergy=RewardArithmetic.cappedAdd(_state.attackEnergy,rewards.fold<int>(0,(sum,r)=>RewardArithmetic.add(sum,r.exp)),9999);
+  _state.gachaTickets=RewardArithmetic.add(_state.gachaTickets,1);
   if(current.rewards.any((r)=>r.stat==StatType.fitness)){
-   _state.maxPlayerHp+=2;
-   _state.playerHp=(_state.playerHp+20).clamp(0,_state.maxPlayerHp);
+   _state.maxPlayerHp=RewardArithmetic.add(_state.maxPlayerHp,2);
+   _state.playerHp=RewardArithmetic.cappedAdd(_state.playerHp,20,_state.maxPlayerHp);
   }
   _markTodayActive();
   _checkAchievements();
@@ -635,7 +637,16 @@ class AppController extends ChangeNotifier {
   }
  }
  void _grantRewards(List<QuestReward> rewards){
-  for(final r in rewards){_state.stats[r.stat]=(_state.stats[r.stat]??0)+r.exp;_state.totalExp+=r.exp;}
+  // 1回の付与内の同一属性・総EXPを全件検査し、成功後にまとめて反映する。
+  final nextStats=Map<StatType,int>.of(_state.stats);
+  var nextTotal=_state.totalExp;
+  for(final r in rewards){
+   if(r.exp<=0)throw StateError('Invalid EXP reward');
+   nextStats[r.stat]=RewardArithmetic.add(nextStats[r.stat]??0,r.exp);
+   nextTotal=RewardArithmetic.add(nextTotal,r.exp);
+  }
+  _state.stats.addAll(nextStats);
+  _state.totalExp=nextTotal;
  }
  void _recoverForNewDay(){
   final today=_dateKey(DateTime.now());
@@ -660,9 +671,9 @@ class AppController extends ChangeNotifier {
   _state.boss=_state.boss.damage(damage);
   var counterDamage=0;
   if(defeated){
-   _state.world.gold+=80;
+   _state.world.gold=RewardArithmetic.add(_state.world.gold,80);
   }else{
-   counterDamage=8+(_state.boss.defeats*2).clamp(0,20);
+   counterDamage=8+min(10,_state.boss.defeats)*2;
    _state.playerHp=max(0,_state.playerHp-counterDamage);
   }
   _checkAchievements(battleOnly:true);
@@ -675,16 +686,16 @@ class AppController extends ChangeNotifier {
   final roll=Random.secure().nextInt(100);
   String reward;
   if(roll<15){
-   _state.attackEnergy=(_state.attackEnergy+60).clamp(0,9999);
+   _state.attackEnergy=RewardArithmetic.cappedAdd(_state.attackEnergy,60,9999);
    reward='大当たり！ 攻撃エネルギー +60';
   }else if(roll<50){
-   _state.attackEnergy=(_state.attackEnergy+30).clamp(0,9999);
+   _state.attackEnergy=RewardArithmetic.cappedAdd(_state.attackEnergy,30,9999);
    reward='攻撃エネルギー +30';
   }else if(roll<80){
-   _state.attackEnergy=(_state.attackEnergy+15).clamp(0,9999);
+   _state.attackEnergy=RewardArithmetic.cappedAdd(_state.attackEnergy,15,9999);
    reward='攻撃エネルギー +15';
   }else{
-   _state.world.gold+=50;
+   _state.world.gold=RewardArithmetic.add(_state.world.gold,50);
    reward='ゴールド +50 G';
   }
   await _persist();

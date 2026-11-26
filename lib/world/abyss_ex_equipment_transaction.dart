@@ -65,7 +65,9 @@ class ExEquipmentTransactionPolicy {
     final rule=master.effectRules[effect.ruleId]!;
     final normal=rule.normalEffect;
     if(effect.drawback||normal==null||rule.capScope!=ExEffectCapScope.sharedWithNormal||
-       !EquipmentSkillMaster.allowedEffects(layout.randomPool).contains(normal))throw StateError('EX fixed effect not connected');
+       !EquipmentSkillMaster.allowedEffects(layout.randomPool).contains(normal)){
+     throw StateError('EX fixed effect not connected');
+    }
    }
   }
  }

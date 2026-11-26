@@ -79,3 +79,18 @@ class EnhancementPolicy {
   return result;
  }
 }
+
+/// Q64/65: EX強化は通常素材と専用素材の2種類。具体的なID・費用は注入。
+/// まだControllerの強化経路に接続しない。
+class ExEnhancementMaterialPlan {
+ ExEnhancementMaterialPlan({required this.normalMaterialId,required this.exMaterialId,required this.normalSchedule,required this.exSchedule}){
+  bool valid(String id)=>id.startsWith('item:')&&id.length>5&&id.trim()==id;
+  if(!valid(normalMaterialId)||!valid(exMaterialId)||normalMaterialId==exMaterialId)throw const FormatException('Invalid EX enhancement materials');
+ }
+ final String normalMaterialId,exMaterialId;
+ final EnhancementMaterialSchedule normalSchedule,exSchedule;
+ Map<String,int> materialsFor(int currentLevel)=>Map.unmodifiable({
+  normalMaterialId:normalSchedule.quantityFor(currentLevel),
+  exMaterialId:exSchedule.quantityFor(currentLevel),
+ });
+}

@@ -39,13 +39,16 @@ class EquipmentSkillDetails extends StatelessWidget {
   if(part==0)return '$whole%';
   return '$whole.${part.toString().padLeft(2,'0')}%';
  }
- static Future<void> show(BuildContext context,AppController controller,EquipmentInstance item)=>showDialog<void>(
+ static Future<void> show(BuildContext context,AppController controller,EquipmentInstance item){
+  final generation=controller.restoreGeneration;
+  return showDialog<void>(
   context:context,builder:(ctx)=>AlertDialog(
    title:const Text('装備スキル詳細'),
-   content:SingleChildScrollView(child:EquipmentSkillDetails(controller:controller,item:item,generation:controller.restoreGeneration)),
+   content:SingleChildScrollView(child:EquipmentSkillDetails(controller:controller,item:item,generation:generation)),
    actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('閉じる'))],
   ),
  );
+ }
 
  @override Widget build(BuildContext context)=>ListenableBuilder(listenable:controller,builder:(context,child){
   final inv=controller.state.inventory;

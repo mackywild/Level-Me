@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:level_me/screens/equipment_skill_details.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:level_me/controllers/app_controller.dart';
@@ -15,6 +16,8 @@ import 'package:level_me/world/abyss_equipment_effects.dart';
 import 'package:level_me/world/world_catalog.dart';
 
 class _Store extends LocalStore {
+ String? backup;
+ @override Future<void> restoreBackup() async {data=backup;}
  String? data;
  int saves=0;
  @override Future<AppStateData> load() async=>data==null?AppStateData.initial():AppStateData.fromJson(jsonDecode(data!) as Map<String,dynamic>);
@@ -52,6 +55,24 @@ void main(){
    await tester.tap(find.text('閉じる'));await tester.pumpAndSettle();
   }
   expect(jsonEncode(c.state.toJson()),before);expect(store.saves,saves);
+ });
+ testWidgets('RV-194: 同一IDの復元後は開いていた詳細を無効化する',(tester) async {
+  final store=_Store();
+  final c=AppController(store,equipmentCatalog:catalog,equipmentSkillMaster:master,clockMs:()=>1700000000000);
+  addTearDown(c.dispose);await c.initialize();
+  final item=c.state.inventory.addEquipment('equipment:sword',EquipmentSlot.hands,EquipmentRarity.gr);
+  await store.save(c.state);store.backup=store.data;
+  await tester.pumpWidget(MaterialApp(home:AbyssInventoryScreen(controller:c)));
+  await tester.ensureVisible(find.text('スキル詳細'));
+  await tester.tap(find.text('スキル詳細'));await tester.pumpAndSettle();
+  expect(tester.widget<EquipmentSkillDetails>(find.byType(EquipmentSkillDetails)).generation,0);
+  await c.restoreBackup();await tester.pumpAndSettle();
+  expect(c.state.inventory.equipment[item.id]!.masterId,item.masterId);
+  expect(find.text('装備情報が更新されました。詳細を開き直してください。'),findsOneWidget);
+  await tester.tap(find.text('閉じる'));await tester.pumpAndSettle();
+  await tester.tap(find.text('スキル詳細'));await tester.pumpAndSettle();
+  expect(find.text('確定済み 0 / 6 枠'),findsOneWidget);
+  expect(tester.widget<EquipmentSkillDetails>(find.byType(EquipmentSkillDetails)).generation,1);
  });
  testWidgets('旧未導入装備は確定結果を作らない',(tester) async {
   final c=AppController(_Store(),equipmentCatalog:catalog);

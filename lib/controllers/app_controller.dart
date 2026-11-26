@@ -149,7 +149,7 @@ class AppController extends ChangeNotifier {
   try{
    final working=WorldState.fromJson(jsonDecode(jsonEncode(_state.world.toJson())) as Map<String,dynamic>);
    final stats=worldStats;
-   worldEngine.refresh(working,stats,_nowMs);
+   worldEngine.refresh(working,stats,_nowMs,naturalRecovery:_naturalRecoveryFor(_state));
    final amount=_consumableCatalog.preview(world:working,stats:stats,inventory:_state.inventory,id:id,expectedSequence:working.itemUseSequence);
    return (amount:amount,reason:null);
   }on StateError catch(error){
@@ -167,7 +167,7 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   // 自然回復を先に反映し、満タンなら消費しない。失敗時は作業用状態を破棄。
   final stats=worldStats;
-  worldEngine.refresh(working.world,stats,_nowMs);
+  worldEngine.refresh(working.world,stats,_nowMs,naturalRecovery:_naturalRecoveryFor(working));
   final amount=_consumableCatalog.use(world:working.world,stats:stats,inventory:working.inventory,id:id,expectedSequence:expectedSequence);
   await _store.save(working);
   _state=working;
@@ -194,7 +194,7 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final now=_nowMs;
   final amount=_consumableCatalog.useInBattle(world:working.world,inventory:working.inventory,id:id,expectedSequence:expectedSequence,battleId:battleId,expectedTurn:turn,engine:worldEngine,now:now);
-  worldEngine.refresh(working.world,worldStats,now);
+  worldEngine.refresh(working.world,worldStats,now,naturalRecovery:_naturalRecoveryFor(working));
   await _store.save(working);
   _state=working;
   return amount;
@@ -223,7 +223,7 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final now=_nowMs;
   _buffCatalog.use(world:working.world,inventory:working.inventory,id:id,expectedSequence:expectedSequence,battleId:battleId,turn:turn,engine:worldEngine,now:now);
-  worldEngine.refresh(working.world,worldStats,now);
+  worldEngine.refresh(working.world,worldStats,now,naturalRecovery:_naturalRecoveryFor(working));
   await _store.save(working);
   _state=working;
  });
@@ -250,7 +250,7 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final now=_nowMs;
   final count=_purificationCatalog.use(world:working.world,inventory:working.inventory,id:id,expectedSequence:expectedSequence,battleId:battleId,turn:turn,engine:worldEngine,now:now);
-  worldEngine.refresh(working.world,worldStats,now);
+  worldEngine.refresh(working.world,worldStats,now,naturalRecovery:_naturalRecoveryFor(working));
   await _store.save(working);
   _state=working;
   return count;
@@ -414,9 +414,10 @@ class AppController extends ChangeNotifier {
   }
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final previousStats=_worldStatsFor(working);
+  final previousRecovery=_naturalRecoveryFor(working);
   final grant=master==null?null:EquipmentEnhancementDraw.prepare(working.inventory,working.inventory.equipment[id]!,master);
   final result=_enhancementPolicy.enhance(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel,skillGrant:grant);
-  _settleEquipmentHpChange(working,previousStats);
+  _settleEquipmentRecoveryChange(working,previousStats,previousRecovery);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -431,7 +432,7 @@ class AppController extends ChangeNotifier {
   final snapshot=_equipmentEffectSnapshot(state)!;
   int v(EquipmentEffect effect)=>snapshot.value(effect);
   if(snapshot.totals.entries.any((e)=>e.value>0&&!battleConnectedEquipmentEffects.contains(e.key)))throw StateError('Equipment battle effect not connected');
-  return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount),penetration:v(EquipmentEffect.penetration),extraAttack:v(EquipmentEffect.extraAttackChance),hp:v(EquipmentEffect.hpPercent),cooldown:v(EquipmentEffect.cooldownReduction),resistance:v(EquipmentEffect.resistance));
+  return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount),penetration:v(EquipmentEffect.penetration),extraAttack:v(EquipmentEffect.extraAttackChance),hp:v(EquipmentEffect.hpPercent),cooldown:v(EquipmentEffect.cooldownReduction),resistance:v(EquipmentEffect.resistance),naturalRecovery:v(EquipmentEffect.naturalRecovery),reward:v(EquipmentEffect.rewardPercent));
  }
  EquipmentEffectSnapshot? _equipmentEffectSnapshot(AppStateData state){
   final master=_equipmentSkillMaster;
@@ -442,6 +443,7 @@ class AppController extends ChangeNotifier {
      EquipmentSkillGrant(instanceId:entry.key,milestone:grant.milestone,skillId:grant.skillId,level:grant.level),
   ]);
  }
+ int _naturalRecoveryFor(AppStateData state)=>_equipmentEffectSnapshot(state)?.value(EquipmentEffect.naturalRecovery)??0;
  WorldStats get worldStats=>_worldStatsFor(_state);
  WorldStats _worldStatsFor(AppStateData state){
   final base=_baseWorldStatsFor(state);
@@ -450,12 +452,14 @@ class AppController extends ChangeNotifier {
  }
  /// 最大HP変更境界で旧能力値の経過分を精算する。HPの未満tickは
  /// 新旧の回復量を混在させないため破棄し、エネルギー端数は維持する。
- void _settleEquipmentHpChange(AppStateData working,WorldStats previousStats){
+ void _settleEquipmentRecoveryChange(AppStateData working,WorldStats previousStats,int previousRecovery){
   final maximum=_worldStatsFor(working).hp;
-  if(maximum!=previousStats.hp){
+  final recoveryChanged=previousRecovery!=_naturalRecoveryFor(working);
+  if(maximum!=previousStats.hp||recoveryChanged){
    final now=_nowMs;
-   worldEngine.refresh(working.world,previousStats,now);
+   worldEngine.refresh(working.world,previousStats,now,naturalRecovery:previousRecovery);
    working.world.hpAt=now;
+   if(recoveryChanged)working.world.energyAt=now;
   }
   if(working.world.hp>maximum)working.world.hp=maximum;
  }
@@ -479,7 +483,7 @@ class AppController extends ChangeNotifier {
   _skillCatalog.validateBattle(working.world,working.skills);
   final now=_nowMs;
   _skillCatalog.executeActive(worldEngine,working.world,working.skills,id,battleId,turn,now);
-  worldEngine.refresh(working.world,worldStats,now);
+  worldEngine.refresh(working.world,worldStats,now,naturalRecovery:_naturalRecoveryFor(working));
   await _store.save(working);
   _state=working;
  });
@@ -489,7 +493,7 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final now=_nowMs;
   worldEngine.act(working.world,command,battleId,turn,now);
-  worldEngine.refresh(working.world,worldStats,now);
+  worldEngine.refresh(working.world,worldStats,now,naturalRecovery:_naturalRecoveryFor(working));
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -501,8 +505,9 @@ class AppController extends ChangeNotifier {
   if(item==null)throw StateError('Equipment not owned');
   equipmentCatalog.require(item);
   final previousStats=_worldStatsFor(working);
+  final previousRecovery=_naturalRecoveryFor(working);
   working.inventory.equip(id);
-  _settleEquipmentHpChange(working,previousStats);
+  _settleEquipmentRecoveryChange(working,previousStats,previousRecovery);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -511,8 +516,9 @@ class AppController extends ChangeNotifier {
   if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final previousStats=_worldStatsFor(working);
+  final previousRecovery=_naturalRecoveryFor(working);
   working.inventory.unequip(slot);
-  _settleEquipmentHpChange(working,previousStats);
+  _settleEquipmentRecoveryChange(working,previousStats,previousRecovery);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -550,7 +556,7 @@ class AppController extends ChangeNotifier {
   _validateEquipment(loaded);
   _state=loaded;
   _recoverForNewDay();
-  worldEngine.refresh(_state.world,worldStats,_nowMs);
+  worldEngine.refresh(_state.world,worldStats,_nowMs,naturalRecovery:_naturalRecoveryFor(_state));
   await _store.save(_state);
   _ready=true;
   notifyListeners();
@@ -624,7 +630,7 @@ class AppController extends ChangeNotifier {
   if (!_ready) return;
   final newDay=_state.lastRecoveryDate != _dateKey(DateTime.now());
   if(newDay)_recoverForNewDay();
-  final changed=worldEngine.refresh(_state.world,worldStats,_nowMs);
+  final changed=worldEngine.refresh(_state.world,worldStats,_nowMs,naturalRecovery:_naturalRecoveryFor(_state));
   if(newDay||changed)await _persist();
  });
  Future<void> completeQuest(Quest quest, {int? activeSeconds, List<String> reviewIds = const [], String? sessionId}) => _transaction(() async {
@@ -675,7 +681,7 @@ class AppController extends ChangeNotifier {
   final seconds=activeSeconds==null?0:min(7200,activeSeconds);
   final physical=study?0:workout?max(1,seconds~/120):5;
   final magic=workout?0:study?max(1,seconds~/100):5;
-  worldEngine.rewardEffort(_state.world,worldStats,_nowMs,physical:physical,magic:magic,levelUp:levelUp);
+  worldEngine.rewardEffort(_state.world,worldStats,_nowMs,physical:physical,magic:magic,levelUp:levelUp,naturalRecovery:_naturalRecoveryFor(_state));
  }
  void _addReview(Quest current,DateTime now,List<String> ids){
   final unique=ids.toSet().toList()..sort();

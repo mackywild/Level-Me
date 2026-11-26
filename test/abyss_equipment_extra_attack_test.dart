@@ -19,7 +19,7 @@ void main(){
  const enemy=WorldEncounter('p01_main',1,'test','test',10000,100,100,0,main:true);
  const spec=ActiveSkillSpec(id:'skill:test',name:'試験攻撃',powerPercent:200,physicalCost:5,cooldown:2,hits:2);
  setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
- WorldState battle({int hp=10000,int extra=5000,int penetration=5000})=>WorldState(hp:1000,physical:100,magic:100,sequence:1,hpAt:now,energyAt:now,lifespan:BigInt.from(100),battle:WorldBattle(id:1,encounterId:enemy.id,stats:stats,enemyHp:hp,encounterSnapshot:enemy,executionVersion:5,equipmentEffects:BattleEquipmentEffects(extraAttack:extra,penetration:penetration),lifeRewardPercent:0,activeSkills:const [spec]));
+ WorldState battle({int hp=10000,int extra=5000,int penetration=5000})=>WorldState(hp:1000,physical:100,magic:100,sequence:1,hpAt:now,energyAt:now,lifespan:BigInt.from(100),battle:WorldBattle(id:1,encounterId:enemy.id,stats:stats,enemyHp:hp,encounterSnapshot:enemy,executionVersion:5,equipmentEffects:BattleEquipmentEffects(extraAttack:extra,penetration:penetration),lifeRewardPercent:100,activeSkills:const [spec]));
  test('物理・魔法・多段能動攻撃から一度だけ追撃、独立会心・無消費',(){
   for(final command in [WorldCommand.claw,WorldCommand.magic,null]){
    final rolls=_Rolls([0.5,0.5,if(command==null)...[0.5,0.5],0.499999,0.05,0.5]);

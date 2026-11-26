@@ -2,7 +2,7 @@ import 'abyss_inventory.dart';
 
 /// 確定済みのLv帯。帯内の個別Lv確率は別途決定する。
 enum EquipmentSkillLevelBand {
- low(1,3), middle(4,6), high(7,9), maximum(10,10);
+ low(1,3), middle(4,6), high(7,9), maxLevel(10,10);
  const EquipmentSkillLevelBand(this.minimum,this.maximum);
  final int minimum,maximum;
 }

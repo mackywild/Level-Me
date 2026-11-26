@@ -17,7 +17,8 @@ class EnhancementScaling {
  int apply(int base,int level){
   if(level<0||level>20)throw RangeError.range(level,0,20);
   // 個々の装備補正を整数で切り捨てる暫定案。プレイヤー基本値には掛けない。
-  return base*(100+percentPerLevel*level)~/100;
+  if(base<0)throw StateError('Invalid equipment base stat');
+  return WorldStats.checkedStat(BigInt.from(base)*BigInt.from(100+percentPerLevel*level)~/BigInt.from(100));
  }
 }
 
@@ -45,9 +46,9 @@ class EquipmentCatalog {
   for(final id in inventory.equipped.values){
    final item=inventory.equipment[id]!;
    final definition=require(item);
-   physical+=scaling.apply(definition.physical,item.enhancement);
-   magic+=scaling.apply(definition.magic,item.enhancement);
-   defense+=scaling.apply(definition.defense,item.enhancement);
+   physical=WorldStats.checkedAdd(physical,scaling.apply(definition.physical,item.enhancement));
+   magic=WorldStats.checkedAdd(magic,scaling.apply(definition.magic,item.enhancement));
+   defense=WorldStats.checkedAdd(defense,scaling.apply(definition.defense,item.enhancement));
   }
   return WorldStats(hp:base.hp,physical:physical,magic:magic,defense:defense,physicalMax:base.physicalMax,magicMax:base.magicMax,crit:base.crit);
  }

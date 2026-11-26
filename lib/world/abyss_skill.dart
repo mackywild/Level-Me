@@ -170,16 +170,12 @@ class SkillCatalog {
  WorldStats applyPassive(WorldStats base,SkillState state){
   validateSaved(state);
   var physical=base.physical,magic=base.magic,defense=base.defense;
-  int add(int value,int bonus){
-   if(value<0||value>0x7fffffffffffffff-bonus)throw StateError('Passive stat overflow');
-   return value+bonus;
-  }
   for(final id in state.passive){
    final bonus=find(id)?.passiveBonus;
    if(bonus==null)continue;
-   physical=add(physical,bonus.physical);
-   magic=add(magic,bonus.magic);
-   defense=add(defense,bonus.defense);
+   physical=WorldStats.checkedAdd(physical,bonus.physical);
+   magic=WorldStats.checkedAdd(magic,bonus.magic);
+   defense=WorldStats.checkedAdd(defense,bonus.defense);
   }
   return WorldStats(hp:base.hp,physical:physical,magic:magic,defense:defense,physicalMax:base.physicalMax,magicMax:base.magicMax,crit:base.crit);
  }

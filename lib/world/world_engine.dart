@@ -24,15 +24,38 @@ class WorldStats {
  const WorldStats({required this.hp,required this.physical,required this.magic,required this.defense,required this.physicalMax,required this.magicMax,required this.crit});
  final int hp,physical,magic,defense,physicalMax,magicMax;
  final double crit;
- factory WorldStats.fromRanks({required int level,required int fitness,required int intelligence,required int discipline,required int creativity})=>WorldStats(
-  hp:100+12*(fitness-1)+8*(level-1),
-  physical:40+8*(fitness-1)+3*(level-1),
-  magic:45+8*(intelligence-1)+3*(level-1),
-  defense:10+5*(discipline-1)+2*(level-1),
-  physicalMax:25+sqrt(fitness).floor()*2,
-  magicMax:35+sqrt(intelligence).floor()*3,
-  crit:min(0.5,0.05+0.005*(creativity-1)),
- );
+ static const maxStat=0x7fffffffffffffff;
+ /// 能力値は飽和させず、表現不能な構成を確定前に拒否する。
+ static int checkedAdd(int value,int bonus){
+  if(value<0||bonus<0||value>maxStat-bonus)throw StateError('Stat addition overflow or negative value');
+  return value+bonus;
+ }
+ static int checkedStat(BigInt value){
+  if(value<BigInt.zero||value>BigInt.from(maxStat))throw StateError('Stat overflow or negative value');
+  return value.toInt();
+ }
+ static int _linear(int base,int rank,int coefficient,int level,int levelCoefficient){
+  return checkedStat(BigInt.from(base)+BigInt.from(rank-1)*BigInt.from(coefficient)+BigInt.from(level-1)*BigInt.from(levelCoefficient));
+ }
+ static int _sqrtFloor(int value){
+  var root=sqrt(value).floor();
+  // doubleの丸めが完全平方数の境界をまたいでも整数除算で補正する。
+  while(root>value~/root){root--;}
+  while(root+1<=value~/(root+1)){root++;}
+  return root;
+ }
+ factory WorldStats.fromRanks({required int level,required int fitness,required int intelligence,required int discipline,required int creativity}){
+  if([level,fitness,intelligence,discipline,creativity].any((v)=>v<1))throw StateError('Invalid player rank');
+  return WorldStats(
+   hp:_linear(100,fitness,12,level,8),
+   physical:_linear(40,fitness,8,level,3),
+   magic:_linear(45,intelligence,8,level,3),
+   defense:_linear(10,discipline,5,level,2),
+   physicalMax:25+_sqrtFloor(fitness)*2,
+   magicMax:35+_sqrtFloor(intelligence)*3,
+   crit:min(0.5,0.05+0.005*(creativity-1)),
+  );
+ }
  Map<String,dynamic> toJson()=>{'hp':hp,'physical':physical,'magic':magic,'defense':defense,'physicalMax':physicalMax,'magicMax':magicMax,'crit':crit};
  factory WorldStats.fromJson(Map<String,dynamic> j)=>WorldStats(hp:j['hp'] as int,physical:j['physical'] as int,magic:j['magic'] as int,defense:j['defense'] as int,physicalMax:j['physicalMax'] as int,magicMax:j['magicMax'] as int,crit:(j['crit'] as num).toDouble());
 }

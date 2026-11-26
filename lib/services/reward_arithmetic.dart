@@ -1,4 +1,4 @@
-/// Dartネイティブの符号付き64bit資源の報酬演算。
+/// 符号付き64bit整数資源の報酬演算（Dartネイティブ向け）。
 class RewardArithmetic {
  const RewardArithmetic._();
  static const maximum=0x7fffffffffffffff;

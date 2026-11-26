@@ -39,7 +39,7 @@ class _AbyssForgeScreenState extends State<AbyssForgeScreen>{
     for(final item in state.inventory.equipment.values)
      Card(child:Padding(padding:const EdgeInsets.all(12),child:Builder(builder:(context){
       final definition=c.equipmentCatalog.find(item.masterId);
-      final recipe=c.enhancementRecipe(item.rarity);
+      final recipe=c.enhancementRecipeFor(item.rarity,item.enhancement);
       final reason=c.enhancementUnavailable(item.id,item.enhancement);
       final level=item.enhancement;
       String stat(int base)=>level>=20?'${scaling.apply(base,level)}':'${scaling.apply(base,level)} → ${scaling.apply(base,level+1)}';

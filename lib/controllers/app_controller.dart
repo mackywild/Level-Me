@@ -347,6 +347,7 @@ class AppController extends ChangeNotifier {
  final EnhancementPolicy _enhancementPolicy;
  final EnhancementScaling enhancementScaling;
  EnhancementRecipe? enhancementRecipe(EquipmentRarity rarity)=>_enhancementPolicy.recipe(rarity);
+ EnhancementRecipe? enhancementRecipeFor(EquipmentRarity rarity,int currentLevel)=>currentLevel==20?null:_enhancementPolicy.recipeFor(rarity,currentLevel);
  String? enhancementUnavailable(String id,int expectedLevel){
   if(!_ready)return '初期化中';
   try {

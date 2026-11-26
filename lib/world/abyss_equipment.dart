@@ -9,10 +9,12 @@ class EquipmentDefinition {
  final int physical,magic,defense;
 }
 
-/// 未承認の性能補正は明示的に注入した場合だけ適用する。
+/// 承認済みの基礎装備性能5%加算。公開経路の有効化は別途管理する。
 class EnhancementScaling {
  const EnhancementScaling.disabled():percentPerLevel=0;
- const EnhancementScaling.proposed():percentPerLevel=5;
+ const EnhancementScaling.approved():percentPerLevel=5;
+ // 既存の明示注入APIとの互換性を保持する。
+ const EnhancementScaling.proposed():this.approved();
  final int percentPerLevel;
  int apply(int base,int level){
   if(level<0||level>20)throw RangeError.range(level,0,20);

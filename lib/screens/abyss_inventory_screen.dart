@@ -3,6 +3,7 @@ import '../controllers/app_controller.dart';
 import '../world/abyss_inventory.dart';
 import '../world/abyss_dismantle.dart';
 import '../world/abyss_consumable.dart';
+import 'equipment_skill_details.dart';
 
 class AbyssInventoryScreen extends StatefulWidget {
  const AbyssInventoryScreen({super.key,required this.controller});
@@ -148,6 +149,7 @@ class _AbyssInventoryScreenState extends State<AbyssInventoryScreen>{
        Text('分解報酬：${_rewardText(recipe)}'),
       if(c.dismantleUnavailable(item.id,item.enhancement) case final reason?)Text(reason),
       Wrap(spacing:8,children:[
+       TextButton(onPressed:()=>EquipmentSkillDetails.show(context,c,item),child:const Text('スキル詳細')),
        OutlinedButton(onPressed:locked?null:()=>_favorite(item),child:Text(item.favorite?'お気に入り解除':'お気に入り登録')),
        FilledButton(onPressed:locked||c.dismantleUnavailable(item.id,item.enhancement)!=null?null:()=>_dismantle(item),child:const Text('分解')),
       ]),

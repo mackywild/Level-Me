@@ -5,6 +5,9 @@ import 'abyss_equipment_skill_pool.dart';
 /// 効果の識別子。数値曲線・上限は本番承認後に注入する。
 enum EquipmentEffect { physicalPercent, magicPercent, defensePercent, damageReduction, extraAttackChance, energyDiscount, cooldownReduction, criticalChance, penetration, hpPercent, evasionChance, resistance, naturalRecovery, rewardPercent }
 
+/// 戦闘版4と表示で共通の接続済み効果集合。
+const battleConnectedEquipmentEffects={EquipmentEffect.physicalPercent,EquipmentEffect.magicPercent,EquipmentEffect.defensePercent,EquipmentEffect.criticalChance,EquipmentEffect.evasionChance,EquipmentEffect.damageReduction,EquipmentEffect.energyDiscount};
+
 /// 自動効果のみ。単位は0.01%（10000=100%）。
 class EquipmentEffectRule {
  EquipmentEffectRule({required this.effect,required this.pool,required Iterable<int> levelValues}):levelValues=List.unmodifiable(levelValues){

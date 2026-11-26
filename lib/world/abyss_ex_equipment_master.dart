@@ -43,13 +43,30 @@ class ExFixedEffect {
  final bool drawback;
 }
 
+/// Q76–87: definition metadata only. No resource is consumed by this class.
+/// HP is basis points of max HP, lifeDays is integer days. Conditions are typed,
+/// not executable strings. Runtime rounding/limits are a separate integration.
+class ExManualSkillSpec {
+ ExManualSkillSpec({this.physicalCost=0,this.magicCost=0,this.hpCostBps=0,this.lifeDays=0,required this.cooldown,this.initialCooldown=0,this.maxUses,this.cooldownReduction=false,this.energyDiscount=false,this.maxHpBps}){
+  if([physicalCost,magicCost,lifeDays].any((n)=>n<0||n>1000000)||hpCostBps<0||hpCostBps>=10000||cooldown<0||cooldown>1000||initialCooldown<0||initialCooldown>1000||(maxUses!=null&&(maxUses!<=0||maxUses!>1000))||(maxHpBps!=null&&(maxHpBps!<=0||maxHpBps!>10000))){
+   throw ArgumentError('Invalid EX manual skill parameters');
+  }
+ }
+ final int physicalCost,magicCost,hpCostBps,lifeDays,cooldown,initialCooldown;
+ final int? maxUses,maxHpBps;
+ final bool cooldownReduction,energyDiscount;
+ Map<String,dynamic> toJson()=>{'physicalCost':physicalCost,'magicCost':magicCost,'hpCostBps':hpCostBps,'lifeDays':lifeDays,'cooldown':cooldown,'initialCooldown':initialCooldown,'maxUses':maxUses,'cooldownReduction':cooldownReduction,'energyDiscount':energyDiscount,'maxHpBps':maxHpBps};
+}
+
 class ExFixedSkillDefinition {
- ExFixedSkillDefinition({required this.id,required this.name,required this.activation,required Iterable<ExFixedEffect> effects})
+ ExFixedSkillDefinition({required this.id,required this.name,required this.activation,this.manualSpec,required Iterable<ExFixedEffect> effects})
   :effects=List.unmodifiable(effects){
+  if(manualSpec!=null&&activation!=ExSkillActivation.manual)throw ArgumentError('Manual parameters on automatic skill');
   if(!ExEffectRule._validId(id,'equipment_ex_skill:')||name.trim().isEmpty||this.effects.isEmpty||this.effects.every((e)=>e.drawback)||this.effects.map((e)=>e.ruleId).toSet().length!=this.effects.length)throw ArgumentError('Invalid EX fixed skill definition');
  }
  final String id,name;
  final ExSkillActivation activation;
+ final ExManualSkillSpec? manualSpec;
  final List<ExFixedEffect> effects;
 }
 
@@ -105,7 +122,8 @@ class ExEquipmentMaster {
    for(final fixed in layout.fixedSkills)
     [fixed.id,fixed.level,_skills[fixed.id]!.name,_skills[fixed.id]!.activation.name,
      for(final effect in _skills[fixed.id]!.effects)
-      [effect.ruleId,effect.drawback,effect.valuesByLevel[fixed.level],_rules[effect.ruleId]!.stacking.name,_rules[effect.ruleId]!.capScope.name,_rules[effect.ruleId]!.cap]],
+      [effect.ruleId,effect.drawback,effect.valuesByLevel[fixed.level],_rules[effect.ruleId]!.stacking.name,_rules[effect.ruleId]!.capScope.name,_rules[effect.ruleId]!.cap],
+     if(_skills[fixed.id]!.manualSpec!=null)_skills[fixed.id]!.manualSpec!.toJson()],
    [for(final e in candidates)[e.id,e.rarity.name,e.pool.name,e.effect.name,e.perLevel]],
   ];
   return sha256.convert(utf8.encode(jsonEncode(content))).toString();

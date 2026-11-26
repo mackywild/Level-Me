@@ -21,7 +21,7 @@ class ExEnhancementRecipe {
 
 /// Explicit injection only. No production offers or recipes.
 class ExEquipmentTransactionPolicy {
- ExEquipmentTransactionPolicy({required this.master,this.enableAutomaticEffects=false,required Iterable<String> normalMaterials,required Iterable<String> exMaterials,required Iterable<ExEnhancementRecipe> recipes,required Iterable<ExAcquisitionOffer> offers}){
+ ExEquipmentTransactionPolicy({required this.master,this.enableAutomaticEffects=false,this.enableManualPlanning=false,required Iterable<String> normalMaterials,required Iterable<String> exMaterials,required Iterable<ExEnhancementRecipe> recipes,required Iterable<ExAcquisitionOffer> offers}){
   final normal=normalMaterials.toSet(),special=exMaterials.toSet();
   bool valid(String id)=>id.startsWith('item:')&&id.length>5&&id.trim()==id;
   if(normal.intersection(special).isNotEmpty||[...normal,...special].any((id)=>!valid(id)))throw const FormatException('Invalid EX material classification');
@@ -35,7 +35,7 @@ class ExEquipmentTransactionPolicy {
   }
  }
  final ExEquipmentMaster master;
- final bool enableAutomaticEffects;
+ final bool enableAutomaticEffects,enableManualPlanning;
  final _recipes=<String,ExEnhancementRecipe>{};
  final _offers=<String,ExAcquisitionOffer>{};
  ExEnhancementRecipe? recipe(String masterId)=>_recipes[masterId];
@@ -54,13 +54,17 @@ class ExEquipmentTransactionPolicy {
     if(actual.length!=expected.length||expected.entries.any((e)=>actual[e.key]!=e.value))throw const FormatException('EX cost history mismatch');
    }
   }
+  for(final selection in inventory.exManualSlots.values){requireManualSelection(inventory,selection);}
  }
  /// Only explicitly enabled, same-pool automatic normal effects with shared caps.
  void requireEquippable(AbyssInventory inventory,EquipmentInstance item){
   if(!enableAutomaticEffects)throw StateError('EX fixed effects not connected');
   final layout=master.validateInstance(inventory,item);
   for(final fixed in master.resolveFixedSkills(item)){
-   if(fixed.skill.activation!=ExSkillActivation.automatic)throw StateError('EX manual skill not connected');
+   if(fixed.skill.activation==ExSkillActivation.manual){
+    if(!enableManualPlanning||fixed.skill.manualSpec==null)throw StateError('EX manual skill not connected');
+    continue;
+   }
    for(final effect in fixed.skill.effects){
     final rule=master.effectRules[effect.ruleId]!;
     final normal=rule.normalEffect;
@@ -69,6 +73,21 @@ class ExEquipmentTransactionPolicy {
      throw StateError('EX fixed effect not connected');
     }
    }
+  }
+ }
+ /// Selection is validated against the registered, equipped instance, not caller-provided data.
+ void requireManualSelection(AbyssInventory inventory,ExManualSkillSlot selection){
+  if(!enableManualPlanning)throw StateError('EX manual planning unavailable');
+  final item=inventory.equipment[selection.instanceId];
+  if(item==null||!inventory.equipped.containsValue(item.id))throw StateError('EX manual skill owner not equipped');
+  requireEquippable(inventory,item);
+  if(!master.resolveFixedSkills(item).any((f)=>f.skill.id==selection.skillId&&f.skill.activation==ExSkillActivation.manual&&f.skill.manualSpec!=null))throw StateError('EX manual skill unavailable');
+ }
+ /// Until the executor is connected, planning loadouts cannot enter a battle.
+ void requireBattleReady(AbyssInventory inventory){
+  for(final id in inventory.equipped.values){
+   final item=inventory.equipment[id]!;
+   if(item.rarity==EquipmentRarity.ex&&master.resolveFixedSkills(item).any((f)=>f.skill.activation==ExSkillActivation.manual))throw StateError('EX manual execution not connected');
   }
  }
  EquipmentEffectSnapshot snapshot(AbyssInventory inventory){
@@ -84,6 +103,7 @@ class ExEquipmentTransactionPolicy {
    if(item.rarity!=EquipmentRarity.ex)continue;
    requireEquippable(inventory,item);
    for(final fixed in master.resolveFixedSkills(item)){
+    if(fixed.skill.activation==ExSkillActivation.manual)continue;
     for(final effect in fixed.skill.effects){
      final rule=master.effectRules[effect.ruleId]!,normal=master.effectRules[effect.ruleId]!.normalEffect!;
      final value=effect.valuesByLevel[fixed.level]!;

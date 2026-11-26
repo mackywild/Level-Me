@@ -41,6 +41,7 @@ class AppController extends ChangeNotifier {
   if(state.inventory.equipmentSkillSeed!=null&&_equipmentSkillMaster==null)throw StateError('Equipment skill master unavailable');
   _validateEquipmentSkillInventory(state.inventory);
   final battle=state.world.battle;
+  if(battle!=null)_exEquipmentPolicy?.requireBattleReady(state.inventory);
   if(battle!=null&&state.inventory.equipped.values.any(state.inventory.exSkillLayouts.containsKey)&&(battle.executionVersion??0)<4)throw const FormatException('EX battle snapshot missing');
   if((battle?.executionVersion??0)>=4){
    final expected=_battleEquipmentEffects(state);
@@ -524,6 +525,7 @@ class AppController extends ChangeNotifier {
  Future<void> startWorldBattle(String id)=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  _exEquipmentPolicy?.requireBattleReady(working.inventory);
   _skillCatalog.validateProgress(working.world,working.skills);
   worldEngine.start(working.world,_baseWorldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills),equipmentEffects:_battleEquipmentEffects(working));
   await _store.save(working);
@@ -548,6 +550,22 @@ class AppController extends ChangeNotifier {
   final now=_nowMs;
   worldEngine.act(working.world,command,battleId,turn,now);
   worldEngine.refresh(working.world,worldStats,now,naturalRecovery:_naturalRecoveryFor(working));
+  await _store.save(working);
+  _state=working;
+  notifyListeners();
+ },keepPublishedState:true);
+ /// Planning only. The ordinary active/passive skill loadout remains independent.
+ Future<void> setExManualSkillSlot(int slot,{String? instanceId,String? skillId,required int expectedGeneration})=>_transaction(() async {
+  if(!_ready||_state.world.battle!=null)throw StateError('EX manual slot change unavailable');
+  if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  final ex=_exEquipmentPolicy;
+  if(ex==null||!ex.enableManualPlanning)throw StateError('EX manual planning unavailable');
+  if((instanceId==null)!=(skillId==null))throw ArgumentError('Incomplete EX manual selection');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final selection=instanceId==null?null:ExManualSkillSlot(instanceId:instanceId,skillId:skillId!);
+  if(selection!=null)ex.requireManualSelection(working.inventory,selection);
+  working.inventory.setExManualSlot(slot,selection);
+  _validateEquipment(working);
   await _store.save(working);
   _state=working;
   notifyListeners();

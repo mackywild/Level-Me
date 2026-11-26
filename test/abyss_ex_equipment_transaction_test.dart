@@ -172,6 +172,74 @@ void main(){
    expect(()=>p.requireEquippable(inv,item),throwsStateError);
   }
  });
+ test('専用3枠の手動登録・保存失敗・復元・交換解除と戦闘拒否',() async{
+  final dir=await Directory.systemTemp.createTemp('ex-manual-slots-');addTearDown(()=>dir.delete(recursive:true));
+  final store=_Store(dir);
+  final spec=ExManualSkillSpec(physicalCost:2,lifeDays:3,hpCostBps:1000,cooldown:4,initialCooldown:1,maxUses:2,energyDiscount:true,maxHpBps:5000);
+  final skills=[for(var i=0;i<4;i++)ExFixedSkillDefinition(id:'equipment_ex_skill:manual_$i',name:'manual $i',activation:ExSkillActivation.manual,manualSpec:spec,effects:[ExFixedEffect(ruleId:rule.id,valuesByLevel:{7:1000})])];
+  final ex=ExEquipmentMaster(equipment:equipment,randomMaster:random,layouts:[ExEquipmentSkillLayout(masterId:id,slot:EquipmentSlot.hands,fixedSkills:[ExFixedEquipmentSkill(id:fixed.id,level:7),for(final skill in skills)ExFixedEquipmentSkill(id:skill.id,level:7)],randomMilestones:[1,20])],fixedSkills:[fixed,...skills],effectRules:[rule]);
+  final p=ExEquipmentTransactionPolicy(master:ex,enableAutomaticEffects:true,enableManualPlanning:true,normalMaterials:[iron],exMaterials:[special],recipes:[ExEnhancementRecipe(masterId:id,materials:plan,gold:2)],offers:const [ExAcquisitionOffer(id:offer,masterId:id,magicCrystals:5)]);
+  AppController make(LocalStore s)=>AppController(s,equipmentCatalog:equipment,exEquipmentPolicy:p,equipmentSkillSeedRandom:Random(7),clockMs:()=>now);
+  final c=make(store);addTearDown(c.dispose);await c.initialize();
+  c.state.world.magicCrystals=20;await store.save(c.state);
+  final a=await c.acquireExWorldItem(offer,0,expectedGeneration:c.restoreGeneration);
+  final b=await c.acquireExWorldItem(offer,1,expectedGeneration:c.restoreGeneration);
+  Future<void> select(int slot,String owner,String skill,{int? generation})=>c.setExManualSkillSlot(slot,instanceId:owner,skillId:skill,expectedGeneration:generation??c.restoreGeneration);
+  await expectLater(select(0,a.id,skills[0].id),throwsStateError);
+  await c.equipWorldItem(a.id,expectedGeneration:c.restoreGeneration);
+  expect(c.state.inventory.exManualSlots,isEmpty);
+  expect(p.snapshot(c.state.inventory).value(EquipmentEffect.physicalPercent),1000);
+  final primary=File('${dir.path}/${LocalStore.fileName}');
+  final before=jsonEncode(c.state.toJson()),bytes=await primary.readAsString();
+  store.failOn=store.calls+1;
+  await expectLater(select(0,a.id,skills[0].id),throwsStateError);
+  expect(jsonEncode(c.state.toJson()),before);expect(await primary.readAsString(),bytes);
+  store.failOn=null;
+  for(var i=0;i<3;i++){await select(i,a.id,skills[i].id);}
+  expect(c.state.inventory.toJson()['version'],5);
+  await expectLater(select(3,a.id,skills[3].id),throwsRangeError);
+  await expectLater(select(1,a.id,skills[0].id),throwsStateError);
+  await expectLater(select(0,a.id,fixed.id),throwsStateError);
+  await expectLater(select(0,b.id,skills[0].id),throwsStateError);
+  await expectLater(select(0,a.id,skills[0].id,generation:c.restoreGeneration+1),throwsStateError);
+  await expectLater(c.startWorldBattle('p01_main'),throwsStateError);
+  final restored=make(LocalStore(directory:dir));addTearDown(restored.dispose);await restored.initialize();
+  expect(restored.state.inventory.exManualSlots.values.map((s)=>s.skillId),skills.take(3).map((s)=>s.id));
+  await restored.setExManualSkillSlot(2,expectedGeneration:restored.restoreGeneration);
+  expect(restored.state.inventory.exManualSlots.length,2);
+  await restored.equipWorldItem(b.id,expectedGeneration:restored.restoreGeneration);
+  expect(restored.state.inventory.exManualSlots,isEmpty);
+  expect(restored.state.inventory.toJson()['version'],4);
+  await restored.setExManualSkillSlot(0,instanceId:b.id,skillId:skills[3].id,expectedGeneration:restored.restoreGeneration);
+  await restored.unequipWorldItem(EquipmentSlot.hands,expectedGeneration:restored.restoreGeneration);
+  expect(restored.state.inventory.exManualSlots,isEmpty);
+  expect(restored.state.inventory.toJson()['version'],3);
+  await restored.startWorldBattle('p01_main');
+  await expectLater(restored.setExManualSkillSlot(0,expectedGeneration:restored.restoreGeneration),throwsStateError);
+ });
+ test('任意定義の寿命消費許可・防御的境界、版5の不正枠を拒否',(){
+  expect(ExManualSkillSpec(lifeDays:10,cooldown:0).lifeDays,10);
+  expect(()=>ExManualSkillSpec(hpCostBps:10000,cooldown:1),throwsArgumentError);
+  expect(()=>ExManualSkillSpec(lifeDays:-1,cooldown:1),throwsArgumentError);
+  expect(()=>ExManualSkillSpec(cooldown:-1),throwsArgumentError);
+  expect(()=>ExManualSkillSpec(cooldown:1,maxUses:0),throwsArgumentError);
+  expect(()=>ExManualSkillSpec(cooldown:1,maxHpBps:0),throwsArgumentError);
+  expect(()=>ExFixedSkillDefinition(id:fixed.id,name:'bad',activation:ExSkillActivation.automatic,manualSpec:ExManualSkillSpec(cooldown:1),effects:fixed.effects),throwsArgumentError);
+  final inv=AbyssInventory();inv.activateEquipmentSkills(7);final item=master.acquire(inv,id);
+  inv.equip(item.id,allowRegisteredEx:true);
+  inv.setExManualSlot(0,ExManualSkillSlot(instanceId:item.id,skillId:'equipment_ex_skill:manual_test'));
+  Map<String,dynamic> raw()=>jsonDecode(jsonEncode(inv.toJson())) as Map<String,dynamic>;
+  expect(raw()['version'],5);
+  for(final mutate in <void Function(Map<String,dynamic>)>[
+   (j)=>j['version']=4,
+   (j)=>j.remove('exManualSlots'),
+   (j)=>j['exManualSlots']['1']=j['exManualSlots']['0'],
+   (j)=>j['exManualSlots']['3']=j['exManualSlots']['0'],
+   (j)=>j['exManualSlots']['0']['instanceId']='eq_999',
+  ]){final j=raw();mutate(j);expect(()=>AbyssInventory.fromJson(j),throwsFormatException);}
+  final restored=AbyssInventory.fromJson(raw());
+  expect(()=>policy(automatic:true).validateInventory(restored,equipment),throwsStateError);
+ });
  test('通常/EX素材種別不一致を登録時拒否',(){
   expect(()=>policy(normal:[special],ex:[iron]),throwsFormatException);
   expect(()=>policy(normal:[iron],ex:[iron,special]),throwsFormatException);

@@ -52,7 +52,30 @@ class ExSkillHistoryLayout {
  }
 }
 
+/// A manually selected equipment skill is bound to its owning instance, not just its master.
+class ExManualSkillSlot {
+ const ExManualSkillSlot({required this.instanceId,required this.skillId});
+ final String instanceId,skillId;
+ Map<String,dynamic> toJson()=>{'instanceId':instanceId,'skillId':skillId};
+}
+
 class AbyssInventory {
+ static const exManualSlotCount=3;
+ final _exManualSlots=<int,ExManualSkillSlot>{};
+ Map<int,ExManualSkillSlot> get exManualSlots=>Map.unmodifiable(_exManualSlots);
+ void setExManualSlot(int slot,ExManualSkillSlot? selection){
+  if(slot<0||slot>=exManualSlotCount)throw RangeError.range(slot,0,exManualSlotCount-1);
+  if(selection==null){_exManualSlots.remove(slot);return;}
+  if(!_exLayouts.containsKey(selection.instanceId)||!_equipped.containsValue(selection.instanceId)||
+     !selection.skillId.startsWith('equipment_ex_skill:')||selection.skillId.length<=19||selection.skillId.trim()!=selection.skillId||
+     _exManualSlots.entries.any((e)=>e.key!=slot&&e.value.skillId==selection.skillId)){
+   throw StateError('Invalid EX manual slot');
+  }
+  _exManualSlots[slot]=selection;
+ }
+ void _clearManualSlots(String? id){
+  if(id!=null)_exManualSlots.removeWhere((_,selection)=>selection.instanceId==id);
+ }
  AbyssInventory();
  final Map<String,int> _stacks={};
  final Map<String,EquipmentInstance> _equipment={};
@@ -126,9 +149,11 @@ class AbyssInventory {
   final item=_equipment[id];
   if(item==null)throw StateError('Equipment not owned');
   if(item.rarity==EquipmentRarity.ex&&(!allowRegisteredEx||!_exLayouts.containsKey(id)))throw StateError('EX fixed effects not connected');
+  final previous=_equipped[item.slot];
+  if(previous!=id)_clearManualSlots(previous);
   _equipped[item.slot]=id;
  }
- void unequip(EquipmentSlot slot){_equipped.remove(slot);}
+ void unequip(EquipmentSlot slot){_clearManualSlots(_equipped.remove(slot));}
  /// 保護状態を個体単位で更新し、他の属性は保持する。
  void setFavorite(String id,bool favorite){
   final item=_equipment[id];
@@ -150,6 +175,7 @@ class AbyssInventory {
   _enhancementCosts.remove(id);
   _skillHistories.remove(id);
   _exLayouts.remove(id);
+  _clearManualSlots(id);
   return item;
  }
 
@@ -233,7 +259,7 @@ class AbyssInventory {
   _discovered.add(masterId);
   return item;
  }
- Map<String,dynamic> toJson()=>{'version':_equipped.values.any(_exLayouts.containsKey)?4:_exLayouts.isNotEmpty?3:_skillSeed==null?1:2,if(_exLayouts.isNotEmpty)'exSkillLayouts':{for(final e in _exLayouts.entries)e.key:e.value.toJson()},if(_skillSeed!=null)'equipmentSkillSeed':_skillSeed,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort(),if(_skillSeed!=null||_skillHistories.isNotEmpty)'equipmentSkills':{'version':1,'items':{for(final e in _skillHistories.entries)e.key:e.value.toJson()}},if(_enhancementCosts.isNotEmpty)'enhancementCosts':_encodeEnhancementCosts()};
+ Map<String,dynamic> toJson()=>{'version':_exManualSlots.isNotEmpty?5:_equipped.values.any(_exLayouts.containsKey)?4:_exLayouts.isNotEmpty?3:_skillSeed==null?1:2,if(_exManualSlots.isNotEmpty)'exManualSlots':{for(final e in _exManualSlots.entries)e.key.toString():e.value.toJson()},if(_exLayouts.isNotEmpty)'exSkillLayouts':{for(final e in _exLayouts.entries)e.key:e.value.toJson()},if(_skillSeed!=null)'equipmentSkillSeed':_skillSeed,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort(),if(_skillSeed!=null||_skillHistories.isNotEmpty)'equipmentSkills':{'version':1,'items':{for(final e in _skillHistories.entries)e.key:e.value.toJson()}},if(_enhancementCosts.isNotEmpty)'enhancementCosts':_encodeEnhancementCosts()};
  Map<String,dynamic> _encodeEnhancementCosts(){
   final multi=_enhancementCosts.values.any((steps)=>steps.any((step)=>step.length>1));
   return {'version':multi?2:1,'items':{for(final e in _enhancementCosts.entries)e.key:[
@@ -242,7 +268,7 @@ class AbyssInventory {
  }
  factory AbyssInventory.fromJson(Map<String,dynamic> j){
   final version=j['version'];
-  if(version is! int||(version!=1&&version!=2&&version!=3&&version!=4))throw const FormatException('Unsupported inventory version');
+  if(version is! int||(version!=1&&version!=2&&version!=3&&version!=4&&version!=5))throw const FormatException('Unsupported inventory version');
   final inventory=AbyssInventory();
   if(version>=2){
    final seed=j['equipmentSkillSeed'];
@@ -333,10 +359,21 @@ class AbyssInventory {
   for(final entry in equipped.entries){
    final slot=EquipmentSlot.values.byName(entry.key);
    final id=entry.value as String;
-   if(inventory._equipment[id]?.slot!=slot||(inventory._exLayouts.containsKey(id)&&version!=4))throw const FormatException('Invalid equipped reference');
+   if(inventory._equipment[id]?.slot!=slot||(inventory._exLayouts.containsKey(id)&&version<4))throw const FormatException('Invalid equipped reference');
    inventory._equipped[slot]=id;
   }
-  if(version==4&&!inventory._equipped.values.any(inventory._exLayouts.containsKey))throw const FormatException('Missing equipped EX reference');
+  if(version>=4&&!inventory._equipped.values.any(inventory._exLayouts.containsKey))throw const FormatException('Missing equipped EX reference');
+  if(version==5){
+   final slots=j['exManualSlots'];
+   if(slots is! Map<String,dynamic>||slots.isEmpty||slots.length>exManualSlotCount)throw const FormatException('Invalid EX manual slots');
+   for(final e in slots.entries){
+    final slot=int.tryParse(e.key),raw=e.value;
+    if(slot==null||slot<0||slot>=exManualSlotCount||slot.toString()!=e.key||raw is! Map<String,dynamic>||raw.length!=2||raw['instanceId'] is! String||raw['skillId'] is! String)throw const FormatException('Invalid EX manual slot fields');
+    try{
+     inventory.setExManualSlot(slot,ExManualSkillSlot(instanceId:raw['instanceId'] as String,skillId:raw['skillId'] as String));
+    }on StateError{throw const FormatException('Invalid EX manual slot reference');}
+   }
+  }else if(j.containsKey('exManualSlots')){throw const FormatException('Unexpected EX manual slots');}
   return inventory;
  }
 }

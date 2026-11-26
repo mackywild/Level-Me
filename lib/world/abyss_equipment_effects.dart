@@ -3,7 +3,7 @@ import 'abyss_equipment_skill_policy.dart';
 import 'abyss_equipment_skill_pool.dart';
 
 /// 効果の識別子。数値曲線・上限は本番承認後に注入する。
-enum EquipmentEffect { physicalPercent, magicPercent, defensePercent, damageReduction, extraAttackChance, energyDiscount, cooldownReduction }
+enum EquipmentEffect { physicalPercent, magicPercent, defensePercent, damageReduction, extraAttackChance, energyDiscount, cooldownReduction, criticalChance, penetration, hpPercent, evasionChance, resistance, naturalRecovery, rewardPercent }
 
 /// 自動効果のみ。単位は0.01%（10000=100%）。
 class EquipmentEffectRule {
@@ -38,7 +38,7 @@ class EquipmentEffectPolicy {
   for(final entry in _caps.entries){
    final bounded=switch(entry.key){
     EquipmentEffect.damageReduction||EquipmentEffect.energyDiscount||EquipmentEffect.cooldownReduction=>9999,
-    EquipmentEffect.extraAttackChance=>10000,
+    EquipmentEffect.extraAttackChance||EquipmentEffect.criticalChance||EquipmentEffect.evasionChance||EquipmentEffect.penetration||EquipmentEffect.resistance=>10000,
     _=>1000000,
    };
    if(entry.value<0||entry.value>bounded)throw ArgumentError('Unsafe equipment effect cap');

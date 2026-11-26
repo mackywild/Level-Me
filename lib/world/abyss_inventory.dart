@@ -1,3 +1,5 @@
+import 'abyss_equipment_skill_policy.dart';
+
 /// Inventory foundation. Master IDs are opaque until the catalog is introduced.
 enum EquipmentSlot { hands, head, body, arms, legs, ring, necklace, relic }
 enum EquipmentRarity { n, r, sr, ssr, ur, lr, gr, ex }
@@ -13,12 +15,65 @@ class EquipmentInstance {
  factory EquipmentInstance.fromJson(Map<String,dynamic> j)=>EquipmentInstance(id:j['id'] as String,masterId:j['masterId'] as String,slot:EquipmentSlot.values.byName(j['slot'] as String),rarity:EquipmentRarity.values.byName(j['rarity'] as String),enhancement:j['enhancement'] as int,favorite:j['favorite'] as bool);
 }
 
+/// 版1のランダム付与確定値。個体IDは所属履歴のキーで固定する。
+class StoredEquipmentSkill {
+ const StoredEquipmentSkill({required this.milestone,required this.skillId,required this.level,this.ruleVersion=1});
+ final int milestone,level,ruleVersion;
+ final String skillId;
+ Map<String,dynamic> toJson()=>{'milestone':milestone,'skillId':skillId,'level':level,'ruleVersion':ruleVersion};
+}
+
+/// 導入時の強化値より前は旧枠として永久に抽選しない。
+class EquipmentSkillHistory {
+ EquipmentSkillHistory({required this.startEnhancement,required Iterable<StoredEquipmentSkill> grants}):grants=List.unmodifiable(grants);
+ final int startEnhancement;
+ final List<StoredEquipmentSkill> grants;
+ Map<String,dynamic> toJson()=>{'startEnhancement':startEnhancement,'grants':grants.map((g)=>g.toJson()).toList()};
+}
+
 class AbyssInventory {
  AbyssInventory();
  final Map<String,int> _stacks={};
  final Map<String,EquipmentInstance> _equipment={};
  final Set<String> _discovered={};
  final Map<EquipmentSlot,String> _equipped={};
+ final Map<String,EquipmentSkillHistory> _skillHistories={};
+ Map<String,EquipmentSkillHistory> get equipmentSkillHistories=>Map.unmodifiable(_skillHistories);
+
+ /// 現在値から将来のみ記録を開始。再初期化・EX仮設定は禁止。
+ void beginEquipmentSkillHistory(String id,int expectedLevel){
+  final item=_equipment[id];
+  if(item==null||item.enhancement!=expectedLevel||_skillHistories.containsKey(id))throw StateError('Invalid skill history initialization');
+  if(item.rarity==EquipmentRarity.ex)throw UnsupportedError('EX skill history layout not connected');
+  _skillHistories[id]=EquipmentSkillHistory(startEnhancement:expectedLevel,grants:const []);
+ }
+
+ static void _validateSkillHistory(EquipmentInstance item,EquipmentSkillHistory history){
+  if(item.rarity==EquipmentRarity.ex||history.startEnhancement<0||history.startEnhancement>item.enhancement)throw const FormatException('Invalid equipment skill history start');
+  final expected=EquipmentSkillPolicy.reachedMilestones(item.rarity,item.enhancement).where((m)=>m>history.startEnhancement).toList();
+  if(expected.length!=history.grants.length)throw const FormatException('Missing or extra equipment skill grants');
+  for(var i=0;i<expected.length;i++){
+   final grant=history.grants[i];
+   if(grant.milestone!=expected[i]||grant.ruleVersion!=1||!EquipmentSkillPolicy.validSkillLevel(grant.level)||
+      !grant.skillId.startsWith('equipment_skill:')||grant.skillId.length<=16||grant.skillId.trim()!=grant.skillId){
+    throw const FormatException('Invalid equipment skill grant');
+   }
+  }
+ }
+
+ /// 強化後の確定履歴を先に検証し、素材消費前に失敗させる。
+ EquipmentSkillHistory? _nextSkillHistory(EquipmentInstance item,StoredEquipmentSkill? grant){
+  final history=_skillHistories[item.id];
+  if(history==null){
+   if(grant!=null)throw StateError('Skill history not initialized');
+   return null;
+  }
+  final next=EquipmentSkillHistory(startEnhancement:history.startEnhancement,grants:[...history.grants,?grant]);
+  final future=EquipmentInstance(id:item.id,masterId:item.masterId,slot:item.slot,rarity:item.rarity,enhancement:item.enhancement+1,favorite:item.favorite);
+  _validateSkillHistory(future,next);
+  return next;
+ }
+
  // 版1: 実消費履歴を強化段階順に保存。旧履歴欠落は推測しない。
  final Map<String,List<({String materialId,int quantity})>> _enhancementCosts={};
  bool hasCompleteEnhancementHistory(EquipmentInstance item)=>
@@ -57,6 +112,7 @@ class AbyssInventory {
   final item=requireDismantleable(id,expectedLevel);
   _equipment.remove(id);
   _enhancementCosts.remove(id);
+  _skillHistories.remove(id);
   return item;
  }
 
@@ -66,7 +122,7 @@ class AbyssInventory {
   if(item==null)throw StateError('Equipment not owned');
   if(item.enhancement!=expectedLevel)throw StateError('Stale enhancement request');
   if(item.enhancement>=20)throw StateError('Enhancement limit reached');
-  if(_enhancementCosts.containsKey(id))throw StateError('Recorded enhancement history requires paid enhancement');
+  if(_enhancementCosts.containsKey(id)||_skillHistories.containsKey(id))throw StateError('Recorded enhancement history requires paid enhancement');
   return _advanceEnhancement(item);
  }
  EquipmentInstance _advanceEnhancement(EquipmentInstance item){
@@ -76,15 +132,17 @@ class AbyssInventory {
  }
 
  /// 実消費と強化を同時に記録。旧履歴欠落個体は引き続き還元保護。
- EquipmentInstance enhanceWithMaterial(String id,int expectedLevel,String materialId,int quantity){
+ EquipmentInstance enhanceWithMaterial(String id,int expectedLevel,String materialId,int quantity,{StoredEquipmentSkill? skillGrant}){
   final item=_equipment[id];
   if(item==null||item.enhancement!=expectedLevel||expectedLevel<0||expectedLevel>=20)throw StateError('Invalid enhancement request');
   if(!materialId.startsWith('item:')||materialId.length<=5||quantity<=0||quantity>1000000)throw ArgumentError('Invalid enhancement cost');
   if(!hasCompleteEnhancementHistory(item))throw StateError('Enhancement history missing');
+  final nextSkills=_nextSkillHistory(item,skillGrant);
   final history=[...?_enhancementCosts[id],(materialId:materialId,quantity:quantity)];
   removeStack(materialId,quantity);
   final next=_advanceEnhancement(item);
   _enhancementCosts[id]=history;
+  if(nextSkills!=null)_skillHistories[id]=nextSkills;
   return next;
  }
 
@@ -118,7 +176,7 @@ class AbyssInventory {
   _discovered.add(masterId);
   return item;
  }
- Map<String,dynamic> toJson()=>{'version':1,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort(),if(_enhancementCosts.isNotEmpty)'enhancementCosts':{'version':1,'items':{for(final e in _enhancementCosts.entries)e.key:[for(final cost in e.value){'materialId':cost.materialId,'quantity':cost.quantity}]}}};
+ Map<String,dynamic> toJson()=>{'version':1,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort(),if(_skillHistories.isNotEmpty)'equipmentSkills':{'version':1,'items':{for(final e in _skillHistories.entries)e.key:e.value.toJson()}},if(_enhancementCosts.isNotEmpty)'enhancementCosts':{'version':1,'items':{for(final e in _enhancementCosts.entries)e.key:[for(final cost in e.value){'materialId':cost.materialId,'quantity':cost.quantity}]}}};
  factory AbyssInventory.fromJson(Map<String,dynamic> j){
   if(j['version']!=1)throw const FormatException('Unsupported inventory version');
   final inventory=AbyssInventory();
@@ -157,6 +215,22 @@ class AbyssInventory {
      validated.add((materialId:materialId,quantity:quantity));
     }
     inventory._enhancementCosts[entry.key]=validated;
+   }
+  }
+  if(j.containsKey('equipmentSkills')){
+   final raw=j['equipmentSkills'];
+   if(raw is! Map<String,dynamic>||raw['version']!=1||raw['items'] is! Map<String,dynamic>)throw const FormatException('Invalid equipment skills version');
+   for(final entry in (raw['items'] as Map<String,dynamic>).entries){
+    final item=inventory._equipment[entry.key],history=entry.value;
+    if(item==null||history is! Map<String,dynamic>||history['startEnhancement'] is! int||history['grants'] is! List)throw const FormatException('Invalid equipment skill history');
+    final grants=<StoredEquipmentSkill>[];
+    for(final row in history['grants'] as List){
+     if(row is! Map<String,dynamic>||row['milestone'] is! int||row['skillId'] is! String||row['level'] is! int||row['ruleVersion'] is! int)throw const FormatException('Invalid equipment skill grant fields');
+     grants.add(StoredEquipmentSkill(milestone:row['milestone'] as int,skillId:row['skillId'] as String,level:row['level'] as int,ruleVersion:row['ruleVersion'] as int));
+    }
+    final value=EquipmentSkillHistory(startEnhancement:history['startEnhancement'] as int,grants:grants);
+    _validateSkillHistory(item,value);
+    inventory._skillHistories[item.id]=value;
    }
   }
   final equipped=j.containsKey('equipped')?j['equipped'] as Map<String,dynamic>:<String,dynamic>{};

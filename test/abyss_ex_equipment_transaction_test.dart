@@ -90,6 +90,35 @@ void main(){
   expect(restored.state.inventory.stacks,{iron:22,special:42});
   expect(restored.state.inventory.toJson()['version'],2);
  });
+ test('RV-218: 復元で同一IDを再取得したEXは旧世代・世代省略の分解を拒否',() async{
+  final dir=await Directory.systemTemp.createTemp('ex-dismantle-generation-');addTearDown(()=>dir.delete(recursive:true));
+  final store=_Store(dir);final c=controller(store);addTearDown(c.dispose);await c.initialize();
+  c.state.world.magicCrystals=20;await store.save(c.state);
+  final primary=File('${dir.path}/${LocalStore.fileName}');
+  final beforeAcquisition=await primary.readAsString();
+  final oldGeneration=c.restoreGeneration;
+  final old=await c.acquireExWorldItem(offer,0,expectedGeneration:oldGeneration);
+  await File('${primary.path}.bak').writeAsString(beforeAcquisition);
+  await c.restoreBackup();
+  expect(c.restoreGeneration,isNot(oldGeneration));
+  expect(c.state.inventory.equipment,isEmpty);
+  final replacement=await c.acquireExWorldItem(offer,0,expectedGeneration:c.restoreGeneration);
+  expect(replacement.id,old.id);expect(replacement.enhancement,old.enhancement);
+  final before=jsonEncode(c.state.toJson()),bytes=await primary.readAsString();
+  final crystals=c.state.world.magicCrystals;
+  await expectLater(c.dismantleWorldItem(old.id,old.enhancement),throwsStateError);
+  await expectLater(c.dismantleWorldItem(old.id,old.enhancement,expectedGeneration:oldGeneration,expectedItem:old),throwsStateError);
+  await expectLater(c.dismantleWorldItem(old.id,old.enhancement,expectedItem:old),throwsStateError);
+  expect(jsonEncode(c.state.toJson()),before);expect(await primary.readAsString(),bytes);
+  expect(c.state.inventory.equipment.containsKey(replacement.id),true);
+  expect(c.state.world.magicCrystals,crystals);
+  final result=await c.dismantleWorldItem(replacement.id,replacement.enhancement,expectedGeneration:c.restoreGeneration,expectedItem:replacement);
+  expect(result.magicCrystals,1);
+  expect(c.state.world.magicCrystals,crystals+1);
+  expect(c.state.inventory.stacks,{iron:1});
+  expect(c.state.inventory.equipment,isEmpty);
+  expect((await store.load()).inventory.equipment,isEmpty);
+ });
  test('通常/EX素材種別不一致を登録時拒否',(){
   expect(()=>policy(normal:[special],ex:[iron]),throwsFormatException);
   expect(()=>policy(normal:[iron],ex:[iron,special]),throwsFormatException);

@@ -357,6 +357,8 @@ class AppController extends ChangeNotifier {
  Future<DismantleRecipe> dismantleWorldItem(String id,int expectedLevel,{int? expectedGeneration,EquipmentInstance? expectedItem})=>_inventoryTransaction(() async {
   if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   final current=_state.inventory.equipment[id];
+  // EX destructive requests require the generation even if the ID/level were reused.
+  if(current?.rarity==EquipmentRarity.ex&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   if(expectedItem!=null&&(current==null||current.id!=expectedItem.id||current.masterId!=expectedItem.masterId||current.slot!=expectedItem.slot||current.rarity!=expectedItem.rarity||current.enhancement!=expectedItem.enhancement))throw StateError('Stale equipment confirmation');
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);

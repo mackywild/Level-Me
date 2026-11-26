@@ -65,6 +65,7 @@ class AppController extends ChangeNotifier {
    return material!=null&&material.category=='material'&&material.rarity==recipe.rarity;
   });
   _shopCatalog.validateMaterials((offer)=>master.supply(offer.materialId)?.category=='material');
+  _shopCatalog.validateEquipment(master.equipment);
   // 現行の素材マスターに回復品を混入させない。正式統合は別PR。
   if(_consumableCatalog.items.isNotEmpty)throw const FormatException('Recovery master not enabled');
   if(_buffCatalog.items.isNotEmpty)throw const FormatException('Buff master not enabled');
@@ -273,22 +274,25 @@ class AppController extends ChangeNotifier {
   if(!_ready)return '初期化中';
   if(_inventoryBusy)return '所持品処理中';
   try {
-   _shopCatalog.validate(world:_state.world,inventory:_state.inventory,offerId:id,expectedSequence:sequence);
+   _shopCatalog.validate(world:_state.world,inventory:_state.inventory,offerId:id,expectedSequence:sequence,equipmentCatalog:equipmentCatalog);
    return null;
   } on StateError catch(error){
    return switch(error.message){
     'Shop unavailable in battle'=>'戦闘中は購入できません',
     'Insufficient shop currency'=>'通貨残高不足',
+    'Shop equipment unavailable'=>'交換装備未承認',
     'Stack overflow'=>'素材所持数の上限です',
     _=>'購入できません',
    };
   }
  }
- Future<ShopOffer> purchaseWorldMaterial(String offerId,int expectedSequence,{int? expectedGeneration})=>_inventoryTransaction(() async {
+ Future<ShopOffer> purchaseWorldMaterial(String offerId,int expectedSequence,{int? expectedGeneration})=>
+  purchaseWorldOffer(offerId,expectedSequence,expectedGeneration:expectedGeneration);
+ Future<ShopOffer> purchaseWorldOffer(String offerId,int expectedSequence,{int? expectedGeneration})=>_inventoryTransaction(() async {
   if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
-  final result=_shopCatalog.purchase(world:working.world,inventory:working.inventory,offerId:offerId,expectedSequence:expectedSequence);
+  final result=_shopCatalog.purchase(world:working.world,inventory:working.inventory,offerId:offerId,expectedSequence:expectedSequence,equipmentCatalog:equipmentCatalog);
   await _store.save(working);
   _state=working;
   return result;

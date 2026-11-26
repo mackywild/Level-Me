@@ -20,15 +20,15 @@ class _AbyssShopScreenState extends State<AbyssShopScreen>{
   try{
    final confirmed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
     title:const Text('購入を確認'),
-    content:Text('${c.summonRewardName(offer.materialId)} × ${offer.quantity}\n支払：${offer.price} ${currency(offer)}'),
+    content:Text('${c.summonRewardName(offer.rewardId)} × ${offer.quantity}${offer.isEquipment?' / 未強化・未付与':''}\n支払：${offer.price} ${currency(offer)}'),
     actions:[
      TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('キャンセル')),
      FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('購入を確定')),
     ],
    ));
    if(!mounted||confirmed!=true)return;
-   await c.purchaseWorldMaterial(offer.id,sequence,expectedGeneration:generation);
-   if(mounted)setState(()=>_message='購入完了：${c.summonRewardName(offer.materialId)} × ${offer.quantity}');
+   await c.purchaseWorldOffer(offer.id,sequence,expectedGeneration:generation);
+   if(mounted)setState(()=>_message='購入完了：${c.summonRewardName(offer.rewardId)} × ${offer.quantity}');
   }catch(_){
    if(mounted)setState(()=>_message='購入できませんでした。残高・商品を確認してください。');
   }finally{
@@ -47,8 +47,11 @@ class _AbyssShopScreenState extends State<AbyssShopScreen>{
     if(_message!=null)Text(_message!),
     if(c.shopOffers.isEmpty)const Text('販売商品は未承認です'),
     for(final offer in c.shopOffers)Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-     Text('${c.summonRewardName(offer.materialId)} × ${offer.quantity}'),
-     Text('所持数：${c.state.inventory.stacks[offer.materialId]??0}'),
+     Text('${c.summonRewardName(offer.rewardId)} × ${offer.quantity}'),
+     if(offer.isEquipment)...[
+      const Text('未強化 +0 / ランダムスキル未付与'),
+      Text('所持数：${c.state.inventory.equipment.values.where((item)=>item.masterId==offer.rewardId).length}'),
+     ]else Text('所持数：${c.state.inventory.stacks[offer.rewardId]??0}'),
      Text('価格：${offer.price} ${currency(offer)}'),
      if(c.shopUnavailable(offer.id,w.shopSequence) case final reason?)Text(reason),
      FilledButton(onPressed:_confirming||c.shopUnavailable(offer.id,w.shopSequence)!=null?null:()=>_purchase(offer),child:const Text('購入')),

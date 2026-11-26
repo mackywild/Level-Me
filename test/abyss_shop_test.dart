@@ -8,6 +8,8 @@ import 'package:level_me/services/local_store.dart';
 import 'package:level_me/services/portable_backup.dart';
 import 'package:level_me/world/abyss_master.dart';
 import 'package:level_me/world/abyss_shop.dart';
+import 'package:level_me/world/abyss_equipment.dart';
+import 'package:level_me/world/abyss_inventory.dart';
 import 'package:level_me/world/world_catalog.dart';
 import 'package:level_me/world/world_engine.dart';
 
@@ -26,6 +28,83 @@ void main(){
  const gold=ShopOffer(id:'shop:iron',materialId:'item:iron',currency:ShopCurrency.gold,price:10,quantity:2);
  const crystals=ShopOffer(id:'shop:alloy',materialId:'item:alloy',currency:ShopCurrency.magicCrystals,price:3,quantity:1);
  final catalog=ShopCatalog(const [gold,crystals]);
+ test('装備交換は魔晶石で新規+0個体を取得し、素材購入と番号を共有',(){
+  const offer=ShopOffer.equipment(id:'shop:ring',equipmentId:'equipment:ring',price:3);
+  final equipment=EquipmentCatalog(const [EquipmentDefinition(id:'equipment:ring',name:'test',slot:EquipmentSlot.ring,rarity:EquipmentRarity.r)]);
+  final shop=ShopCatalog(const [offer,gold]);
+  shop.validateEquipment(equipment);
+  final s=AppStateData.initial();
+  s.world.magicCrystals=6;
+  s.world.gold=10;
+  void buy(String id,int seq)=>shop.purchase(world:s.world,inventory:s.inventory,offerId:id,expectedSequence:seq,equipmentCatalog:equipment);
+  buy(offer.id,0);buy(gold.id,1);buy(offer.id,2);
+  expect(s.world.magicCrystals,0);
+  expect(s.world.gold,0);
+  expect(s.world.shopSequence,3);
+  expect(s.inventory.stacks,{'item:iron':2});
+  expect(s.inventory.equipment.keys,['eq_1','eq_2']);
+  for(final item in s.inventory.equipment.values){
+   expect(item.enhancement,0);expect(item.favorite,false);
+   expect(item.slot,EquipmentSlot.ring);expect(item.rarity,EquipmentRarity.r);
+   expect(s.inventory.enhancementRefund(item),isEmpty);
+  }
+  expect(s.inventory.equipped,isEmpty);
+  final before=jsonEncode(s.toJson());
+  expect(()=>buy(offer.id,2),throwsStateError);
+  expect(()=>buy(offer.id,3),throwsStateError);
+  expect(jsonEncode(s.toJson()),before);
+ });
+ test('装備参照欠落・EX・装備数量・通貨不正を拒否',(){
+  const offer=ShopOffer.equipment(id:'shop:ring',equipmentId:'equipment:ring',price:3);
+  final shop=ShopCatalog(const [offer]);
+  final empty=EquipmentCatalog(const []);
+  final ex=EquipmentCatalog(const [EquipmentDefinition(id:'equipment:ring',name:'test',slot:EquipmentSlot.ring,rarity:EquipmentRarity.ex)]);
+  final s=AppStateData.initial();s.world.magicCrystals=3;
+  for(final equipment in [empty,ex]){
+   expect(()=>shop.validateEquipment(equipment),throwsFormatException);
+   final before=jsonEncode(s.toJson());
+   expect(()=>shop.purchase(world:s.world,inventory:s.inventory,offerId:offer.id,expectedSequence:0,equipmentCatalog:equipment),throwsStateError);
+   expect(jsonEncode(s.toJson()),before);
+  }
+  for(final invalid in const [
+   ShopOffer(id:'shop:ring',materialId:'equipment:ring',currency:ShopCurrency.gold,price:3,quantity:1),
+   ShopOffer(id:'shop:ring',materialId:'equipment:ring',currency:ShopCurrency.magicCrystals,price:3,quantity:2),
+  ]){expect(()=>ShopCatalog([invalid]),throwsFormatException);}
+ });
+ test('装備交換の保存失敗・再試行・再起動で個体と通貨を一括管理',() async {
+  const offer=ShopOffer.equipment(id:'shop:ring',equipmentId:'equipment:ring',price:3);
+  final shop=ShopCatalog(const [offer]);
+  final equipment=EquipmentCatalog(const [EquipmentDefinition(id:'equipment:ring',name:'test',slot:EquipmentSlot.ring,rarity:EquipmentRarity.r)]);
+  final dir=await Directory.systemTemp.createTemp('abyss-shop-equipment-');
+  addTearDown(()=>dir.delete(recursive:true));
+  final store=_DelayedStore(dir);
+  final c=AppController(store,portableBackup:PortableBackup(directory:dir),shopCatalog:shop,equipmentCatalog:equipment);
+  addTearDown(c.dispose);
+  await c.initialize();
+  c.state.world.magicCrystals=6;
+  await store.save(c.state);
+  final before=jsonEncode(c.state.toJson());
+  final primary=File('${dir.path}/${LocalStore.fileName}');
+  final bytes=await primary.readAsBytes();
+  store.gate=Completer<void>();store.entered=Completer<void>();store.fail=true;
+  final failed=expectLater(c.purchaseWorldOffer(offer.id,0),throwsStateError);
+  await store.entered!.future;
+  expect(jsonEncode(c.state.toJson()),before);
+  await expectLater(c.purchaseWorldOffer(offer.id,0),throwsStateError);
+  store.gate!.complete();await failed;
+  expect(jsonEncode(c.state.toJson()),before);expect(await primary.readAsBytes(),bytes);
+  store.gate=null;store.fail=false;
+  await c.purchaseWorldOffer(offer.id,0);
+  final saved=await store.load();
+  expect(saved.inventory.equipment.values.single.enhancement,0);
+  expect(saved.world.magicCrystals,3);expect(saved.world.shopSequence,1);
+  final restarted=AppController(LocalStore(directory:dir),portableBackup:PortableBackup(directory:dir),shopCatalog:shop,equipmentCatalog:equipment);
+  addTearDown(restarted.dispose);await restarted.initialize();
+  await expectLater(restarted.purchaseWorldOffer(offer.id,0),throwsStateError);
+  await restarted.purchaseWorldOffer(offer.id,1);
+  expect(restarted.state.inventory.equipment.keys,['eq_1','eq_2']);
+  expect(restarted.state.world.magicCrystals,0);
+ });
  test('旧worldセーブは魔晶石・取引番号0で読み込み、不正値を拒否する',(){
   final old=WorldState(gold:50,summonTickets:3,supplyTickets:2).toJson()..remove('magicCrystals')..remove('shopSequence');
   final loaded=WorldState.fromJson(old);

@@ -122,10 +122,10 @@ class AbyssInventory {
   return Map.unmodifiable({for(final entry in totals.entries)if(entry.value>=10)entry.key:entry.value~/10});
  }
  Map<EquipmentSlot,String> get equipped=>Map.unmodifiable(_equipped);
- void equip(String id){
+ void equip(String id,{bool allowRegisteredEx=false}){
   final item=_equipment[id];
   if(item==null)throw StateError('Equipment not owned');
-  if(_exLayouts.containsKey(id))throw StateError('EX fixed effects not connected');
+  if(item.rarity==EquipmentRarity.ex&&(!allowRegisteredEx||!_exLayouts.containsKey(id)))throw StateError('EX fixed effects not connected');
   _equipped[item.slot]=id;
  }
  void unequip(EquipmentSlot slot){_equipped.remove(slot);}
@@ -233,7 +233,7 @@ class AbyssInventory {
   _discovered.add(masterId);
   return item;
  }
- Map<String,dynamic> toJson()=>{'version':_exLayouts.isNotEmpty?3:_skillSeed==null?1:2,if(_exLayouts.isNotEmpty)'exSkillLayouts':{for(final e in _exLayouts.entries)e.key:e.value.toJson()},if(_skillSeed!=null)'equipmentSkillSeed':_skillSeed,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort(),if(_skillSeed!=null||_skillHistories.isNotEmpty)'equipmentSkills':{'version':1,'items':{for(final e in _skillHistories.entries)e.key:e.value.toJson()}},if(_enhancementCosts.isNotEmpty)'enhancementCosts':_encodeEnhancementCosts()};
+ Map<String,dynamic> toJson()=>{'version':_equipped.values.any(_exLayouts.containsKey)?4:_exLayouts.isNotEmpty?3:_skillSeed==null?1:2,if(_exLayouts.isNotEmpty)'exSkillLayouts':{for(final e in _exLayouts.entries)e.key:e.value.toJson()},if(_skillSeed!=null)'equipmentSkillSeed':_skillSeed,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort(),if(_skillSeed!=null||_skillHistories.isNotEmpty)'equipmentSkills':{'version':1,'items':{for(final e in _skillHistories.entries)e.key:e.value.toJson()}},if(_enhancementCosts.isNotEmpty)'enhancementCosts':_encodeEnhancementCosts()};
  Map<String,dynamic> _encodeEnhancementCosts(){
   final multi=_enhancementCosts.values.any((steps)=>steps.any((step)=>step.length>1));
   return {'version':multi?2:1,'items':{for(final e in _enhancementCosts.entries)e.key:[
@@ -242,9 +242,9 @@ class AbyssInventory {
  }
  factory AbyssInventory.fromJson(Map<String,dynamic> j){
   final version=j['version'];
-  if(version is! int||(version!=1&&version!=2&&version!=3))throw const FormatException('Unsupported inventory version');
+  if(version is! int||(version!=1&&version!=2&&version!=3&&version!=4))throw const FormatException('Unsupported inventory version');
   final inventory=AbyssInventory();
-  if(version==2||version==3){
+  if(version>=2){
    final seed=j['equipmentSkillSeed'];
    if(seed is! int||seed<0||seed>0x7fffffff||!j.containsKey('equipmentSkills'))throw const FormatException('Invalid equipment skill activation');
    inventory._skillSeed=seed;
@@ -299,7 +299,7 @@ class AbyssInventory {
     inventory._enhancementCosts[entry.key]=validated;
    }
   }
-  if(version==3){
+  if(version>=3){
    final layouts=j['exSkillLayouts'];
    if(layouts is! Map<String,dynamic>||layouts.isEmpty)throw const FormatException('Missing EX layout references');
    for(final entry in layouts.entries){
@@ -333,9 +333,10 @@ class AbyssInventory {
   for(final entry in equipped.entries){
    final slot=EquipmentSlot.values.byName(entry.key);
    final id=entry.value as String;
-   if(inventory._equipment[id]?.slot!=slot||inventory._exLayouts.containsKey(id))throw const FormatException('Invalid equipped reference');
+   if(inventory._equipment[id]?.slot!=slot||(inventory._exLayouts.containsKey(id)&&version!=4))throw const FormatException('Invalid equipped reference');
    inventory._equipped[slot]=id;
   }
+  if(version==4&&!inventory._equipped.values.any(inventory._exLayouts.containsKey))throw const FormatException('Missing equipped EX reference');
   return inventory;
  }
 }

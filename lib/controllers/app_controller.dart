@@ -41,6 +41,7 @@ class AppController extends ChangeNotifier {
   if(state.inventory.equipmentSkillSeed!=null&&_equipmentSkillMaster==null)throw StateError('Equipment skill master unavailable');
   _validateEquipmentSkillInventory(state.inventory);
   final battle=state.world.battle;
+  if(battle!=null&&state.inventory.equipped.values.any(state.inventory.exSkillLayouts.containsKey)&&(battle.executionVersion??0)<4)throw const FormatException('EX battle snapshot missing');
   if((battle?.executionVersion??0)>=4){
    final expected=_battleEquipmentEffects(state);
    if(expected==null||!battle!.equipmentEffects!.sameAs(expected))throw const FormatException('Battle equipment snapshot mismatch');
@@ -441,7 +442,10 @@ class AppController extends ChangeNotifier {
   if(_state.inventory.equipment[id]?.rarity==EquipmentRarity.ex&&ex!=null){
    if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
    final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+   final previousStats=_worldStatsFor(working);
+   final previousRecovery=_naturalRecoveryFor(working);
    final result=ex.enhance(working.world,working.inventory,equipmentCatalog,id,expectedLevel);
+   _settleEquipmentRecoveryChange(working,previousStats,previousRecovery);
    _validateEquipment(working);
    await _store.save(working);
    _state=working;
@@ -484,6 +488,8 @@ class AppController extends ChangeNotifier {
  EquipmentEffectSnapshot? _equipmentEffectSnapshot(AppStateData state){
   final master=_equipmentSkillMaster;
   if(master==null||state.inventory.equipmentSkillSeed==null)return null;
+  final ex=_exEquipmentPolicy;
+  if(ex!=null)return ex.snapshot(state.inventory);
   return master.effectPolicy.snapshot(state.inventory,[
    for(final entry in state.inventory.equipmentSkillHistories.entries)
     if(state.inventory.equipment[entry.key]!.rarity!=EquipmentRarity.ex)
@@ -546,25 +552,34 @@ class AppController extends ChangeNotifier {
   _state=working;
   notifyListeners();
  },keepPublishedState:true);
- Future<void> equipWorldItem(String id)=>_transaction(() async {
+ Future<void> equipWorldItem(String id,{int? expectedGeneration})=>_transaction(() async {
   if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final item=working.inventory.equipment[id];
   if(item==null)throw StateError('Equipment not owned');
   equipmentCatalog.require(item);
+  final replacedId=working.inventory.equipped[item.slot];
+  if((expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)||(working.inventory.equipment[replacedId]?.rarity==EquipmentRarity.ex&&expectedGeneration!=_restoreGeneration))throw StateError('Stale save generation');
+  final ex=_exEquipmentPolicy;
+  if(item.rarity==EquipmentRarity.ex){
+   if(expectedGeneration!=_restoreGeneration||ex==null)throw StateError('EX equipment unavailable');
+   ex.requireEquippable(working.inventory,item);
+  }
   final previousStats=_worldStatsFor(working);
   final previousRecovery=_naturalRecoveryFor(working);
-  working.inventory.equip(id);
+  working.inventory.equip(id,allowRegisteredEx:item.rarity==EquipmentRarity.ex&&ex!=null);
   _settleEquipmentRecoveryChange(working,previousStats,previousRecovery);
   await _store.save(working);
   _state=working;
   notifyListeners();
  },keepPublishedState:true);
- Future<void> unequipWorldItem(EquipmentSlot slot)=>_transaction(() async {
+ Future<void> unequipWorldItem(EquipmentSlot slot,{int? expectedGeneration})=>_transaction(() async {
   if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final previousStats=_worldStatsFor(working);
   final previousRecovery=_naturalRecoveryFor(working);
+  final equippedId=working.inventory.equipped[slot];
+  if((expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)||(working.inventory.equipment[equippedId]?.rarity==EquipmentRarity.ex&&expectedGeneration!=_restoreGeneration))throw StateError('Stale save generation');
   working.inventory.unequip(slot);
   _settleEquipmentRecoveryChange(working,previousStats,previousRecovery);
   await _store.save(working);

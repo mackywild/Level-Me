@@ -60,7 +60,8 @@ class EquipmentSkillMaster {
  ({EquipmentSkillCandidate skill,int level}) draw(EquipmentInstance item,int Function(int) nextInt,{ExEquipmentSkillLayout? exLayout}){
   if(item.rarity==EquipmentRarity.ex){
    if(exLayout==null)throw StateError('EX layout required');
-   exLayout.unlockedFixedSkills(item);
+   final fixedIds=exLayout.unlockedFixedSkills(item).map((skill)=>skill.id).toSet();
+   if(entries.any((entry)=>fixedIds.contains(entry.id)))throw StateError('EX fixed skill conflicts with random candidate');
   }else if(exLayout!=null){
    throw StateError('EX layout on non-EX equipment');
   }

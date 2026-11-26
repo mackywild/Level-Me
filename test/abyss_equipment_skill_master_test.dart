@@ -39,6 +39,17 @@ void main(){
   expect(()=>EquipmentSkillMaster([entry,entry]),throwsArgumentError);
   expect(()=>EquipmentSkillMaster([entry],additionalCaps:{EquipmentEffect.physicalPercent:100}),throwsArgumentError);
  });
+ test('RV-180: EX固定IDと全ランダム候補の衝突を乱数消費前に拒否',(){
+  const ex=EquipmentInstance(id:'eq_1',masterId:'test',slot:EquipmentSlot.hands,rarity:EquipmentRarity.ex);
+  const other=EquipmentSkillMasterEntry(id:'equipment_skill:other',rarity:EquipmentSkillRarity.rare,pool:EquipmentSkillPool.defense,effect:EquipmentEffect.defensePercent,perLevel:100);
+  final catalog=EquipmentSkillMaster([entry,other]);
+  for(final id in [entry.id,other.id]){
+   final layout=ExEquipmentSkillLayout(masterId:'test',slot:EquipmentSlot.hands,fixedSkills:[ExFixedEquipmentSkill(id:id,level:1)],randomMilestones:[5]);
+   var calls=0;
+   expect(()=>catalog.draw(ex,(bound){calls++;return 0;},exLayout:layout),throwsStateError);
+   expect(calls,0);
+  }
+ });
  test('EXはGRと同じ全帯境界、帯内均等乱数と独立抽選',(){
   const ex=EquipmentInstance(id:'eq_1',masterId:'test',slot:EquipmentSlot.hands,rarity:EquipmentRarity.ex);
   const gr=EquipmentInstance(id:'eq_2',masterId:'test',slot:EquipmentSlot.hands,rarity:EquipmentRarity.gr);

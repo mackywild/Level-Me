@@ -36,7 +36,17 @@ class ExBattleAttack {
   if(list.length>3||list.map((a)=>a.slot).toSet().length!=list.length||list.map((a)=>a.skillId).toSet().length!=list.length||list.any((a)=>a.lastCast>=turn||(a.uses>0&&BigInt.from(a.lastCast)<BigInt.from(a.initialCooldown+1)+BigInt.from(a.uses-1)*BigInt.from(a.cooldown+1)))){
    throw const FormatException('Invalid EX attack history');
   }
-  final total=list.fold(BigInt.zero,(n,a)=>n+BigInt.from(a.uses));
+  // Only one action can succeed in a turn. Unused slots share lastCast=0.
+  // Sort a separate list so the original slot ordering is preserved.
+  final used=list.where((a)=>a.uses>0).toList()..sort((a,b)=>a.lastCast.compareTo(b.lastCast));
+  var previous=0;
+  var total=BigInt.zero;
+  for(final a in used){
+   if(a.lastCast==previous)throw const FormatException('Duplicate EX cast turn');
+   total+=BigInt.from(a.uses);
+   if(total>BigInt.from(a.lastCast))throw const FormatException('Invalid cumulative EX usage count');
+   previous=a.lastCast;
+  }
   if(total>BigInt.from(turn-1))throw const FormatException('Invalid EX usage count');
   return list;
  }

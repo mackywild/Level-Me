@@ -246,7 +246,8 @@ void main(){
   final store=_Store(dir);
   final attackRule=ExEffectRule.special(id:'equipment_ex_effect:manual_attack',stacking:ExEffectStacking.additive,cap:1000000);
   final skill=ExFixedSkillDefinition(id:'equipment_ex_skill:attack',name:'attack',activation:ExSkillActivation.manual,manualSpec:ExManualSkillSpec(physicalCost:1,magicCost:1,lifeDays:3,hpCostBps:100,cooldown:2,initialCooldown:1,maxUses:1,attackAttribute:ExAttackAttribute.magic),effects:[ExFixedEffect(ruleId:attackRule.id,valuesByLevel:{7:1})]);
-  final ex=ExEquipmentMaster(equipment:equipment,randomMaster:random,layouts:[ExEquipmentSkillLayout(masterId:id,slot:EquipmentSlot.hands,fixedSkills:[ExFixedEquipmentSkill(id:skill.id,level:7)],randomMilestones:[1,20])],fixedSkills:[skill],effectRules:[attackRule]);
+  final second=ExFixedSkillDefinition(id:'equipment_ex_skill:second_attack',name:'second attack',activation:ExSkillActivation.manual,manualSpec:skill.manualSpec,effects:skill.effects);
+  final ex=ExEquipmentMaster(equipment:equipment,randomMaster:random,layouts:[ExEquipmentSkillLayout(masterId:id,slot:EquipmentSlot.hands,fixedSkills:[ExFixedEquipmentSkill(id:skill.id,level:7),ExFixedEquipmentSkill(id:second.id,level:7)],randomMilestones:[1,20])],fixedSkills:[skill,second],effectRules:[attackRule]);
   final p=ExEquipmentTransactionPolicy(master:ex,enableAutomaticEffects:true,enableManualPlanning:true,enableManualExecution:true,normalMaterials:[iron],exMaterials:[special],recipes:[ExEnhancementRecipe(masterId:id,materials:plan,gold:2)],offers:const [ExAcquisitionOffer(id:offer,masterId:id,magicCrystals:5)]);
   AppController make(LocalStore s)=>AppController(s,equipmentCatalog:equipment,exEquipmentPolicy:p,equipmentSkillSeedRandom:Random(7),clockMs:()=>now);
   final c=make(store);addTearDown(c.dispose);await c.initialize();
@@ -254,13 +255,14 @@ void main(){
   final item=await c.acquireExWorldItem(offer,0,expectedGeneration:c.restoreGeneration);
   await c.equipWorldItem(item.id,expectedGeneration:c.restoreGeneration);
   await c.setExManualSkillSlot(0,instanceId:item.id,skillId:skill.id,expectedGeneration:c.restoreGeneration);
+  await c.setExManualSkillSlot(1,instanceId:item.id,skillId:second.id,expectedGeneration:c.restoreGeneration);
   await c.startWorldBattle('p01_main');
   final b=c.state.world.battle!;
-  expect(b.executionVersion,9);expect(b.activeSkills,isEmpty);expect(b.exAttacks.single.remaining(b.turn),1);
+  expect(b.executionVersion,9);expect(b.activeSkills,isEmpty);expect(b.exAttacks.first.remaining(b.turn),1);
   await expectLater(c.useBattleExSkill(0,b.id,b.turn,expectedGeneration:c.restoreGeneration),throwsStateError);
   await c.worldCommand(WorldCommand.guard,b.id,b.turn);
   final next=c.state.world.battle!;
-  expect(next.exAttacks.single.remaining(next.turn),0);
+  expect(next.exAttacks.first.remaining(next.turn),0);
   final before=jsonEncode(c.state.toJson()),primary=File('${dir.path}/${LocalStore.fileName}');final bytes=await primary.readAsString();
   store.failOn=store.calls+1;
   await expectLater(c.useBattleExSkill(0,next.id,next.turn,expectedGeneration:c.restoreGeneration),throwsStateError);
@@ -270,11 +272,25 @@ void main(){
   final physical=restored.state.world.physical,magic=restored.state.world.magic;
   await restored.useBattleExSkill(0,current.id,current.turn,expectedGeneration:restored.restoreGeneration);
   final after=restored.state.world.battle!;
-  expect(after.turn,current.turn+1);expect(after.exAttacks.single.uses,1);expect(after.exAttacks.single.remaining(after.turn),2);
+  expect(after.turn,current.turn+1);expect(after.exAttacks.first.uses,1);expect(after.exAttacks.first.remaining(after.turn),2);
   expect(restored.state.world.lifespan,BigInt.zero);expect(restored.state.world.physical,physical-1);expect(restored.state.world.magic,magic-1);
   await expectLater(restored.useBattleExSkill(0,current.id,current.turn,expectedGeneration:restored.restoreGeneration),throwsStateError);
   final reloaded=make(LocalStore(directory:dir));addTearDown(reloaded.dispose);await reloaded.initialize();
-  expect(reloaded.state.world.battle!.exAttacks.single.uses,1);
+  expect(reloaded.state.world.battle!.exAttacks.first.uses,1);
+  expect(reloaded.state.world.battle!.exAttacks[1].uses,0);
+  // Both individual histories are plausible, but they cannot share turn 2.
+  final original=await primary.readAsString();
+  final raw=jsonDecode(original) as Map<String,dynamic>;
+  final attacks=raw['world']['battle']['exAttacks'] as List;
+  attacks[1]['uses']=1;
+  attacks[1]['lastCast']=attacks[0]['lastCast'];
+  final backup=File('${primary.path}.bak');
+  await backup.writeAsString(jsonEncode(raw));
+  final published=jsonEncode(reloaded.state.toJson());
+  await expectLater(reloaded.restoreBackup(),throwsFormatException);
+  expect(await primary.readAsString(),original);
+  expect(jsonEncode(reloaded.state.toJson()),published);
+  expect(reloaded.state.world.battle!.exAttacks[1].uses,0);
  });
  test('通常/EX素材種別不一致を登録時拒否',(){
   expect(()=>policy(normal:[special],ex:[iron]),throwsFormatException);

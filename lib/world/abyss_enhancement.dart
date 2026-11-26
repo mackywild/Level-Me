@@ -73,8 +73,8 @@ class EnhancementPolicy {
 
  EquipmentInstance enhance({required WorldState world,required AbyssInventory inventory,required EquipmentCatalog catalog,required String id,required int expectedLevel}){
   final cost=validate(world:world,inventory:inventory,catalog:catalog,id:id,expectedLevel:expectedLevel);
-  inventory.removeStack(cost.materialId,cost.quantity);
+  final result=inventory.enhanceWithMaterial(id,expectedLevel,cost.materialId,cost.quantity);
   world.gold-=cost.gold;
-  return inventory.enhance(id,expectedLevel);
+  return result;
  }
 }

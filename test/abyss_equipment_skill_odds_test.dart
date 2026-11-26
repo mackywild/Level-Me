@@ -43,8 +43,8 @@ void main(){
    for(var level=band.minimum;level<=band.maximum;level++){actual.add(level);}
   }
   expect(actual,List<int>.generate(10,(i)=>i+1));
-  expect(EquipmentSkillLevelBand.maximum.minimum,10);
-  expect(EquipmentSkillLevelBand.maximum.maximum,10);
+  expect(EquipmentSkillLevelBand.maxLevel.minimum,10);
+  expect(EquipmentSkillLevelBand.maxLevel.maximum,10);
  });
  test('高希少度ほど上位帯の累積確率が高く、全希少度でLv10が可能',(){
   List<int>? previous;

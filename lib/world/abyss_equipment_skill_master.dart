@@ -34,6 +34,7 @@ class EquipmentSkillMaster {
    candidates.add(EquipmentSkillCandidate(id:entry.id,pool:entry.pool,rarity:entry.rarity));
   }
   effectPolicy=EquipmentEffectPolicy(rules:rules,caps:caps);
+  candidates.sort((a,b)=>a.id.compareTo(b.id));
   _odds=EquipmentSkillPoolOdds(candidates);
   this.entries=List.unmodifiable(entriesFrom(candidates,rules));
  }
@@ -54,6 +55,18 @@ class EquipmentSkillMaster {
  late final EquipmentSkillPoolOdds _odds;
  late final List<EquipmentSkillMasterEntry> entries;
  static Iterable<EquipmentSkillMasterEntry> entriesFrom(List<EquipmentSkillCandidate> candidates,Map<String,EquipmentEffectRule> rules)=>candidates.map((c)=>EquipmentSkillMasterEntry(id:c.id,rarity:c.rarity,pool:c.pool,effect:rules[c.id]!.effect,perLevel:rules[c.id]!.levelValues.first));
+
+ void validateInventory(AbyssInventory inventory){
+  for(final entry in inventory.equipmentSkillHistories.entries){
+   final item=inventory.equipment[entry.key]!;
+   for(final grant in entry.value.grants){
+    if(!entries.any((e)=>e.id==grant.skillId&&e.pool==EquipmentSkillPoolOdds.poolForSlot(item.slot))||grant.ruleVersion!=version){
+     throw const FormatException('Equipment skill master mismatch');
+    }
+   }
+  }
+ }
+ bool hasCandidates(EquipmentSlot slot)=>_odds.totalWeight(EquipmentSkillPoolOdds.poolForSlot(slot))>0;
 
  /// 既存の版1帯確率を維持し、EXは明示的な個別構成に限りGRを使用する。
  /// ここでは確定保存・強化は行わない。

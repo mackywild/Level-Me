@@ -14,7 +14,7 @@ class _AbyssForgeScreenState extends State<AbyssForgeScreen>{
   if(_busy)return;
   setState((){_busy=true;_error=null;});
   try {
-   await widget.controller.enhanceWorldItem(id,expectedLevel);
+   await widget.controller.enhanceWorldItem(id,expectedLevel,expectedGeneration:widget.controller.restoreGeneration);
   }catch(_){
    if(mounted)setState(()=>_error='強化を完了できませんでした。装備・資産を確認してください。');
   }finally{

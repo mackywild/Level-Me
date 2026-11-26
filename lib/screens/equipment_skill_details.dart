@@ -88,6 +88,8 @@ class EquipmentSkillDetails extends StatelessWidget {
        if(entries[grant.skillId] case final entry?)...[
         Text('${rarityName(entry.rarity)} / ${effectName(entry.effect)} ${percent(entry.perLevel*grant.level)}'),
         const Text('個別性能（重複・上限適用前）'),
+        if(entry.effect==EquipmentEffect.resistance)const Text('状態異常耐性：判定基盤のみ（敵の付与能力は未接続）'),
+        if(entry.effect==EquipmentEffect.rewardPercent)const Text('報酬補正：G接続済み・素材ドロップ未接続'),
         if(!battleConnectedEquipmentEffects.contains(entry.effect))const Text('戦闘未接続（装着時は戦闘開始不可の場合あり）'),
        ]else const Text('性能定義未確認'),
       ]else if(stage<=current.enhancement)

@@ -76,7 +76,7 @@ void main(){
   expect(legacy.battle!.enemyHp,enemy.hp-60);expect(legacy.magic,94);
   expect(legacy.hp,950);expect(legacyRandom.calls,2);
  });
- test('RV-191: Controller装着履歴・実ファイル再起動・不一致復元拒否',() async {
+ test('RV-191: Controller装着履歴・報酬版8開始・実ファイル再起動・不一致復元拒否',() async {
   final dir=await Directory.systemTemp.createTemp('equipment-battle-');
   addTearDown(()=>dir.delete(recursive:true));
   final store=LocalStore(directory:dir);
@@ -101,8 +101,12 @@ void main(){
   await store.save(c.state);
   final primary=File('${dir.path}/${LocalStore.fileName}');
   final before=await primary.readAsString();
-  await expectLater(c.startWorldBattle('p01_main'),throwsStateError);
-  expect(await primary.readAsString(),before);
+  await c.startWorldBattle('p01_main');
+  final rewardBattle=c.state.world.battle!;
+  expect(rewardBattle.executionVersion,8);
+  expect(rewardBattle.equipmentEffects!.reward,200);
+  expect(await primary.readAsString(),isNot(before));
+  await c.worldCommand(WorldCommand.retreat,rewardBattle.id,rewardBattle.turn);
   c.state.inventory.unequip(EquipmentSlot.ring);
   c.state.inventory.equip(supported.id);
   await c.startWorldBattle('p01_main');

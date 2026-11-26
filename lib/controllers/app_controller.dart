@@ -41,7 +41,10 @@ class AppController extends ChangeNotifier {
   if(state.inventory.equipmentSkillSeed!=null&&_equipmentSkillMaster==null)throw StateError('Equipment skill master unavailable');
   _validateEquipmentSkillInventory(state.inventory);
   final battle=state.world.battle;
-  if(battle!=null)_exEquipmentPolicy?.requireBattleReady(state.inventory);
+  if(battle!=null){
+   if(_exEquipmentPolicy==null&&battle.exAttacks.isNotEmpty)throw const FormatException('EX battle policy missing');
+   _exEquipmentPolicy?.validateBattle(state.inventory,battle);
+  }
   if(battle!=null&&state.inventory.equipped.values.any(state.inventory.exSkillLayouts.containsKey)&&(battle.executionVersion??0)<4)throw const FormatException('EX battle snapshot missing');
   if((battle?.executionVersion??0)>=4){
    final expected=_battleEquipmentEffects(state);
@@ -527,11 +530,23 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   _exEquipmentPolicy?.requireBattleReady(working.inventory);
   _skillCatalog.validateProgress(working.world,working.skills);
-  worldEngine.start(working.world,_baseWorldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills),equipmentEffects:_battleEquipmentEffects(working));
+  final effects=_battleEquipmentEffects(working);
+  final attacks=_exEquipmentPolicy?.battleAttacks(working.inventory,effects?.cooldown??0);
+  worldEngine.start(working.world,_baseWorldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills),equipmentEffects:effects,exAttacks:attacks??const []);
   await _store.save(working);
   _state=working;
   notifyListeners();
  },keepPublishedState:true);
+ Future<void> useBattleExSkill(int slot,int battleId,int turn,{required int expectedGeneration})=>_inventoryTransaction(() async {
+  if(!_ready||expectedGeneration!=_restoreGeneration||_exEquipmentPolicy?.enableManualExecution!=true)throw StateError('EX battle action unavailable');
+  final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  _validateEquipment(working);
+  final now=_nowMs;
+  worldEngine.actExAttack(working.world,slot,battleId,turn,now);
+  worldEngine.refresh(working.world,worldStats,now,naturalRecovery:_naturalRecoveryFor(working));
+  await _store.save(working);
+  _state=working;
+ });
  Future<void> useBattleActiveSkill(String id,int battleId,int turn,{required int expectedGeneration})=>_inventoryTransaction(() async {
   if(!_ready)throw StateError('Player not ready');
   if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');

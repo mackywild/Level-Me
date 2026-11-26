@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'abyss_equipment.dart';
+import 'abyss_ex_battle_attack.dart';
 import 'abyss_equipment_effects.dart';
 import 'abyss_equipment_skill_master.dart';
 import 'abyss_ex_equipment_skill.dart';
@@ -47,7 +48,7 @@ class ExFixedEffect {
 /// HP is basis points of max HP, lifeDays is integer days. Conditions are typed,
 /// not executable strings. Runtime rounding/limits are a separate integration.
 class ExManualSkillSpec {
- ExManualSkillSpec({this.physicalCost=0,this.magicCost=0,this.hpCostBps=0,this.lifeDays=0,required this.cooldown,this.initialCooldown=0,this.maxUses,this.cooldownReduction=false,this.energyDiscount=false,this.maxHpBps}){
+ ExManualSkillSpec({this.physicalCost=0,this.magicCost=0,this.hpCostBps=0,this.lifeDays=0,required this.cooldown,this.initialCooldown=0,this.maxUses,this.cooldownReduction=false,this.energyDiscount=false,this.maxHpBps,this.attackAttribute}){
   if([physicalCost,magicCost,lifeDays].any((n)=>n<0||n>1000000)||hpCostBps<0||hpCostBps>=10000||cooldown<0||cooldown>1000||initialCooldown<0||initialCooldown>1000||(maxUses!=null&&(maxUses!<=0||maxUses!>1000))||(maxHpBps!=null&&(maxHpBps!<=0||maxHpBps!>10000))){
    throw ArgumentError('Invalid EX manual skill parameters');
   }
@@ -55,7 +56,8 @@ class ExManualSkillSpec {
  final int physicalCost,magicCost,hpCostBps,lifeDays,cooldown,initialCooldown;
  final int? maxUses,maxHpBps;
  final bool cooldownReduction,energyDiscount;
- Map<String,dynamic> toJson()=>{'physicalCost':physicalCost,'magicCost':magicCost,'hpCostBps':hpCostBps,'lifeDays':lifeDays,'cooldown':cooldown,'initialCooldown':initialCooldown,'maxUses':maxUses,'cooldownReduction':cooldownReduction,'energyDiscount':energyDiscount,'maxHpBps':maxHpBps};
+ final ExAttackAttribute? attackAttribute;
+ Map<String,dynamic> toJson()=>{'physicalCost':physicalCost,'magicCost':magicCost,'hpCostBps':hpCostBps,'lifeDays':lifeDays,'cooldown':cooldown,'initialCooldown':initialCooldown,'maxUses':maxUses,'cooldownReduction':cooldownReduction,'energyDiscount':energyDiscount,'maxHpBps':maxHpBps,if(attackAttribute!=null)'attackAttribute':attackAttribute!.name};
 }
 
 class ExFixedSkillDefinition {

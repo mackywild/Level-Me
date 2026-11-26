@@ -80,17 +80,17 @@ void main(){
   final dir=await Directory.systemTemp.createTemp('equipment-battle-');
   addTearDown(()=>dir.delete(recursive:true));
   final store=LocalStore(directory:dir);
-  final catalog=EquipmentCatalog(const [EquipmentDefinition(id:'equipment:sword',name:'test',slot:EquipmentSlot.hands,rarity:EquipmentRarity.r),EquipmentDefinition(id:'equipment:armor',name:'armor',slot:EquipmentSlot.body,rarity:EquipmentRarity.r)]);
+  final catalog=EquipmentCatalog(const [EquipmentDefinition(id:'equipment:sword',name:'test',slot:EquipmentSlot.hands,rarity:EquipmentRarity.r),EquipmentDefinition(id:'equipment:armor',name:'armor',slot:EquipmentSlot.ring,rarity:EquipmentRarity.r)]);
   final master=EquipmentSkillMaster(const [
    EquipmentSkillMasterEntry(id:'equipment_skill:attack',rarity:EquipmentSkillRarity.common,pool:EquipmentSkillPool.attack,effect:EquipmentEffect.physicalPercent,perLevel:1000),
-   EquipmentSkillMasterEntry(id:'equipment_skill:extra',rarity:EquipmentSkillRarity.common,pool:EquipmentSkillPool.defense,effect:EquipmentEffect.resistance,perLevel:100),
+   EquipmentSkillMasterEntry(id:'equipment_skill:extra',rarity:EquipmentSkillRarity.common,pool:EquipmentSkillPool.special,effect:EquipmentEffect.rewardPercent,perLevel:100),
   ]);
   AppController controller(LocalStore s)=>AppController(s,equipmentCatalog:catalog,equipmentSkillMaster:master,clockMs:()=>now);
   final c=controller(store);addTearDown(c.dispose);await c.initialize();
   final inv=c.state.inventory;inv.activateEquipmentSkills(7);
   inv.addStack('item:iron',10);
   EquipmentInstance add(String skill){
-   final item=inv.addEquipment(skill=='equipment_skill:extra'?'equipment:armor':'equipment:sword',skill=='equipment_skill:extra'?EquipmentSlot.body:EquipmentSlot.hands,EquipmentRarity.r);
+   final item=inv.addEquipment(skill=='equipment_skill:extra'?'equipment:armor':'equipment:sword',skill=='equipment_skill:extra'?EquipmentSlot.ring:EquipmentSlot.hands,EquipmentRarity.r);
    for(var i=0;i<5;i++){
     inv.enhanceWithMaterial(item.id,i,'item:iron',1,skillGrant:i==4?StoredEquipmentSkill(milestone:5,skillId:skill,level:2):null);
    }
@@ -103,7 +103,7 @@ void main(){
   final before=await primary.readAsString();
   await expectLater(c.startWorldBattle('p01_main'),throwsStateError);
   expect(await primary.readAsString(),before);
-  c.state.inventory.unequip(EquipmentSlot.body);
+  c.state.inventory.unequip(EquipmentSlot.ring);
   c.state.inventory.equip(supported.id);
   await c.startWorldBattle('p01_main');
   final snapshot=c.state.world.battle!;

@@ -27,7 +27,7 @@ void main(){
  setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
  final catalog=EquipmentCatalog(const [EquipmentDefinition(id:'equipment:sword',name:'試験剣',slot:EquipmentSlot.ring,rarity:EquipmentRarity.gr)]);
  final master=EquipmentSkillMaster(const [
-  EquipmentSkillMasterEntry(id:'equipment_skill:extra',rarity:EquipmentSkillRarity.ultraRare,pool:EquipmentSkillPool.special,effect:EquipmentEffect.cooldownReduction,perLevel:125),
+  EquipmentSkillMasterEntry(id:'equipment_skill:extra',rarity:EquipmentSkillRarity.ultraRare,pool:EquipmentSkillPool.special,effect:EquipmentEffect.rewardPercent,perLevel:125),
  ]);
  testWidgets('所持品・鍛造で同じ確定履歴、旧枠、未解放と未接続を表示し書き込まない',(tester) async {
   final store=_Store();
@@ -48,7 +48,7 @@ void main(){
    expect(find.text('確定済み 1 / 6 枠'),findsOneWidget);
    expect(find.text('+3 旧枠・抽選対象外'),findsOneWidget);
    expect(find.text('+6 確定済み：Lv7'),findsOneWidget);
-   expect(find.text('超希少 / CD短縮 8.75%'),findsOneWidget);
+   expect(find.text('超希少 / 報酬補正 8.75%'),findsOneWidget);
    expect(find.text('戦闘未接続（装着時は戦闘開始不可の場合あり）'),findsOneWidget);
    expect(find.text('+9 未解放'),findsOneWidget);
    expect(find.text('未装着のため戦闘効果は適用されません'),findsOneWidget);

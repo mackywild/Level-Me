@@ -413,9 +413,10 @@ class AppController extends ChangeNotifier {
    }
   }
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final previousStats=_worldStatsFor(working);
   final grant=master==null?null:EquipmentEnhancementDraw.prepare(working.inventory,working.inventory.equipment[id]!,master);
   final result=_enhancementPolicy.enhance(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel,skillGrant:grant);
-  _worldStatsFor(working);
+  _settleEquipmentHpChange(working,previousStats);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -427,18 +428,38 @@ class AppController extends ChangeNotifier {
  BattleEquipmentEffects? _battleEquipmentEffects(AppStateData state){
   final master=_equipmentSkillMaster;
   if(master==null||state.inventory.equipmentSkillSeed==null)return null;
-  final snapshot=master.effectPolicy.snapshot(state.inventory,[
+  final snapshot=_equipmentEffectSnapshot(state)!;
+  int v(EquipmentEffect effect)=>snapshot.value(effect);
+  if(snapshot.totals.entries.any((e)=>e.value>0&&!battleConnectedEquipmentEffects.contains(e.key)))throw StateError('Equipment battle effect not connected');
+  return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount),penetration:v(EquipmentEffect.penetration),extraAttack:v(EquipmentEffect.extraAttackChance),hp:v(EquipmentEffect.hpPercent),cooldown:v(EquipmentEffect.cooldownReduction));
+ }
+ EquipmentEffectSnapshot? _equipmentEffectSnapshot(AppStateData state){
+  final master=_equipmentSkillMaster;
+  if(master==null||state.inventory.equipmentSkillSeed==null)return null;
+  return master.effectPolicy.snapshot(state.inventory,[
    for(final entry in state.inventory.equipmentSkillHistories.entries)
     for(final grant in entry.value.grants)
      EquipmentSkillGrant(instanceId:entry.key,milestone:grant.milestone,skillId:grant.skillId,level:grant.level),
   ]);
-  int v(EquipmentEffect effect)=>snapshot.value(effect);
-  
-  if(snapshot.totals.entries.any((e)=>e.value>0&&!battleConnectedEquipmentEffects.contains(e.key)))throw StateError('Equipment battle effect not connected');
-  return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount),penetration:v(EquipmentEffect.penetration),extraAttack:v(EquipmentEffect.extraAttackChance));
  }
  WorldStats get worldStats=>_worldStatsFor(_state);
- WorldStats _worldStatsFor(AppStateData state)=>_skillCatalog.applyPassive(equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(state.totalExp).level,fitness:LevelCalculator.statRankFromExp(state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(state.stats[StatType.creativity]??0)),state.inventory,scaling:enhancementScaling),state.skills);
+ WorldStats _worldStatsFor(AppStateData state){
+  final base=_baseWorldStatsFor(state);
+  final hp=_equipmentEffectSnapshot(state)?.value(EquipmentEffect.hpPercent)??0;
+  return BattleEquipmentEffects(hp:hp).apply(base);
+ }
+ /// 最大HP変更境界で旧能力値の経過分を精算する。HPの未満tickは
+ /// 新旧の回復量を混在させないため破棄し、エネルギー端数は維持する。
+ void _settleEquipmentHpChange(AppStateData working,WorldStats previousStats){
+  final maximum=_worldStatsFor(working).hp;
+  if(maximum!=previousStats.hp){
+   final now=_nowMs;
+   worldEngine.refresh(working.world,previousStats,now);
+   working.world.hpAt=now;
+  }
+  if(working.world.hp>maximum)working.world.hp=maximum;
+ }
+ WorldStats _baseWorldStatsFor(AppStateData state)=>_skillCatalog.applyPassive(equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(state.totalExp).level,fitness:LevelCalculator.statRankFromExp(state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(state.stats[StatType.creativity]??0)),state.inventory,scaling:enhancementScaling),state.skills);
  final int Function() _clockMs;
  static int _systemClockMs()=>DateTime.now().millisecondsSinceEpoch;
  int get _nowMs=>_clockMs();
@@ -446,7 +467,7 @@ class AppController extends ChangeNotifier {
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   _skillCatalog.validateProgress(working.world,working.skills);
-  worldEngine.start(working.world,_worldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills),equipmentEffects:_battleEquipmentEffects(working));
+  worldEngine.start(working.world,_baseWorldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills),equipmentEffects:_battleEquipmentEffects(working));
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -479,8 +500,9 @@ class AppController extends ChangeNotifier {
   final item=working.inventory.equipment[id];
   if(item==null)throw StateError('Equipment not owned');
   equipmentCatalog.require(item);
+  final previousStats=_worldStatsFor(working);
   working.inventory.equip(id);
-  _worldStatsFor(working);
+  _settleEquipmentHpChange(working,previousStats);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -488,8 +510,9 @@ class AppController extends ChangeNotifier {
  Future<void> unequipWorldItem(EquipmentSlot slot)=>_transaction(() async {
   if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final previousStats=_worldStatsFor(working);
   working.inventory.unequip(slot);
-  _worldStatsFor(working);
+  _settleEquipmentHpChange(working,previousStats);
   await _store.save(working);
   _state=working;
   notifyListeners();

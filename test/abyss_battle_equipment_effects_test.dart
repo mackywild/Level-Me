@@ -83,7 +83,7 @@ void main(){
   final catalog=EquipmentCatalog(const [EquipmentDefinition(id:'equipment:sword',name:'test',slot:EquipmentSlot.hands,rarity:EquipmentRarity.r),EquipmentDefinition(id:'equipment:armor',name:'armor',slot:EquipmentSlot.body,rarity:EquipmentRarity.r)]);
   final master=EquipmentSkillMaster(const [
    EquipmentSkillMasterEntry(id:'equipment_skill:attack',rarity:EquipmentSkillRarity.common,pool:EquipmentSkillPool.attack,effect:EquipmentEffect.physicalPercent,perLevel:1000),
-   EquipmentSkillMasterEntry(id:'equipment_skill:extra',rarity:EquipmentSkillRarity.common,pool:EquipmentSkillPool.defense,effect:EquipmentEffect.hpPercent,perLevel:100),
+   EquipmentSkillMasterEntry(id:'equipment_skill:extra',rarity:EquipmentSkillRarity.common,pool:EquipmentSkillPool.defense,effect:EquipmentEffect.resistance,perLevel:100),
   ]);
   AppController controller(LocalStore s)=>AppController(s,equipmentCatalog:catalog,equipmentSkillMaster:master,clockMs:()=>now);
   final c=controller(store);addTearDown(c.dispose);await c.initialize();

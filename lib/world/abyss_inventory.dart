@@ -110,6 +110,7 @@ class AbyssInventory {
 
  // 版1: 実消費履歴を強化段階順に保存。旧履歴欠落は推測しない。
  final Map<String,List<Map<String,int>>> _enhancementCosts={};
+ List<Map<String,int>> enhancementCostsFor(String id)=>List.unmodifiable(_enhancementCosts[id]??const <Map<String,int>>[]);
  bool hasCompleteEnhancementHistory(EquipmentInstance item)=>
   (_enhancementCosts[item.id]?.length??0)==item.enhancement;
  Map<String,int> enhancementRefund(EquipmentInstance item){

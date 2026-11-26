@@ -59,8 +59,12 @@ class EquipmentSkillMaster {
 
  void validateInventory(AbyssInventory inventory){
   if(inventory.exSkillLayouts.isNotEmpty)throw StateError('EX inventory requires EX-aware controller');
+  validateNormalInventory(inventory);
+ }
+ void validateNormalInventory(AbyssInventory inventory){
   for(final entry in inventory.equipmentSkillHistories.entries){
    final item=inventory.equipment[entry.key]!;
+   if(item.rarity==EquipmentRarity.ex)continue;
    for(final grant in entry.value.grants){
     if(!entries.any((e)=>e.id==grant.skillId&&e.pool==EquipmentSkillPoolOdds.poolForSlot(item.slot))||grant.ruleVersion!=version){
      throw const FormatException('Equipment skill master mismatch');

@@ -431,7 +431,7 @@ class AppController extends ChangeNotifier {
   final snapshot=_equipmentEffectSnapshot(state)!;
   int v(EquipmentEffect effect)=>snapshot.value(effect);
   if(snapshot.totals.entries.any((e)=>e.value>0&&!battleConnectedEquipmentEffects.contains(e.key)))throw StateError('Equipment battle effect not connected');
-  return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount),penetration:v(EquipmentEffect.penetration),extraAttack:v(EquipmentEffect.extraAttackChance),hp:v(EquipmentEffect.hpPercent),cooldown:v(EquipmentEffect.cooldownReduction));
+  return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount),penetration:v(EquipmentEffect.penetration),extraAttack:v(EquipmentEffect.extraAttackChance),hp:v(EquipmentEffect.hpPercent),cooldown:v(EquipmentEffect.cooldownReduction),resistance:v(EquipmentEffect.resistance));
  }
  EquipmentEffectSnapshot? _equipmentEffectSnapshot(AppStateData state){
   final master=_equipmentSkillMaster;

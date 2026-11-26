@@ -1,4 +1,6 @@
 import 'abyss_equipment.dart';
+import 'abyss_equipment_effects.dart';
+import 'abyss_equipment_skill_master.dart';
 import 'abyss_equipment_enhancement_draw.dart';
 import 'abyss_enhancement.dart';
 import 'abyss_ex_equipment_master.dart';
@@ -19,7 +21,7 @@ class ExEnhancementRecipe {
 
 /// Explicit injection only. No production offers or recipes.
 class ExEquipmentTransactionPolicy {
- ExEquipmentTransactionPolicy({required this.master,required Iterable<String> normalMaterials,required Iterable<String> exMaterials,required Iterable<ExEnhancementRecipe> recipes,required Iterable<ExAcquisitionOffer> offers}){
+ ExEquipmentTransactionPolicy({required this.master,this.enableAutomaticEffects=false,required Iterable<String> normalMaterials,required Iterable<String> exMaterials,required Iterable<ExEnhancementRecipe> recipes,required Iterable<ExAcquisitionOffer> offers}){
   final normal=normalMaterials.toSet(),special=exMaterials.toSet();
   bool valid(String id)=>id.startsWith('item:')&&id.length>5&&id.trim()==id;
   if(normal.intersection(special).isNotEmpty||[...normal,...special].any((id)=>!valid(id)))throw const FormatException('Invalid EX material classification');
@@ -33,6 +35,7 @@ class ExEquipmentTransactionPolicy {
   }
  }
  final ExEquipmentMaster master;
+ final bool enableAutomaticEffects;
  final _recipes=<String,ExEnhancementRecipe>{};
  final _offers=<String,ExAcquisitionOffer>{};
  ExEnhancementRecipe? recipe(String masterId)=>_recipes[masterId];
@@ -40,7 +43,7 @@ class ExEquipmentTransactionPolicy {
   master.randomMaster.validateNormalInventory(inventory);
   for(final item in inventory.equipment.values.where((e)=>e.rarity==EquipmentRarity.ex)){
    catalog.require(item);
-   if(inventory.equipped.containsValue(item.id))throw const FormatException('EX fixed effects not connected');
+   if(inventory.equipped.containsValue(item.id))requireEquippable(inventory,item);
    EquipmentEnhancementDraw.validateExHistory(inventory,item,master);
    final recipe=_recipes[item.masterId];
    if(recipe==null)throw const FormatException('EX recipe unavailable');
@@ -51,6 +54,44 @@ class ExEquipmentTransactionPolicy {
     if(actual.length!=expected.length||expected.entries.any((e)=>actual[e.key]!=e.value))throw const FormatException('EX cost history mismatch');
    }
   }
+ }
+ /// Only explicitly enabled, same-pool automatic normal effects with shared caps.
+ void requireEquippable(AbyssInventory inventory,EquipmentInstance item){
+  if(!enableAutomaticEffects)throw StateError('EX fixed effects not connected');
+  final layout=master.validateInstance(inventory,item);
+  for(final fixed in master.resolveFixedSkills(item)){
+   if(fixed.skill.activation!=ExSkillActivation.automatic)throw StateError('EX manual skill not connected');
+   for(final effect in fixed.skill.effects){
+    final rule=master.effectRules[effect.ruleId]!;
+    final normal=rule.normalEffect;
+    if(effect.drawback||normal==null||rule.capScope!=ExEffectCapScope.sharedWithNormal||
+       !EquipmentSkillMaster.allowedEffects(layout.randomPool).contains(normal))throw StateError('EX fixed effect not connected');
+   }
+  }
+ }
+ EquipmentEffectSnapshot snapshot(AbyssInventory inventory){
+  final random=master.randomMaster.effectPolicy.snapshot(inventory,[
+   for(final entry in inventory.equipmentSkillHistories.entries)
+    if(inventory.equipment[entry.key]!.rarity!=EquipmentRarity.ex||enableAutomaticEffects)
+     for(final grant in entry.value.grants)
+      EquipmentSkillGrant(instanceId:entry.key,milestone:grant.milestone,skillId:grant.skillId,level:grant.level),
+  ],includeRegisteredEx:enableAutomaticEffects);
+  final totals=<EquipmentEffect,int>{};
+  for(final id in inventory.equipped.values){
+   final item=inventory.equipment[id]!;
+   if(item.rarity!=EquipmentRarity.ex)continue;
+   requireEquippable(inventory,item);
+   for(final fixed in master.resolveFixedSkills(item)){
+    for(final effect in fixed.skill.effects){
+     final rule=master.effectRules[effect.ruleId]!,normal=master.effectRules[effect.ruleId]!.normalEffect!;
+     final value=effect.valuesByLevel[fixed.level]!;
+     final old=totals[normal]??0;
+     final sum=rule.stacking==ExEffectStacking.additive?old+value:(old>value?old:value);
+     totals[normal]=sum>rule.cap?rule.cap:sum;
+    }
+   }
+  }
+  return master.randomMaster.effectPolicy.mergeSharedFixed(random,totals);
  }
  ExAcquisitionOffer validateAcquisition(WorldState world,EquipmentCatalog catalog,String offerId,int expectedSequence){
   if(world.battle!=null)throw StateError('EX acquisition unavailable in battle');

@@ -52,16 +52,18 @@ class EquipmentEffectPolicy {
 
  /// 同じIDの異なる付与枠は加算。枠の二重計上・分類違いは拒否。
  /// EX固定・ランダム枠は個別規則の接続まで明示的に未対応。
- EquipmentEffectSnapshot snapshot(AbyssInventory inventory,Iterable<EquipmentSkillGrant> grants){
+ EquipmentEffectSnapshot snapshot(AbyssInventory inventory,Iterable<EquipmentSkillGrant> grants,{bool includeRegisteredEx=false}){
   final equipped=inventory.equipped.values.toSet();
   final totals=<EquipmentEffect,int>{};
   final seen=<({String id,int milestone})>{};
   for(final grant in grants){
    final item=inventory.equipment[grant.instanceId];
    if(item==null)throw StateError('Unknown equipment skill owner');
-   if(item.rarity==EquipmentRarity.ex)throw UnsupportedError('EX effect layout not connected');
+   final layout=inventory.exSkillLayouts[item.id];
+   if(item.rarity==EquipmentRarity.ex&&(!includeRegisteredEx||layout==null))throw UnsupportedError('EX effect layout not connected');
+   final reached=layout==null?EquipmentSkillPolicy.reachedMilestones(item.rarity,item.enhancement):layout.milestones.where((m)=>m<=item.enhancement);
    if(!EquipmentSkillPolicy.validSkillLevel(grant.level)||
-      !EquipmentSkillPolicy.reachedMilestones(item.rarity,item.enhancement).contains(grant.milestone)||
+      !reached.contains(grant.milestone)||
       !seen.add((id:item.id,milestone:grant.milestone))){
     throw StateError('Invalid equipment skill grant');
    }
@@ -71,6 +73,18 @@ class EquipmentEffectPolicy {
    final cap=_caps[rule.effect]!;
    final sum=(totals[rule.effect]??0)+rule.levelValues[grant.level-1];
    totals[rule.effect]=sum>cap?cap:sum;
+  }
+  return EquipmentEffectSnapshot._(totals);
+ }
+
+ /// Shared normal-effect cap applies after fixed contributions.
+ EquipmentEffectSnapshot mergeSharedFixed(EquipmentEffectSnapshot random,Map<EquipmentEffect,int> fixed){
+  final totals=Map<EquipmentEffect,int>.of(random.totals);
+  for(final e in fixed.entries){
+   final cap=_caps[e.key];
+   if(cap==null||e.value<0)throw StateError('Invalid EX fixed contribution');
+   final sum=(totals[e.key]??0)+e.value;
+   totals[e.key]=sum>cap?cap:sum;
   }
   return EquipmentEffectSnapshot._(totals);
  }

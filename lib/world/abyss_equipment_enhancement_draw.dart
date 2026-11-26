@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'abyss_inventory.dart';
+import 'abyss_ex_equipment_master.dart';
 import 'abyss_equipment_skill_master.dart';
 import 'abyss_equipment_skill_policy.dart';
 
@@ -10,10 +11,13 @@ class EquipmentEnhancementDraw {
  const EquipmentEnhancementDraw._();
  static const _purposes=['rarity','candidate','levelBand','levelWithinBand'];
 
- static StoredEquipmentSkill? prepare(AbyssInventory inventory,EquipmentInstance item,EquipmentSkillMaster master){
+ static StoredEquipmentSkill? prepare(AbyssInventory inventory,EquipmentInstance item,EquipmentSkillMaster master,{ExEquipmentMaster? exMaster}){
   final seed=inventory.equipmentSkillSeed;
   if(seed==null)throw StateError('Equipment skill seed missing');
-  final milestone=EquipmentSkillPolicy.nextGrant(item.rarity,item.enhancement,item.enhancement+1);
+  if(item.rarity==EquipmentRarity.ex&&exMaster==null)throw StateError('Registered EX master required');
+  if(exMaster!=null&&(item.rarity!=EquipmentRarity.ex||!identical(master,exMaster.randomMaster)))throw StateError('EX draw master mismatch');
+  final layout=exMaster?.validateInstance(inventory,item);
+  final milestone=layout==null?EquipmentSkillPolicy.nextGrant(item.rarity,item.enhancement,item.enhancement+1):layout.nextRandomGrant(item,item.enhancement+1);
   if(milestone==null)return null;
   final serial=int.parse(item.id.substring(3));
   var purposeIndex=0;
@@ -31,7 +35,7 @@ class EquipmentEnhancementDraw {
     if(value<limit)return value%bound;
    }
   }
-  final result=master.draw(item,nextInt);
+  final result=master.draw(item,nextInt,exLayout:layout);
   return StoredEquipmentSkill(milestone:milestone,skillId:result.skill.id,level:result.level,ruleVersion:EquipmentSkillMaster.version);
  }
 }

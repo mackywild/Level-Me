@@ -58,6 +58,7 @@ class EquipmentSkillMaster {
  static Iterable<EquipmentSkillMasterEntry> entriesFrom(List<EquipmentSkillCandidate> candidates,Map<String,EquipmentEffectRule> rules)=>candidates.map((c)=>EquipmentSkillMasterEntry(id:c.id,rarity:c.rarity,pool:c.pool,effect:rules[c.id]!.effect,perLevel:rules[c.id]!.levelValues.first));
 
  void validateInventory(AbyssInventory inventory){
+  if(inventory.exSkillLayouts.isNotEmpty)throw StateError('EX inventory requires EX-aware controller');
   for(final entry in inventory.equipmentSkillHistories.entries){
    final item=inventory.equipment[entry.key]!;
    for(final grant in entry.value.grants){

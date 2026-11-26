@@ -39,7 +39,7 @@ class AppController extends ChangeNotifier {
   if(state.inventory.equipmentSkillSeed!=null&&_equipmentSkillMaster==null)throw StateError('Equipment skill master unavailable');
   _equipmentSkillMaster?.validateInventory(state.inventory);
   final battle=state.world.battle;
-  if(battle?.executionVersion==4){
+  if((battle?.executionVersion??0)>=4){
    final expected=_battleEquipmentEffects(state);
    if(expected==null||!battle!.equipmentEffects!.sameAs(expected))throw const FormatException('Battle equipment snapshot mismatch');
   }
@@ -435,7 +435,7 @@ class AppController extends ChangeNotifier {
   int v(EquipmentEffect effect)=>snapshot.value(effect);
   
   if(snapshot.totals.entries.any((e)=>e.value>0&&!battleConnectedEquipmentEffects.contains(e.key)))throw StateError('Equipment battle effect not connected');
-  return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount));
+  return BattleEquipmentEffects(physical:v(EquipmentEffect.physicalPercent),magic:v(EquipmentEffect.magicPercent),defense:v(EquipmentEffect.defensePercent),critical:v(EquipmentEffect.criticalChance),evasion:v(EquipmentEffect.evasionChance),reduction:v(EquipmentEffect.damageReduction),discount:v(EquipmentEffect.energyDiscount),penetration:v(EquipmentEffect.penetration),extraAttack:v(EquipmentEffect.extraAttackChance));
  }
  WorldStats get worldStats=>_worldStatsFor(_state);
  WorldStats _worldStatsFor(AppStateData state)=>_skillCatalog.applyPassive(equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(state.totalExp).level,fitness:LevelCalculator.statRankFromExp(state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(state.stats[StatType.creativity]??0)),state.inventory,scaling:enhancementScaling),state.skills);

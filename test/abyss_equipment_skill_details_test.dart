@@ -25,16 +25,16 @@ class _Store extends LocalStore {
 }
 void main(){
  setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
- final catalog=EquipmentCatalog(const [EquipmentDefinition(id:'equipment:sword',name:'試験剣',slot:EquipmentSlot.hands,rarity:EquipmentRarity.gr)]);
+ final catalog=EquipmentCatalog(const [EquipmentDefinition(id:'equipment:sword',name:'試験剣',slot:EquipmentSlot.ring,rarity:EquipmentRarity.gr)]);
  final master=EquipmentSkillMaster(const [
-  EquipmentSkillMasterEntry(id:'equipment_skill:extra',rarity:EquipmentSkillRarity.ultraRare,pool:EquipmentSkillPool.attack,effect:EquipmentEffect.extraAttackChance,perLevel:125),
+  EquipmentSkillMasterEntry(id:'equipment_skill:extra',rarity:EquipmentSkillRarity.ultraRare,pool:EquipmentSkillPool.special,effect:EquipmentEffect.cooldownReduction,perLevel:125),
  ]);
  testWidgets('所持品・鍛造で同じ確定履歴、旧枠、未解放と未接続を表示し書き込まない',(tester) async {
   final store=_Store();
   final c=AppController(store,equipmentCatalog:catalog,equipmentSkillMaster:master);
   addTearDown(c.dispose);await c.initialize();
   final inv=c.state.inventory;
-  final item=inv.addEquipment('equipment:sword',EquipmentSlot.hands,EquipmentRarity.gr);
+  final item=inv.addEquipment('equipment:sword',EquipmentSlot.ring,EquipmentRarity.gr);
   inv.addStack('item:iron',6);
   for(var i=0;i<5;i++){inv.enhanceWithMaterial(item.id,i,'item:iron',1);}
   inv.activateEquipmentSkills(7);
@@ -48,7 +48,7 @@ void main(){
    expect(find.text('確定済み 1 / 6 枠'),findsOneWidget);
    expect(find.text('+3 旧枠・抽選対象外'),findsOneWidget);
    expect(find.text('+6 確定済み：Lv7'),findsOneWidget);
-   expect(find.text('超希少 / 追加攻撃発生率 8.75%'),findsOneWidget);
+   expect(find.text('超希少 / CD短縮 8.75%'),findsOneWidget);
    expect(find.text('戦闘未接続（装着時は戦闘開始不可の場合あり）'),findsOneWidget);
    expect(find.text('+9 未解放'),findsOneWidget);
    expect(find.text('未装着のため戦闘効果は適用されません'),findsOneWidget);
@@ -60,7 +60,7 @@ void main(){
   final store=_Store();
   final c=AppController(store,equipmentCatalog:catalog,equipmentSkillMaster:master,clockMs:()=>1700000000000);
   addTearDown(c.dispose);await c.initialize();
-  final item=c.state.inventory.addEquipment('equipment:sword',EquipmentSlot.hands,EquipmentRarity.gr);
+  final item=c.state.inventory.addEquipment('equipment:sword',EquipmentSlot.ring,EquipmentRarity.gr);
   await store.save(c.state);store.backup=store.data;
   await tester.pumpWidget(MaterialApp(home:AbyssInventoryScreen(controller:c)));
   await tester.ensureVisible(find.text('スキル詳細'));
@@ -77,7 +77,7 @@ void main(){
  testWidgets('旧未導入装備は確定結果を作らない',(tester) async {
   final c=AppController(_Store(),equipmentCatalog:catalog);
   addTearDown(c.dispose);await c.initialize();
-  final item=c.state.inventory.addEquipment('equipment:sword',EquipmentSlot.hands,EquipmentRarity.gr);
+  final item=c.state.inventory.addEquipment('equipment:sword',EquipmentSlot.ring,EquipmentRarity.gr);
   for(var i=0;i<3;i++){c.state.inventory.enhance(item.id,i);}
   await tester.pumpWidget(MaterialApp(home:AbyssInventoryScreen(controller:c)));
   await tester.ensureVisible(find.text('スキル詳細'));

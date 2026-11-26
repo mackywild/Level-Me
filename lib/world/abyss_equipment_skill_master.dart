@@ -43,6 +43,7 @@ class EquipmentSkillMaster {
   EquipmentEffect.physicalPercent:30000,EquipmentEffect.magicPercent:30000,EquipmentEffect.defensePercent:30000,
   EquipmentEffect.damageReduction:7000,EquipmentEffect.criticalChance:10000,EquipmentEffect.evasionChance:5000,
   EquipmentEffect.energyDiscount:5000,EquipmentEffect.cooldownReduction:5000,EquipmentEffect.extraAttackChance:5000,
+  EquipmentEffect.hpPercent:30000,EquipmentEffect.penetration:5000,EquipmentEffect.resistance:8000,EquipmentEffect.naturalRecovery:30000,EquipmentEffect.rewardPercent:10000,
  };
  static Set<EquipmentEffect> allowedEffects(EquipmentSkillPool pool)=>switch(pool){
   EquipmentSkillPool.attack=>const {EquipmentEffect.physicalPercent,EquipmentEffect.magicPercent,EquipmentEffect.criticalChance,EquipmentEffect.extraAttackChance,EquipmentEffect.penetration},

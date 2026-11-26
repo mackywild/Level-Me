@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'abyss_equipment.dart';
 import 'abyss_equipment_effects.dart';
 import 'abyss_equipment_skill_master.dart';
@@ -54,7 +56,7 @@ class ExFixedSkillDefinition {
 /// 個別構成と固定効果規則を一括検証する。通常候補とは別の名前空間。
 /// 入手、保存、抽選実行、効果集計、能動枠はまだ接続しない。
 class ExEquipmentMaster {
- ExEquipmentMaster({required EquipmentCatalog equipment,required EquipmentSkillMaster randomMaster,required Iterable<ExEquipmentSkillLayout> layouts,required Iterable<ExFixedSkillDefinition> fixedSkills,required Iterable<ExEffectRule> effectRules}){
+ ExEquipmentMaster({required EquipmentCatalog equipment,required this.randomMaster,required Iterable<ExEquipmentSkillLayout> layouts,required Iterable<ExFixedSkillDefinition> fixedSkills,required Iterable<ExEffectRule> effectRules}){
   for(final rule in effectRules){
    if(_rules.containsKey(rule.id))throw ArgumentError('Duplicate EX effect rule');
    _rules[rule.id]=rule;
@@ -80,6 +82,7 @@ class ExEquipmentMaster {
    _layouts[layout.masterId]=layout;
   }
  }
+ final EquipmentSkillMaster randomMaster;
  static const version=1;
  final _rules=<String,ExEffectRule>{};
  final _skills=<String,ExFixedSkillDefinition>{};
@@ -92,6 +95,41 @@ class ExEquipmentMaster {
   if(layout==null)throw StateError('EX equipment layout unavailable');
   layout.unlockedFixedSkills(item);
   return layout;
+ }
+ /// 固有定義・規則・抽選候補の内容を正規化したマスター照合値。
+ String fingerprintFor(EquipmentInstance item){
+  final layout=requireLayout(item);
+  final candidates=randomMaster.entries.where((e)=>e.pool==layout.randomPool).toList()..sort((a,b)=>a.id.compareTo(b.id));
+  final content=[
+   'ex-layout',version,EquipmentSkillMaster.version,layout.masterId,layout.slot.name,layout.randomMilestones,
+   for(final fixed in layout.fixedSkills)
+    [fixed.id,fixed.level,_skills[fixed.id]!.name,_skills[fixed.id]!.activation.name,
+     for(final effect in _skills[fixed.id]!.effects)
+      [effect.ruleId,effect.drawback,effect.valuesByLevel[fixed.level],_rules[effect.ruleId]!.stacking.name,_rules[effect.ruleId]!.capScope.name,_rules[effect.ruleId]!.cap]],
+   [for(final e in candidates)[e.id,e.rarity.name,e.pool.name,e.effect.name,e.perLevel]],
+  ];
+  return sha256.convert(utf8.encode(jsonEncode(content))).toString();
+ }
+ EquipmentInstance acquire(AbyssInventory inventory,String masterId){
+  final layout=_layouts[masterId];
+  if(layout==null)throw StateError('EX equipment layout unavailable');
+  final preview=EquipmentInstance(id:'preview',masterId:masterId,slot:layout.slot,rarity:EquipmentRarity.ex);
+  return inventory.addRegisteredExEquipment(masterId,layout.slot,ExSkillHistoryLayout(fingerprint:fingerprintFor(preview),milestones:layout.randomMilestones));
+ }
+ ExEquipmentSkillLayout validateInstance(AbyssInventory inventory,EquipmentInstance item){
+  final owned=inventory.equipment[item.id];
+  if(owned==null||owned.masterId!=item.masterId||owned.slot!=item.slot||owned.rarity!=item.rarity||owned.enhancement!=item.enhancement)throw StateError('Stale EX equipment instance');
+  final layout=requireLayout(item);
+  final saved=inventory.exSkillLayouts[item.id];
+  final history=inventory.equipmentSkillHistories[item.id];
+  if(saved==null||history==null||saved.fingerprint!=fingerprintFor(item)||jsonEncode(saved.milestones)!=jsonEncode(layout.randomMilestones))throw const FormatException('EX layout snapshot mismatch');
+  for(final grant in history.grants){
+   if(!randomMaster.entries.any((e)=>e.id==grant.skillId&&e.pool==layout.randomPool)||grant.ruleVersion!=EquipmentSkillMaster.version)throw const FormatException('EX random skill master mismatch');
+  }
+  return layout;
+ }
+ void validateInventory(AbyssInventory inventory){
+  for(final item in inventory.equipment.values.where((e)=>e.rarity==EquipmentRarity.ex)){validateInstance(inventory,item);}
  }
  List<({ExFixedSkillDefinition skill,int level})> resolveFixedSkills(EquipmentInstance item){
   final layout=requireLayout(item);

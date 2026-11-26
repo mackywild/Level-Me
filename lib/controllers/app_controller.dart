@@ -413,9 +413,10 @@ class AppController extends ChangeNotifier {
    }
   }
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final previousStats=_worldStatsFor(working);
   final grant=master==null?null:EquipmentEnhancementDraw.prepare(working.inventory,working.inventory.equipment[id]!,master);
   final result=_enhancementPolicy.enhance(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel,skillGrant:grant);
-  _worldStatsFor(working);
+  _settleEquipmentHpChange(working,previousStats);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -446,6 +447,17 @@ class AppController extends ChangeNotifier {
   final base=_baseWorldStatsFor(state);
   final hp=_equipmentEffectSnapshot(state)?.value(EquipmentEffect.hpPercent)??0;
   return BattleEquipmentEffects(hp:hp).apply(base);
+ }
+ /// 最大HP変更境界で旧能力値の経過分を精算する。HPの未満tickは
+ /// 新旧の回復量を混在させないため破棄し、エネルギー端数は維持する。
+ void _settleEquipmentHpChange(AppStateData working,WorldStats previousStats){
+  final maximum=_worldStatsFor(working).hp;
+  if(maximum!=previousStats.hp){
+   final now=_nowMs;
+   worldEngine.refresh(working.world,previousStats,now);
+   working.world.hpAt=now;
+  }
+  if(working.world.hp>maximum)working.world.hp=maximum;
  }
  WorldStats _baseWorldStatsFor(AppStateData state)=>_skillCatalog.applyPassive(equipmentCatalog.apply(WorldStats.fromRanks(level:LevelCalculator.fromTotalExp(state.totalExp).level,fitness:LevelCalculator.statRankFromExp(state.stats[StatType.fitness]??0),intelligence:LevelCalculator.statRankFromExp(state.stats[StatType.intelligence]??0),discipline:LevelCalculator.statRankFromExp(state.stats[StatType.discipline]??0),creativity:LevelCalculator.statRankFromExp(state.stats[StatType.creativity]??0)),state.inventory,scaling:enhancementScaling),state.skills);
  final int Function() _clockMs;
@@ -488,9 +500,9 @@ class AppController extends ChangeNotifier {
   final item=working.inventory.equipment[id];
   if(item==null)throw StateError('Equipment not owned');
   equipmentCatalog.require(item);
+  final previousStats=_worldStatsFor(working);
   working.inventory.equip(id);
-  final maximum=_worldStatsFor(working).hp;
-  if(working.world.hp>maximum)working.world.hp=maximum;
+  _settleEquipmentHpChange(working,previousStats);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -498,9 +510,9 @@ class AppController extends ChangeNotifier {
  Future<void> unequipWorldItem(EquipmentSlot slot)=>_transaction(() async {
   if(!_ready||_state.world.battle!=null)throw StateError('Equipment change unavailable');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
+  final previousStats=_worldStatsFor(working);
   working.inventory.unequip(slot);
-  final maximum=_worldStatsFor(working).hp;
-  if(working.world.hp>maximum)working.world.hp=maximum;
+  _settleEquipmentHpChange(working,previousStats);
   await _store.save(working);
   _state=working;
   notifyListeners();

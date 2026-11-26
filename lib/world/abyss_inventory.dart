@@ -55,7 +55,9 @@ class AbyssInventory {
   for(var i=0;i<expected.length;i++){
    final grant=history.grants[i];
    if(grant.milestone!=expected[i]||grant.ruleVersion!=1||!EquipmentSkillPolicy.validSkillLevel(grant.level)||
-      !grant.skillId.startsWith('equipment_skill:')||grant.skillId.length<=16||grant.skillId.trim()!=grant.skillId)throw const FormatException('Invalid equipment skill grant');
+      !grant.skillId.startsWith('equipment_skill:')||grant.skillId.length<=16||grant.skillId.trim()!=grant.skillId){
+    throw const FormatException('Invalid equipment skill grant');
+   }
   }
  }
 
@@ -66,7 +68,7 @@ class AbyssInventory {
    if(grant!=null)throw StateError('Skill history not initialized');
    return null;
   }
-  final next=EquipmentSkillHistory(startEnhancement:history.startEnhancement,grants:[...history.grants,if(grant!=null)grant]);
+  final next=EquipmentSkillHistory(startEnhancement:history.startEnhancement,grants:[...history.grants,?grant]);
   final future=EquipmentInstance(id:item.id,masterId:item.masterId,slot:item.slot,rarity:item.rarity,enhancement:item.enhancement+1,favorite:item.favorite);
   _validateSkillHistory(future,next);
   return next;

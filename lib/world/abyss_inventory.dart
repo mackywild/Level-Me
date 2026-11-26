@@ -66,10 +66,12 @@ class AbyssInventory {
   if(item==null)throw StateError('Equipment not owned');
   if(item.enhancement!=expectedLevel)throw StateError('Stale enhancement request');
   if(item.enhancement>=20)throw StateError('Enhancement limit reached');
+  if(_enhancementCosts.containsKey(id))throw StateError('Recorded enhancement history requires paid enhancement');
+  return _advanceEnhancement(item);
+ }
+ EquipmentInstance _advanceEnhancement(EquipmentInstance item){
   final next=EquipmentInstance(id:item.id,masterId:item.masterId,slot:item.slot,rarity:item.rarity,enhancement:item.enhancement+1,favorite:item.favorite);
-  _equipment[id]=next;
-  // 無料の低レベルAPIでは完全履歴を保証できない。
-  _enhancementCosts.remove(id);
+  _equipment[item.id]=next;
   return next;
  }
 
@@ -78,11 +80,11 @@ class AbyssInventory {
   final item=_equipment[id];
   if(item==null||item.enhancement!=expectedLevel||expectedLevel<0||expectedLevel>=20)throw StateError('Invalid enhancement request');
   if(!materialId.startsWith('item:')||materialId.length<=5||quantity<=0||quantity>1000000)throw ArgumentError('Invalid enhancement cost');
-  final complete=hasCompleteEnhancementHistory(item);
+  if(!hasCompleteEnhancementHistory(item))throw StateError('Enhancement history missing');
   final history=[...?_enhancementCosts[id],(materialId:materialId,quantity:quantity)];
   removeStack(materialId,quantity);
-  final next=enhance(id,expectedLevel);
-  if(complete)_enhancementCosts[id]=history;
+  final next=_advanceEnhancement(item);
+  _enhancementCosts[id]=history;
   return next;
  }
 

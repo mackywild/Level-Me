@@ -64,6 +64,7 @@ class EnhancementPolicy {
   catalog.require(item);
   if(item.enhancement!=expectedLevel)throw StateError('Stale enhancement request');
   if(item.enhancement>=20)throw StateError('Enhancement limit reached');
+  if(!inventory.hasCompleteEnhancementHistory(item))throw StateError('Enhancement history missing');
   final cost=recipeFor(item.rarity,item.enhancement);
   if(cost==null)throw StateError('Enhancement recipe unavailable');
   if(world.gold<cost.gold)throw StateError('Insufficient gold');

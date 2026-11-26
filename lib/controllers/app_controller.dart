@@ -361,6 +361,7 @@ class AppController extends ChangeNotifier {
     'Enhancement unavailable in battle'=>'戦闘中は強化できません',
     'Enhancement limit reached'=>'最大強化済み',
     'Enhancement recipe unavailable'=>'強化レシピ未承認',
+    'Enhancement history missing'=>'素材消費履歴がないため強化できません',
     'Insufficient gold'=>'G不足',
     'Insufficient materials'=>'素材不足',
     _=>'強化できません',

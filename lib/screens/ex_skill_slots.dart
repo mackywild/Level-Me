@@ -50,7 +50,7 @@ class ExManualSlotPanel extends StatelessWidget {
         final matches=available.where((candidate)=>keyOf(candidate.selection)==value);
         if(value.isNotEmpty&&matches.isEmpty)return;
         final selection=value.isEmpty?null:matches.single.selection;
-        run(()=>controller.setExManualSkillSlot(index,instanceId:selection?.instanceId,skillId:selection?.skillId,expectedGeneration:generation));
+        run(()=>controller.setExManualSkillSlot(index,instanceId:selection?.instanceId,skillId:selection?.skillId,expectedGeneration:generation,checkExpectedSelection:true,expectedSelection:current));
        },
       ),
       if(selected>=0)Text(exManualSpecText(available[selected].spec)),

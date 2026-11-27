@@ -227,6 +227,16 @@ class WorldBattle {
  final WorldStats stats;
  final BattleEquipmentEffects? equipmentEffects;
  final RelicRecoveryBattleRuntime? _relicRecovery;
+ /// Recompute resolved effects from the equipped history. Base stats remain frozen
+ /// because quest rewards can change player progression during a battle.
+ void validateRelicDefinition(RelicEffectSnapshot? expected){
+  final runtime=_relicRecovery;
+  if((runtime==null)!=(expected==null))throw const FormatException('Relic battle ownership mismatch');
+  if(runtime==null||expected==null)return;
+  final resolved=RelicRecoveryBattleRuntime(expected,baseAttack:runtime.baseAttack);
+  if(!runtime.sameDefinition(resolved))throw const FormatException('Relic battle definition mismatch');
+  _validateRelicAttack();
+ }
  bool get turnLimitReached=>turn>=(_relicRecovery?.expanded==true?RelicRecoveryBattleRuntime.maxExpandedTurn:0x7fffffffffffffff);
  static int _scaleAttack(int base,int bps)=>WorldStats.checkedStat(BigInt.from(base)*BigInt.from(10000+bps)~/BigInt.from(10000));
  /// Merge conditional equipment bonus before scaling the original base.
@@ -641,7 +651,7 @@ class WorldEngine {
  void act(WorldState w,WorldCommand command,int battleId,int expectedTurn,int now){
   final b=w.battle;
   if(b==null||b.id!=battleId||b.turn!=expectedTurn)throw StateError('Stale battle command');
-  if(b.turnLimitReached)throw StateError('Battle turn overflow');
+  if(b.turnLimitReached&&!(b._relicRecovery!=null&&command==WorldCommand.retreat))throw StateError('Battle turn overflow');
   final unavailableReason=unavailable(w,command);
   if(unavailableReason!=null)throw StateError(unavailableReason);
   final e=b.encounter;

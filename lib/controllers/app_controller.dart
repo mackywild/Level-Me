@@ -20,6 +20,9 @@ import '../world/abyss_ex_equipment_master.dart';
 import '../world/abyss_equipment_effects.dart';
 import '../world/abyss_equipment_skill_policy.dart';
 import '../world/abyss_equipment_enhancement_draw.dart';
+import '../world/abyss_relic_enhancement_draw.dart';
+import '../world/abyss_relic_skill_master.dart';
+import '../world/abyss_relic_trigger_runtime.dart';
 import '../world/abyss_dismantle.dart';
 import '../world/abyss_shop.dart';
 import '../world/abyss_consumable.dart';
@@ -31,7 +34,8 @@ import '../world/abyss_skill.dart';
 import '../world/abyss_summon.dart';
 import '../world/abyss_summon_transaction.dart';
 class AppController extends ChangeNotifier {
- AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Random? legacyRewardRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,EquipmentSkillMaster? equipmentSkillMaster,ExEquipmentTransactionPolicy? exEquipmentPolicy,Random? equipmentSkillSeedRandom,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,BuffCatalog? buffCatalog,PurificationCatalog? purificationCatalog,SkillCatalog? skillCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_exEquipmentPolicy=exEquipmentPolicy,_equipmentSkillMaster=equipmentSkillMaster??exEquipmentPolicy?.master.randomMaster,_equipmentSkillSeedRandom=equipmentSkillSeedRandom??Random.secure(),_skillCatalog=skillCatalog??SkillCatalog.production,_purificationCatalog=purificationCatalog??PurificationCatalog.production,_buffCatalog=buffCatalog??BuffCatalog.production,_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_legacyRewardRandom=legacyRewardRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+ AppController(this._store,{PortableBackup? portableBackup,EquipmentCatalog? equipmentCatalog,SummonCatalog? summonCatalog,Random? summonRandom,Random? legacyRewardRandom,Future<AbyssMaster> Function()? loadAbyssMaster,EnhancementPolicy? enhancementPolicy,EquipmentSkillMaster? equipmentSkillMaster,ExEquipmentTransactionPolicy? exEquipmentPolicy,RelicSkillMaster? relicSkillMaster,Random? equipmentSkillSeedRandom,DismantlePolicy? dismantlePolicy,ShopCatalog? shopCatalog,ConsumableCatalog? consumableCatalog,BuffCatalog? buffCatalog,PurificationCatalog? purificationCatalog,SkillCatalog? skillCatalog,int Function()? clockMs,this.enhancementScaling=const EnhancementScaling.disabled()}):_relicSkillMaster=relicSkillMaster,_exEquipmentPolicy=exEquipmentPolicy,_equipmentSkillMaster=equipmentSkillMaster??exEquipmentPolicy?.master.randomMaster,_equipmentSkillSeedRandom=equipmentSkillSeedRandom??Random.secure(),_skillCatalog=skillCatalog??SkillCatalog.production,_purificationCatalog=purificationCatalog??PurificationCatalog.production,_buffCatalog=buffCatalog??BuffCatalog.production,_clockMs=clockMs??_systemClockMs,_consumableCatalog=consumableCatalog??ConsumableCatalog.production,_shopCatalog=shopCatalog??ShopCatalog.production,_dismantlePolicy=dismantlePolicy??DismantlePolicy.production,_enhancementPolicy=enhancementPolicy??EnhancementPolicy.production,_loadAbyssMaster=loadAbyssMaster,_summonRandom=summonRandom,_legacyRewardRandom=legacyRewardRandom,_portableBackup=portableBackup,_equipmentCatalog=equipmentCatalog??EquipmentCatalog.production {
+  if(relicSkillMaster!=null&&(equipmentSkillMaster==null||exEquipmentPolicy!=null||loadAbyssMaster!=null))throw ArgumentError('Relic trial requires ordinary master without EX or production loader');
   if(exEquipmentPolicy!=null&&(!identical(_equipmentSkillMaster,exEquipmentPolicy.master.randomMaster)||loadAbyssMaster!=null))throw ArgumentError('EX test policy master mismatch');
   _summonEngine=SummonEngine(catalog:summonCatalog??SummonCatalog.production,equipmentCatalog:this.equipmentCatalog,random:summonRandom);
   _store.validatePlayer=_validateEquipment;
@@ -42,8 +46,7 @@ class AppController extends ChangeNotifier {
   if(state.inventory.equipmentSkillSeed!=null&&_equipmentSkillMaster==null)throw StateError('Equipment skill master unavailable');
   _validateEquipmentSkillInventory(state.inventory);
   final battle=state.world.battle;
-  // Trial relic definitions have no inventory ownership proof yet.
-  if(battle?.executionVersion==11||battle?.executionVersion==12||battle?.executionVersion==13)throw const FormatException('Relic battle inventory integration unavailable');
+  if(battle!=null)battle.validateRelicDefinition(_equippedRelicEffects(state.inventory));
   if(battle!=null){
    if(_exEquipmentPolicy==null&&battle.exAttacks.isNotEmpty)throw const FormatException('EX battle policy missing');
    _exEquipmentPolicy?.validateBattle(state.inventory,battle);
@@ -76,7 +79,7 @@ class AppController extends ChangeNotifier {
  bool get hasAbyssMaster=>_abyssMaster!=null;
  CompendiumView get compendiumView=>(_abyssMaster?.compendium??CompendiumCatalog.production).view(_state.inventory);
  void configureAbyssMaster(AbyssMaster master){
-  if(_exEquipmentPolicy!=null)throw StateError('EX test policy cannot configure production master');
+  if(_exEquipmentPolicy!=null||_relicSkillMaster!=null)throw StateError('Trial policy cannot configure production master');
   if(_ready||_summonBusy||_abyssMaster!=null)throw StateError('Cannot replace master while active');
   _enhancementPolicy.validateMaterials((recipe){
    final material=master.supply(recipe.materialId);
@@ -366,7 +369,7 @@ class AppController extends ChangeNotifier {
   if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   final current=_state.inventory.equipment[id];
   // EX destructive requests require the generation even if the ID/level were reused.
-  if(current?.rarity==EquipmentRarity.ex&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  if((current?.rarity==EquipmentRarity.ex||(_relicSkillMaster!=null&&current?.slot==EquipmentSlot.relic))&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   if(expectedItem!=null&&(current==null||current.id!=expectedItem.id||current.masterId!=expectedItem.masterId||current.slot!=expectedItem.slot||current.rarity!=expectedItem.rarity||current.enhancement!=expectedItem.enhancement))throw StateError('Stale equipment confirmation');
   if(!_ready)throw StateError('Player not ready');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
@@ -377,6 +380,9 @@ class AppController extends ChangeNotifier {
  });
  final EnhancementPolicy _enhancementPolicy;
  final EquipmentSkillMaster? _equipmentSkillMaster;
+ final RelicSkillMaster? _relicSkillMaster;
+ RelicSkillMaster? get relicSkillMaster=>_relicSkillMaster;
+ RelicEffectSnapshot? _equippedRelicEffects(AbyssInventory inventory)=>_relicSkillMaster==null?null:RelicEnhancementDraw.equipped(inventory,_relicSkillMaster);
  final ExEquipmentTransactionPolicy? _exEquipmentPolicy;
  bool get exManualPlanningAvailable=>_exEquipmentPolicy?.enableManualPlanning==true;
  bool get exManualExecutionAvailable=>_exEquipmentPolicy?.enableManualExecution==true;
@@ -398,7 +404,8 @@ class AppController extends ChangeNotifier {
  }
  void _validateEquipmentSkillInventory(AbyssInventory inventory){
   final ex=_exEquipmentPolicy;
-  if(ex==null){_equipmentSkillMaster?.validateInventory(inventory);}else{ex.validateInventory(inventory,equipmentCatalog);}
+  if(ex==null){_equipmentSkillMaster?.validateInventory(inventory,allowRelicHistory:_relicSkillMaster!=null);}else{ex.validateInventory(inventory,equipmentCatalog);}
+  if(_relicSkillMaster!=null)RelicEnhancementDraw.validateInventory(inventory,_relicSkillMaster);
  }
  EquipmentSkillMaster? get equipmentSkillMaster=>_equipmentSkillMaster;
  final Random _equipmentSkillSeedRandom;
@@ -408,7 +415,7 @@ class AppController extends ChangeNotifier {
   final item=inventory.equipment[id]!;
   if(item.rarity==EquipmentRarity.ex||(inventory.equipmentSkillSeed==null&&inventory.equipment.values.any((e)=>e.rarity==EquipmentRarity.ex)))throw StateError('EX skill history layout not connected');
   final milestone=EquipmentSkillPolicy.nextGrant(item.rarity,item.enhancement,item.enhancement+1);
-  if(milestone!=null&&!master.hasCandidates(item.slot))throw StateError('Equipment skill pool unavailable');
+  if(milestone!=null&&!(item.slot==EquipmentSlot.relic?_relicSkillMaster?.hasCandidates==true:master.hasCandidates(item.slot)))throw StateError('Equipment skill pool unavailable');
   _validateEquipmentSkillInventory(inventory);
  }
  final EnhancementScaling enhancementScaling;
@@ -462,7 +469,7 @@ class AppController extends ChangeNotifier {
  },keepPublishedState:true);
  Future<EquipmentInstance> enhanceWorldItem(String id,int expectedLevel,{int? expectedGeneration})=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
-  if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  if((expectedGeneration!=null||(_relicSkillMaster!=null&&_state.inventory.equipment[id]?.slot==EquipmentSlot.relic))&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   final ex=_exEquipmentPolicy;
   if(_state.inventory.equipment[id]?.rarity==EquipmentRarity.ex&&ex!=null){
    if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
@@ -491,9 +498,12 @@ class AppController extends ChangeNotifier {
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final previousStats=_worldStatsFor(working);
   final previousRecovery=_naturalRecoveryFor(working);
-  final grant=master==null?null:EquipmentEnhancementDraw.prepare(working.inventory,working.inventory.equipment[id]!,master);
-  final result=_enhancementPolicy.enhance(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel,skillGrant:grant);
+  final item=working.inventory.equipment[id]!;
+  final relic=item.slot==EquipmentSlot.relic?_relicSkillMaster:null;
+  final grant=master==null?null:relic!=null?RelicEnhancementDraw.prepare(working.inventory,item,relic):EquipmentEnhancementDraw.prepare(working.inventory,item,master);
+  final result=_enhancementPolicy.enhance(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel,skillGrant:grant,relicFingerprint:relic!=null&&grant!=null?RelicEnhancementDraw.fingerprint(relic):null);
   _settleEquipmentRecoveryChange(working,previousStats,previousRecovery);
+  _validateEquipment(working);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -517,7 +527,7 @@ class AppController extends ChangeNotifier {
   if(ex!=null)return ex.snapshot(state.inventory);
   return master.effectPolicy.snapshot(state.inventory,[
    for(final entry in state.inventory.equipmentSkillHistories.entries)
-    if(state.inventory.equipment[entry.key]!.rarity!=EquipmentRarity.ex)
+    if(state.inventory.equipment[entry.key]!.rarity!=EquipmentRarity.ex&&entry.value.relicFingerprint==null)
     for(final grant in entry.value.grants)
      EquipmentSkillGrant(instanceId:entry.key,milestone:grant.milestone,skillId:grant.skillId,level:grant.level),
   ]);
@@ -553,7 +563,8 @@ class AppController extends ChangeNotifier {
   _skillCatalog.validateProgress(working.world,working.skills);
   final effects=_battleEquipmentEffects(working);
   final attacks=_exEquipmentPolicy?.battleAttacks(working.inventory,effects?.cooldown??0);
-  worldEngine.start(working.world,_baseWorldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills),equipmentEffects:effects,exAttacks:attacks??const []);
+  worldEngine.start(working.world,_baseWorldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills),equipmentEffects:effects,exAttacks:attacks??const [],trialRelicEffects:_equippedRelicEffects(working.inventory));
+  _validateEquipment(working);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -581,9 +592,10 @@ class AppController extends ChangeNotifier {
  });
  Future<void> worldCommand(WorldCommand command,int battleId,int turn,{int? expectedGeneration})=>_transaction(() async {
   if(!_ready)throw StateError('Player not ready');
-  if(expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
+  if((expectedGeneration!=null||(_state.world.battle?.executionVersion??0)>=11)&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final now=_nowMs;
+  _validateEquipment(working);
   worldEngine.act(working.world,command,battleId,turn,now);
   worldEngine.refresh(working.world,worldStats,now,naturalRecovery:_naturalRecoveryFor(working));
   await _store.save(working);
@@ -615,6 +627,7 @@ class AppController extends ChangeNotifier {
   if(item==null)throw StateError('Equipment not owned');
   equipmentCatalog.require(item);
   final replacedId=working.inventory.equipped[item.slot];
+  if(_relicSkillMaster!=null&&item.slot==EquipmentSlot.relic&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   if((expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)||(working.inventory.equipment[replacedId]?.rarity==EquipmentRarity.ex&&expectedGeneration!=_restoreGeneration))throw StateError('Stale save generation');
   final ex=_exEquipmentPolicy;
   if(item.rarity==EquipmentRarity.ex){
@@ -635,6 +648,7 @@ class AppController extends ChangeNotifier {
   final previousStats=_worldStatsFor(working);
   final previousRecovery=_naturalRecoveryFor(working);
   final equippedId=working.inventory.equipped[slot];
+  if(_relicSkillMaster!=null&&slot==EquipmentSlot.relic&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   if((expectedGeneration!=null&&expectedGeneration!=_restoreGeneration)||(working.inventory.equipment[equippedId]?.rarity==EquipmentRarity.ex&&expectedGeneration!=_restoreGeneration))throw StateError('Stale save generation');
   working.inventory.unequip(slot);
   _settleEquipmentRecoveryChange(working,previousStats,previousRecovery);

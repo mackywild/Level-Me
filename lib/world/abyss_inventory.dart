@@ -129,7 +129,7 @@ class AbyssInventory {
    if(grant!=null||relicFingerprint!=null)throw StateError('Skill history not initialized');
    return null;
   }
-  if(relicFingerprint!=null&&(grant==null||(history.relicFingerprint!=null&&history.relicFingerprint!=relicFingerprint)))throw StateError('Relic history master mismatch');
+  if(relicFingerprint!=null&&(_skillSeed==null||grant==null||(history.relicFingerprint!=null&&history.relicFingerprint!=relicFingerprint)))throw StateError('Relic history master mismatch');
   final next=EquipmentSkillHistory(startEnhancement:history.startEnhancement,grants:[...history.grants,?grant],relicFingerprint:history.relicFingerprint??relicFingerprint);
   final future=EquipmentInstance(id:item.id,masterId:item.masterId,slot:item.slot,rarity:item.rarity,enhancement:item.enhancement+1,favorite:item.favorite);
   _validateSkillHistory(future,next,exLayout:_exLayouts[item.id]);

@@ -16,6 +16,16 @@ RelicEffectSnapshot effects(List<RelicEffect> kinds,{int chance=10000,int low=10
  ]);
  return RelicEffectSnapshot.resolve(master,[for(final e in kinds)RelicSkillContribution(skillId:'equipment_relic_skill:${e.name}',level:1)]);
 }
+class _ZeroRandom implements Random {
+ @override double nextDouble()=>0;
+ @override bool nextBool()=>false;
+ @override int nextInt(int max)=>0;
+}
+class _HalfRandom implements Random {
+ @override double nextDouble()=>0.5;
+ @override bool nextBool()=>false;
+ @override int nextInt(int max)=>0;
+}
 void main(){
  const now=1700000000000;
  const stats=WorldStats(hp:100,physical:7,magic:11,defense:0,physicalMax:100,magicMax:100,crit:0);
@@ -78,6 +88,55 @@ void main(){
   e.start(healthy,stats,'p01_main',now,trialRelicEffects:effects([RelicEffect.lethalSurvival],chance:5000));
   final before=healthy.battle!.rngState;guard(e,healthy);
   expect(healthy.battle!.rngState,before);expect(healthy.battle!.relicUses,isEmpty);
+ });
+ test('窮地覚醒を実際の物理・魔法攻撃と追加攻撃に適用',(){
+  final e=WorldEngine(seedRandom:Random(7),random:_HalfRandom());
+  for(final command in [WorldCommand.claw,WorldCommand.magic]){
+   for(final hp in [30,31]){
+    final w=world(hp:hp);w.cleared.add('p01_main');
+    e.start(w,stats,'p01_elite',now,trialRelicEffects:effects([RelicEffect.lowHpAttack]),equipmentEffects:BattleEquipmentEffects(extraAttack:5000));
+    final b=w.battle!,before=b.enemyHp;
+    e.act(w,command,b.id,b.turn,now);
+    final attack=command==WorldCommand.claw?7:11;
+    final value=hp==30?attack*2:attack;
+    final expected=e.damage(value,b.encounter.defense,command==WorldCommand.claw?1:1.2);
+    expect(before-b.enemyHp,expected);
+   }
+  }
+  final extra=WorldEngine(seedRandom:Random(7),random:_ZeroRandom());
+  final w=world();w.cleared.add('p01_main');
+  extra.start(w,stats,'p01_elite',now,trialRelicEffects:effects([RelicEffect.lowHpAttack]),equipmentEffects:BattleEquipmentEffects(extraAttack:5000));
+  final b=w.battle!,before=b.enemyHp;
+  extra.act(w,WorldCommand.claw,b.id,b.turn,now);
+  expect(before-b.enemyHp,extra.damage(14,b.encounter.defense,1,variance:0.95)+extra.damage(14,b.encounter.defense,0.5,variance:0.95));
+  expect(b.log.any((l)=>l.startsWith('追加攻撃')),true);
+ });
+ test('致死の確率成功/失敗を永続RNGで再現し敗北時に二次効果なし',(){
+  final e=engine();
+  for(final (seed,success) in [(1,true),(40000,false)]){
+   final w=world(hp:1);e.start(w,stats,'p01_main',now,trialRelicEffects:effects([RelicEffect.lethalSurvival,RelicEffect.turnEndMagicRecovery],chance:5000));
+   final raw=jsonDecode(jsonEncode(w.toJson())) as Map<String,dynamic>;
+   raw['battle']['rngState']=seed;
+   final restored=WorldState.fromJson(raw),again=clone(restored);
+   guard(e,restored);guard(engine(),again);
+   expect(restored.toJson(),again.toJson());
+   expect(restored.hp,success?1:0);
+   if(success){expect(restored.battle!.relicUses[RelicEffect.lethalSurvival],1);}
+   else{expect(restored.battle,isNull);expect(restored.magic,80);}
+  }
+ });
+ test('版12の最大turn拒否と攻撃補正overflowは変更前に拒否',(){
+  final e=engine(),w=world();
+  e.start(w,stats,'p01_main',now,trialRelicEffects:effects([RelicEffect.lowHpAttack]));
+  final raw=jsonDecode(jsonEncode(w.toJson())) as Map<String,dynamic>;
+  const maxTurn=RelicRecoveryBattleRuntime.maxExpandedTurn;
+  raw['battle']['turn']=maxTurn;raw['battle']['relicRecovery']['lastEvent']=2*maxTurn-1;
+  final restored=WorldState.fromJson(raw),before=jsonEncode(restored.toJson());
+  expect(()=>guard(e,restored),throwsStateError);expect(jsonEncode(restored.toJson()),before);
+  final untouched=world(),original=jsonEncode(untouched.toJson());
+  const enormous=WorldStats(hp:100,physical:WorldStats.maxStat,magic:1,defense:0,physicalMax:100,magicMax:100,crit:0);
+  expect(()=>e.start(untouched,enormous,'p01_main',now,trialRelicEffects:effects([RelicEffect.lowHpAttack])),throwsStateError);
+  expect(jsonEncode(untouched.toJson()),original);
  });
  test('版12のイベント・閾値・基礎攻撃・回数・旧版混入拒否',(){
   final e=engine(),w=world();

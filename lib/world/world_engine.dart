@@ -233,6 +233,7 @@ class WorldBattle {
   final runtime=_relicRecovery;
   if((runtime==null)!=(expected==null))throw const FormatException('Relic battle ownership mismatch');
   if(runtime==null||expected==null)return;
+  if(runtime.expanded!=RelicRecoveryBattleRuntime.requiresExpanded(expected))throw const FormatException('Relic battle version mismatch');
   final resolved=RelicRecoveryBattleRuntime(expected,baseAttack:runtime.baseAttack);
   if(!runtime.sameDefinition(resolved))throw const FormatException('Relic battle definition mismatch');
   _validateRelicAttack();

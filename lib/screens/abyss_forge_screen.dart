@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../controllers/app_controller.dart';
 import 'equipment_skill_details.dart';
+import '../world/abyss_inventory.dart';
 
 class AbyssForgeScreen extends StatefulWidget {
  const AbyssForgeScreen({super.key,required this.controller});
@@ -11,11 +12,11 @@ class AbyssForgeScreen extends StatefulWidget {
 class _AbyssForgeScreenState extends State<AbyssForgeScreen>{
  bool _busy=false;
  String? _error;
- Future<void> _enhance(String id,int expectedLevel) async {
+ Future<void> _enhance(String id,int expectedLevel,int generation) async {
   if(_busy)return;
   setState((){_busy=true;_error=null;});
   try {
-   await widget.controller.enhanceWorldItem(id,expectedLevel,expectedGeneration:widget.controller.restoreGeneration);
+   await widget.controller.enhanceWorldItem(id,expectedLevel,expectedGeneration:generation);
   }catch(_){
    if(mounted)setState(()=>_error='強化を完了できませんでした。装備・資産を確認してください。');
   }finally{
@@ -40,7 +41,9 @@ class _AbyssForgeScreenState extends State<AbyssForgeScreen>{
     for(final item in state.inventory.equipment.values)
      Card(child:Padding(padding:const EdgeInsets.all(12),child:Builder(builder:(context){
       final definition=c.equipmentCatalog.find(item.masterId);
-      final recipe=c.enhancementRecipeFor(item.rarity,item.enhancement);
+      final recipe=item.rarity==EquipmentRarity.ex?null:c.enhancementRecipeFor(item.rarity,item.enhancement);
+      final exRecipe=item.rarity==EquipmentRarity.ex?c.exEnhancementRecipe(item.masterId):null;
+      final generation=c.restoreGeneration;
       final reason=c.enhancementUnavailable(item.id,item.enhancement);
       final level=item.enhancement;
       String stat(int base)=>level>=20?'${scaling.apply(base,level)}':'${scaling.apply(base,level)} → ${scaling.apply(base,level+1)}';
@@ -56,9 +59,14 @@ class _AbyssForgeScreenState extends State<AbyssForgeScreen>{
         Text('${c.summonRewardName(recipe.materialId)}：${state.inventory.stacks[recipe.materialId]??0} / ${recipe.quantity}'),
         Text('消費G：${recipe.gold}'),
        ],
+       if(exRecipe!=null&&level<20)...[
+        for(final cost in exRecipe.materials.materialsFor(level).entries)
+         Text('${c.summonRewardName(cost.key)}：${state.inventory.stacks[cost.key]??0} / ${cost.value}'),
+        Text('消費G：${exRecipe.gold}'),
+       ],
        if(reason!=null)Text(reason),
        TextButton(onPressed:()=>EquipmentSkillDetails.show(context,c,item),child:const Text('スキル詳細')),
-       FilledButton(onPressed:_busy||reason!=null?null:()=>_enhance(item.id,level),child:Text(level>=20?'最大強化済み':'強化 +${level+1}')),
+       FilledButton(onPressed:_busy||c.inventoryBusy||reason!=null?null:()=>_enhance(item.id,level,generation),child:Text(level>=20?'最大強化済み':'強化 +${level+1}')),
       ]);
      }))),
    ]);

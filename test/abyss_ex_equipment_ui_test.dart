@@ -1,0 +1,89 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:level_me/controllers/app_controller.dart';
+import 'package:level_me/models/app_state.dart';
+import 'package:level_me/services/local_store.dart';
+import 'package:level_me/screens/equipment_skill_details.dart';
+import 'package:level_me/screens/abyss_forge_screen.dart';
+import 'package:level_me/screens/ex_skill_slots.dart';
+import 'package:level_me/world/abyss_equipment.dart';
+import 'package:level_me/world/abyss_equipment_effects.dart';
+import 'package:level_me/world/abyss_equipment_skill_master.dart';
+import 'package:level_me/world/abyss_equipment_skill_pool.dart';
+import 'package:level_me/world/abyss_ex_equipment_skill.dart';
+import 'package:level_me/world/abyss_ex_equipment_master.dart';
+import 'package:level_me/world/abyss_ex_equipment_transaction.dart';
+import 'package:level_me/world/abyss_ex_battle_attack.dart';
+import 'package:level_me/world/abyss_enhancement.dart';
+import 'package:level_me/world/abyss_inventory.dart';
+import 'package:level_me/world/world_catalog.dart';
+
+class _Store extends LocalStore {
+ String? data;
+ int saves=0;
+ @override Future<AppStateData> load() async=>data==null?AppStateData.initial():AppStateData.fromJson(jsonDecode(data!) as Map<String,dynamic>);
+ @override Future<void> save(AppStateData state) async {saves++;data=jsonEncode(state.toJson());}
+}
+void main(){
+ const now=1700000000000,id='equipment:ex_ui',iron='item:iron',special='item:ex_ui',offer='ex_offer:ui';
+ setUpAll(()=>WorldCatalog.loadJson(File(WorldCatalog.assetPath).readAsStringSync()));
+ final equipment=EquipmentCatalog(const [EquipmentDefinition(id:id,name:'試験EX剣',slot:EquipmentSlot.hands,rarity:EquipmentRarity.ex)]);
+ final random=EquipmentSkillMaster(const [EquipmentSkillMasterEntry(id:'equipment_skill:attack',rarity:EquipmentSkillRarity.common,pool:EquipmentSkillPool.attack,effect:EquipmentEffect.physicalPercent,perLevel:100)]);
+ final rule=ExEffectRule.special(id:'equipment_ex_effect:manual_attack',stacking:ExEffectStacking.additive,cap:1000000);
+ final skill=ExFixedSkillDefinition(id:'equipment_ex_skill:ui',name:'試験斬撃',activation:ExSkillActivation.manual,manualSpec:ExManualSkillSpec(physicalCost:1,magicCost:1,cooldown:2,maxUses:1,attackAttribute:ExAttackAttribute.physical),effects:[ExFixedEffect(ruleId:rule.id,valuesByLevel:{7:1})]);
+ final master=ExEquipmentMaster(equipment:equipment,randomMaster:random,layouts:[ExEquipmentSkillLayout(masterId:id,slot:EquipmentSlot.hands,fixedSkills:[ExFixedEquipmentSkill(id:skill.id,level:7)],randomMilestones:[1,20])],fixedSkills:[skill],effectRules:[rule]);
+ final plan=ExEnhancementMaterialPlan(normalMaterialId:iron,exMaterialId:special,normalSchedule:EnhancementMaterialSchedule(List.generate(20,(i)=>i+1)),exSchedule:EnhancementMaterialSchedule(List.generate(20,(i)=>(i+1)*2)));
+ final policy=ExEquipmentTransactionPolicy(master:master,enableAutomaticEffects:true,enableManualPlanning:true,enableManualExecution:true,normalMaterials:[iron],exMaterials:[special],recipes:[ExEnhancementRecipe(masterId:id,materials:plan,gold:2)],offers:const [ExAcquisitionOffer(id:offer,masterId:id,magicCrystals:5)]);
+ Future<AppController> make(_Store store) async{
+  final c=AppController(store,equipmentCatalog:equipment,exEquipmentPolicy:policy,equipmentSkillSeedRandom:Random(7),clockMs:()=>now);
+  addTearDown(c.dispose);await c.initialize();
+  c.state.world.magicCrystals=10;c.state.world.gold=10;c.state.inventory.addStack(iron,10);c.state.inventory.addStack(special,10);
+  await c.acquireExWorldItem(offer,0,expectedGeneration:c.restoreGeneration);
+  return c;
+ }
+ testWidgets('EX詳細・個別素材費用と確定履歴は描画で変更しない',(tester) async{
+  final store=_Store(),c=await make(store);
+  final item=c.state.inventory.equipment.values.single;
+  await c.enhanceWorldItem(item.id,0,expectedGeneration:c.restoreGeneration);
+  final before=jsonEncode(c.state.toJson()),saves=store.saves;
+  await tester.pumpWidget(MaterialApp(home:Scaffold(body:SingleChildScrollView(child:EquipmentSkillDetails(controller:c,item:item,generation:c.restoreGeneration)))));
+  expect(find.text('EX固定スキル'),findsOneWidget);
+  expect(find.text('試験斬撃 Lv7 / 任意発動'),findsOneWidget);
+  expect(find.text('確定済み 1 / 2 枠'),findsOneWidget);
+  expect(find.text('+20 未解放'),findsOneWidget);
+  await tester.pumpWidget(MaterialApp(home:AbyssForgeScreen(controller:c)));
+  expect(find.text('${c.summonRewardName(iron)}：9 / 2'),findsOneWidget);
+  expect(find.text('${c.summonRewardName(special)}：8 / 4'),findsOneWidget);
+  expect(find.text('消費G：2'),findsOneWidget);
+  expect(jsonEncode(c.state.toJson()),before);expect(store.saves,saves);
+ });
+ testWidgets('EX専用枠を登録し重複候補を除外、戦闘発動とCDを表示',(tester) async{
+  final store=_Store(),c=await make(store);
+  final item=c.state.inventory.equipment.values.single;
+  await c.equipWorldItem(item.id,expectedGeneration:c.restoreGeneration);
+  Future<void> run(Future<void> Function() action)=>action();
+  Widget host(Widget panel)=>MaterialApp(home:Scaffold(body:ListenableBuilder(listenable:c,builder:(context,child)=>SingleChildScrollView(child:panel))));
+  // Recreate the panel on controller notification.
+  await tester.pumpWidget(MaterialApp(home:Scaffold(body:ListenableBuilder(listenable:c,builder:(context,child)=>SingleChildScrollView(child:ExManualSlotPanel(controller:c,busy:false,run:run))))));
+  final first=find.byKey(const ValueKey('ex-slot-0-0'));
+  final second=find.byKey(const ValueKey('ex-slot-0-1'));
+  expect(tester.widget<DropdownButton<String>>(first).items!.length,2);
+  tester.widget<DropdownButton<String>>(first).onChanged!('${item.id}:${skill.id}');
+  await tester.pumpAndSettle();
+  expect(c.state.inventory.exManualSlots[0]!.skillId,skill.id);
+  expect(tester.widget<DropdownButton<String>>(second).items!.length,1);
+  await c.startWorldBattle('p01_main');
+  await tester.pumpWidget(host(ExBattleSkillPanel(controller:c,busy:false,run:run)));
+  expect(find.text('物理攻撃 威力 0.01%'),findsOneWidget);
+  expect(find.text('実消費：物理 1 / 魔法 1 / HP 0 / 寿命 0日'),findsOneWidget);
+  final button=find.byKey(const ValueKey('ex-battle-0'));
+  await tester.tap(button);await tester.pumpAndSettle();
+  expect(c.state.world.battle!.exAttacks.single.uses,1);
+  await tester.pumpWidget(MaterialApp(home:Scaffold(body:ExBattleSkillPanel(controller:c,busy:false,run:run))));
+  expect(find.text('CD 2 / 残回数 0'),findsOneWidget);
+  expect(tester.widget<OutlinedButton>(button).onPressed,isNull);
+ });
+}

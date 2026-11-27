@@ -5,6 +5,8 @@ import '../world/abyss_equipment_skill_policy.dart';
 import '../world/abyss_equipment_skill_master.dart';
 import '../world/abyss_equipment_skill_pool.dart';
 import '../world/abyss_equipment_effects.dart';
+import '../world/abyss_ex_equipment_master.dart';
+import 'ex_skill_slots.dart';
 
 /// 保存済み結果だけを表示する。抽選・履歴生成・書き込みは行わない。
 class EquipmentSkillDetails extends StatelessWidget {
@@ -62,7 +64,13 @@ class EquipmentSkillDetails extends StatelessWidget {
   final active=inv.equipmentSkillSeed!=null&&master!=null;
   final entries=<String,EquipmentSkillMasterEntry>{for(final entry in master?.entries??const <EquipmentSkillMasterEntry>[])entry.id:entry};
   final grants=<int,StoredEquipmentSkill>{for(final grant in history?.grants??const <StoredEquipmentSkill>[])grant.milestone:grant};
-  final milestones=current.rarity==EquipmentRarity.ex?const <int>[]:EquipmentSkillPolicy.milestones(current.rarity);
+  final exMaster=controller.exEquipmentMaster;
+  final exLayout=inv.exSkillLayouts[current.id];
+  var exVerified=false;
+  if(current.rarity==EquipmentRarity.ex&&exMaster!=null&&exLayout!=null){
+   try{exMaster.validateInstance(inv,current);exVerified=true;}catch(_){/* fail closed */}
+  }
+  final milestones=current.rarity==EquipmentRarity.ex?(exVerified?exLayout!.milestones:const <int>[]):EquipmentSkillPolicy.milestones(current.rarity);
   final theme=Theme.of(context);
   final definition=controller.equipmentCatalog.find(current.masterId);
   final validDefinition=definition!=null&&definition.slot==current.slot&&definition.rarity==current.rarity;
@@ -73,9 +81,24 @@ class EquipmentSkillDetails extends StatelessWidget {
     Text('装備性能：物攻 ${controller.enhancementScaling.apply(definition.physical,current.enhancement)} / 魔攻 ${controller.enhancementScaling.apply(definition.magic,current.enhancement)} / 防御 ${controller.enhancementScaling.apply(definition.defense,current.enhancement)}'),
    ],
    const Divider(),
-   if(current.rarity==EquipmentRarity.ex)const Text('EX固有・ランダム枠は未対応')
-   else if(milestones.isEmpty)const Text('スキル付与枠なし')
-   else...[
+   if(current.rarity==EquipmentRarity.ex)...[
+    const Text('EX固定スキル',style:TextStyle(fontWeight:FontWeight.bold)),
+    if(!exVerified||exMaster==null)const Text('EX固有・ランダム枠は未対応')
+    else...[
+     for(final fixed in exMaster.resolveFixedSkills(current))...[
+      Text('${fixed.skill.name} Lv${fixed.level} / ${fixed.skill.activation==ExSkillActivation.automatic?'自動':'任意発動'}'),
+      for(final effect in fixed.skill.effects)
+       Text('${effect.drawback?'代償：':''}${exMaster.effectRules[effect.ruleId]?.normalEffect==null?effect.ruleId:effectName(exMaster.effectRules[effect.ruleId]!.normalEffect!)} ${exMaster.effectRules[effect.ruleId]?.normalEffect!=null||const ['equipment_ex_effect:manual_attack','equipment_ex_effect:manual_heal_hp'].contains(effect.ruleId)?percent(effect.valuesByLevel[fixed.level]!):'${effect.valuesByLevel[fixed.level]!}（定義値・未接続）'}'),
+      if(fixed.skill.manualSpec case final spec?)Text(exManualSpecText(spec)),
+     ],
+     if(controller.exEquipUnavailable(current) case final reason?)Text(reason),
+     const Text('個別性能（重複・上限適用前）'),
+     const Divider(),
+     const Text('EXランダム枠',style:TextStyle(fontWeight:FontWeight.bold)),
+    ],
+   ],
+   if(milestones.isEmpty&&current.rarity!=EquipmentRarity.ex)const Text('スキル付与枠なし')
+   else if(milestones.isNotEmpty)...[
     Text('確定済み ${grants.length} / ${milestones.length} 枠'),
     if(!active)const Text('装備スキル機能未有効化'),
     if(!equipped)const Text('未装着のため戦闘効果は適用されません'),

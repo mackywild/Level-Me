@@ -9,6 +9,7 @@ import 'abyss_inventory_screen.dart';
 import 'abyss_shop_screen.dart';
 import 'abyss_compendium_screen.dart';
 import 'abyss_skill_screen.dart';
+import 'ex_skill_slots.dart';
 
 String _activeSkillDescription(AppController c,WorldState w,ActiveSkillSpec spec){
  final cost=spec.lifeCost>0?'寿命 ${spec.lifeCost}日':'物理 ${c.worldEngine.activeSkillCost(w,spec)}';
@@ -131,6 +132,7 @@ class _WorldScreenState extends State<WorldScreen>{
        );
       }),
     ]),
+    if(b.exAttacks.isNotEmpty)ExBattleSkillPanel(controller:c,busy:busy,run:run),
     panel([const Text('ITEM / 回復アイテム',style:TextStyle(color:gold,fontWeight:FontWeight.bold)),
      if(c.inventoryBusy)const LinearProgressIndicator(),
      if(!c.recoveryItems.any((item)=>(c.state.inventory.stacks[item.id]??0)>0))const Text('使用可能な回復アイテムなし'),
@@ -225,12 +227,14 @@ class _WorldScreenState extends State<WorldScreen>{
      FilledButton(onPressed:busy?null:()=>Navigator.of(context).push<void>(MaterialPageRoute(builder:(_)=>AbyssShopScreen(controller:c))),child:const Text('深淵商店へ')),
      for(final slot in EquipmentSlot.values)
       Row(children:[Expanded(child:Text('${slot.name}: ${c.equipmentCatalog.find(c.state.inventory.equipment[c.state.inventory.equipped[slot]]?.masterId??'')?.name??'未装着'}')),
-       if(c.state.inventory.equipped.containsKey(slot))TextButton(onPressed:busy?null:()=>run(()=>c.unequipWorldItem(slot)),child:const Text('解除'))]),
+       if(c.state.inventory.equipped.containsKey(slot))TextButton(onPressed:busy||c.inventoryBusy||!c.ready?null:()=>run(()=>c.unequipWorldItem(slot,expectedGeneration:generation)),child:const Text('解除'))]),
      if(c.state.inventory.equipment.isEmpty)const Text('所持装備なし'),
      for(final item in c.state.inventory.equipment.values)
       if(c.equipmentCatalog.find(item.masterId)!=null&&!c.state.inventory.equipped.containsValue(item.id))
-       OutlinedButton(onPressed:busy?null:()=>run(()=>c.equipWorldItem(item.id)),child:Text('${c.equipmentCatalog.find(item.masterId)!.name} / ${item.id} を装着')),
+       OutlinedButton(onPressed:busy||c.inventoryBusy||c.exEquipUnavailable(item)!=null?null:()=>run(()=>c.equipWorldItem(item.id,expectedGeneration:generation)),child:Text('${c.equipmentCatalog.find(item.masterId)!.name} / ${item.id} を装着${c.exEquipUnavailable(item)==null?'':' / ${c.exEquipUnavailable(item)}'}')),
     ]),
+    if(c.exManualPlanningAvailable)ExManualSlotPanel(controller:c,busy:busy,run:run),
+    if(c.exBattleUnavailable() case final reason?)Text(reason),
     panel([Text('PROLOGUE   ${w.cleared.where((id)=>id.endsWith("_main")).length} / 21',style:const TextStyle(color:gold,letterSpacing:2)),
      const SizedBox(height:10),
      for(final entry in WorldCatalog.titles.entries)
@@ -249,7 +253,7 @@ class _WorldScreenState extends State<WorldScreen>{
       Text('HP ${e.hp}   報酬 ${e.gold} G${e.lifeDays>0?' / 寿命 +${e.lifeDays}日':''}'),
       const SizedBox(height:10),
       SizedBox(width:double.infinity,child:FilledButton(
-       onPressed:busy||w.hp==0||!c.worldEngine.isUnlocked(w,e)||c.worldEngine.victoryRewardUnavailable(w,e)!=null?null:()=>run(()=>c.startWorldBattle(e.id)),
+       onPressed:busy||c.inventoryBusy||c.exBattleUnavailable()!=null||w.hp==0||!c.worldEngine.isUnlocked(w,e)||c.worldEngine.victoryRewardUnavailable(w,e)!=null?null:()=>run(()=>c.startWorldBattle(e.id)),
        child:Text(e.main&&w.cleared.contains(e.id)?'クリア済み':!c.worldEngine.isUnlocked(w,e)?'未解放':w.hp==0?'HP回復待ち':c.worldEngine.victoryRewardUnavailable(w,e)??'戦闘開始'))),
      ]),
    ],

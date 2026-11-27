@@ -16,6 +16,7 @@ import '../world/abyss_equipment.dart';
 import '../world/abyss_enhancement.dart';
 import '../world/abyss_equipment_skill_master.dart';
 import '../world/abyss_ex_equipment_transaction.dart';
+import '../world/abyss_ex_equipment_master.dart';
 import '../world/abyss_equipment_effects.dart';
 import '../world/abyss_equipment_skill_policy.dart';
 import '../world/abyss_equipment_enhancement_draw.dart';
@@ -375,6 +376,24 @@ class AppController extends ChangeNotifier {
  final EnhancementPolicy _enhancementPolicy;
  final EquipmentSkillMaster? _equipmentSkillMaster;
  final ExEquipmentTransactionPolicy? _exEquipmentPolicy;
+ bool get exManualPlanningAvailable=>_exEquipmentPolicy?.enableManualPlanning==true;
+ bool get exManualExecutionAvailable=>_exEquipmentPolicy?.enableManualExecution==true;
+ ExEquipmentMaster? get exEquipmentMaster=>_exEquipmentPolicy?.master;
+ ExEnhancementRecipe? exEnhancementRecipe(String masterId)=>_exEquipmentPolicy?.recipe(masterId);
+ String? exEquipUnavailable(EquipmentInstance item){
+  if(item.rarity!=EquipmentRarity.ex)return null;
+  final ex=_exEquipmentPolicy;
+  if(ex==null)return 'EX装着未対応';
+  try{ex.requireEquippable(_state.inventory,item);return null;}catch(_){return 'EX固有効果未接続または装備情報不整合';}
+ }
+ String? exManualSelectionUnavailable(ExManualSkillSlot selection){
+  final ex=_exEquipmentPolicy;
+  if(ex==null)return 'EX専用枠未対応';
+  try{ex.requireManualSelection(_state.inventory,selection);return null;}catch(_){return '未装着または登録できないEXスキル';}
+ }
+ String? exBattleUnavailable(){
+  try{_exEquipmentPolicy?.requireBattleReady(_state.inventory);return null;}catch(_){return '未接続のEX任意効果があります';}
+ }
  void _validateEquipmentSkillInventory(AbyssInventory inventory){
   final ex=_exEquipmentPolicy;
   if(ex==null){_equipmentSkillMaster?.validateInventory(inventory);}else{ex.validateInventory(inventory,equipmentCatalog);}

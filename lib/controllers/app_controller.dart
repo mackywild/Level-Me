@@ -503,7 +503,7 @@ class AppController extends ChangeNotifier {
   final grant=master==null?null:relic!=null?RelicEnhancementDraw.prepare(working.inventory,item,relic):EquipmentEnhancementDraw.prepare(working.inventory,item,master);
   final result=_enhancementPolicy.enhance(world:working.world,inventory:working.inventory,catalog:equipmentCatalog,id:id,expectedLevel:expectedLevel,skillGrant:grant,relicFingerprint:relic!=null&&grant!=null?RelicEnhancementDraw.fingerprint(relic):null);
   _settleEquipmentRecoveryChange(working,previousStats,previousRecovery);
-  _validateEquipment(working);
+  if(_relicSkillMaster!=null)_validateEquipment(working);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -564,7 +564,7 @@ class AppController extends ChangeNotifier {
   final effects=_battleEquipmentEffects(working);
   final attacks=_exEquipmentPolicy?.battleAttacks(working.inventory,effects?.cooldown??0);
   worldEngine.start(working.world,_baseWorldStatsFor(working),id,_nowMs,activeSkills:_skillCatalog.snapshot(working.skills),lifeRewardBonuses:_skillCatalog.rewardSnapshot(working.skills),equipmentEffects:effects,exAttacks:attacks??const [],trialRelicEffects:_equippedRelicEffects(working.inventory));
-  _validateEquipment(working);
+  if(_relicSkillMaster!=null)_validateEquipment(working);
   await _store.save(working);
   _state=working;
   notifyListeners();
@@ -595,7 +595,7 @@ class AppController extends ChangeNotifier {
   if((expectedGeneration!=null||(_state.world.battle?.executionVersion??0)>=11)&&expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final now=_nowMs;
-  _validateEquipment(working);
+  if(_relicSkillMaster!=null)_validateEquipment(working);
   worldEngine.act(working.world,command,battleId,turn,now);
   worldEngine.refresh(working.world,worldStats,now,naturalRecovery:_naturalRecoveryFor(working));
   await _store.save(working);

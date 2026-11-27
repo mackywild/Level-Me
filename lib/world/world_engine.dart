@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'world_catalog.dart';
 import 'abyss_ex_battle_attack.dart';
+import 'abyss_relic_skill_master.dart';
+import 'abyss_relic_trigger_runtime.dart';
 
 enum BattleBuff { attack, defense, regeneration, critical, evasion, energyDiscount, lethalProtection, regenerationSuppression }
 
@@ -218,11 +220,13 @@ class BattleEquipmentEffects {
 }
 
 class WorldBattle {
- WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses,List<ActiveSkillSpec> activeSkills=const [],Map<String,int>? skillCooldowns,int? rngState,({int startHp,int? previousHp})? rewindHistory,List<LifeRewardBonus> lifeRewardBonuses=const [],int awakeningTurns=0,this.executionVersion,int? lifeRewardPercent,WorldEncounter? encounterSnapshot,this.equipmentEffects,List<ExBattleAttack> exAttacks=const []}):_exAttacks=ExBattleAttack.validate(exAttacks,turn),_encounterSnapshot=encounterSnapshot,_lifeRewardPercent=lifeRewardPercent,_awakeningTurns=awakeningTurns,lifeRewardBonuses=List.unmodifiable(lifeRewardBonuses),_rewindHistory=rewindHistory,log=log??[],_buffs=Map.of(buffs??{}),_statuses=Map.of(statuses??{}),activeSkills=List.unmodifiable(activeSkills),_skillCooldowns=Map.of(skillCooldowns??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
+ WorldBattle({required this.id,required this.encounterId,required this.stats,required this.enemyHp,this.turn=1,this.slowTurns=0,this.acceleratedClaws=0,this.stopCooldown=0,this.energyRemainder=0,this.hpRemainder=0,List<String>? log,Map<BattleBuff,int>? buffs,Map<BattleStatus,int>? statuses,List<ActiveSkillSpec> activeSkills=const [],Map<String,int>? skillCooldowns,int? rngState,({int startHp,int? previousHp})? rewindHistory,List<LifeRewardBonus> lifeRewardBonuses=const [],int awakeningTurns=0,this.executionVersion,int? lifeRewardPercent,WorldEncounter? encounterSnapshot,this.equipmentEffects,List<ExBattleAttack> exAttacks=const [],RelicRecoveryBattleRuntime? relicRecovery}):_relicRecovery=relicRecovery,_exAttacks=ExBattleAttack.validate(exAttacks,turn),_encounterSnapshot=encounterSnapshot,_lifeRewardPercent=lifeRewardPercent,_awakeningTurns=awakeningTurns,lifeRewardBonuses=List.unmodifiable(lifeRewardBonuses),_rewindHistory=rewindHistory,log=log??[],_buffs=Map.of(buffs??{}),_statuses=Map.of(statuses??{}),activeSkills=List.unmodifiable(activeSkills),_skillCooldowns=Map.of(skillCooldowns??{}),_rngState=BattleRandom.validate(rngState??BattleRandom.legacySeed(id,turn));
  final int id;
  final String encounterId;
  final WorldStats stats;
  final BattleEquipmentEffects? equipmentEffects;
+ final RelicRecoveryBattleRuntime? _relicRecovery;
+ Map<RelicEffect,int> get relicUses=>_relicRecovery?.uses??const {};
  final List<ExBattleAttack> _exAttacks;
  List<ExBattleAttack> get exAttacks=>List.unmodifiable(_exAttacks);
  final int energyRemainder,hpRemainder;
@@ -251,26 +255,27 @@ class WorldBattle {
  Map<String,int> get skillCooldowns=>Map.unmodifiable(_skillCooldowns);
  Map<BattleStatus,int> get statuses=>Map.unmodifiable(_statuses);
  Map<BattleBuff,int> get buffs=>Map.unmodifiable(_buffs);
- Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),if(executionVersion!=null)'executionVersion':executionVersion,if(executionVersion!=null)'lifeRewardPercent':lifeRewardPercent,if((executionVersion??0)>=2)'encounterSnapshot':_encounterSnapshot!.toBattleJson(),if((executionVersion??0)>=3)'activeRuleSnapshots':activeSkills.map((s)=>s.rules.toJson(s.id)).toList(),if((executionVersion??0)>=4)'equipmentEffects':equipmentEffects!.toJson(extended:executionVersion==5,hpCooldown:executionVersion==6,statusResistance:executionVersion==7,recoveryReward:(executionVersion??0)>=8),if((executionVersion??0)>=9)'exAttacks':_exAttacks.map((a)=>a.toJson()).toList(),if(activeSkills.any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening))'awakeningTurns':_awakeningTurns,if(executionVersion!=null||lifeRewardBonuses.isNotEmpty)'lifeRewardBonuses':lifeRewardBonuses.map((b)=>b.name).toList(),if(_rewindHistory case final history?)'rewindHistory':{'turn':turn,'startHp':history.startHp,'previousHp':history.previousHp},'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
+ Map<String,dynamic> toJson()=>{'id':id,'encounterId':encounterId,'stats':stats.toJson(),'enemyHp':enemyHp,'turn':turn,'slowTurns':slowTurns,'acceleratedClaws':acceleratedClaws,'stopCooldown':stopCooldown,'energyRemainder':energyRemainder,'hpRemainder':hpRemainder,'log':log,'rngVersion':BattleRandom.version,'rngState':_rngState,'activeSkills':activeSkills.map((s)=>s.toJson()).toList(),'skillCooldowns':Map<String,int>.of(_skillCooldowns),if(executionVersion!=null)'executionVersion':executionVersion,if(executionVersion!=null)'lifeRewardPercent':lifeRewardPercent,if((executionVersion??0)>=2)'encounterSnapshot':_encounterSnapshot!.toBattleJson(),if((executionVersion??0)>=3)'activeRuleSnapshots':activeSkills.map((s)=>s.rules.toJson(s.id)).toList(),if((executionVersion??0)>=4)'equipmentEffects':equipmentEffects!.toJson(extended:executionVersion==5,hpCooldown:executionVersion==6,statusResistance:executionVersion==7,recoveryReward:(executionVersion??0)>=8),if(executionVersion==9||executionVersion==10)'exAttacks':_exAttacks.map((a)=>a.toJson()).toList(),if(executionVersion==11)'relicRecovery':_relicRecovery!.toJson(),if(activeSkills.any((s)=>s.effect==ActiveSkillEffect.crimsonAwakening))'awakeningTurns':_awakeningTurns,if(executionVersion!=null||lifeRewardBonuses.isNotEmpty)'lifeRewardBonuses':lifeRewardBonuses.map((b)=>b.name).toList(),if(_rewindHistory case final history?)'rewindHistory':{'turn':turn,'startHp':history.startHp,'previousHp':history.previousHp},'statuses':{for(final entry in _statuses.entries)entry.key.name:entry.value},'buffs':{for(final entry in _buffs.entries)entry.key.name:entry.value}};
  factory WorldBattle.fromJson(Map<String,dynamic> j){
   final version=_decodeExecutionVersion(j);
   final specs=_decodeActiveSkills(j);
   if((version??0)>=3)ActiveSkillRulesV1.validateSnapshot(j['activeRuleSnapshots'],specs);
-  final attacks=(version??0)>=9?(j['exAttacks'] as List).map(ExBattleAttack.fromJson).toList():<ExBattleAttack>[];
+  final attacks=(version==9||version==10)?(j['exAttacks'] as List).map(ExBattleAttack.fromJson).toList():<ExBattleAttack>[];
   if((version==10)!=attacks.any((a)=>a.attribute==ExAttackAttribute.hpRecovery))throw const FormatException('EX recovery snapshot version mismatch');
-  return WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:specs,skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j),awakeningTurns:_decodeAwakeningTurns(j),executionVersion:version,exAttacks:attacks,equipmentEffects:(version??0)>=4?BattleEquipmentEffects.fromJson(j['equipmentEffects'],extended:version==5,hpCooldown:version==6,statusResistance:version==7,recoveryReward:(version??0)>=8):null,lifeRewardPercent:version!=null?j['lifeRewardPercent'] as int:null,encounterSnapshot:(version??0)>=2?WorldEncounter.fromBattleJson(j['encounterSnapshot'] as Map<String,dynamic>,j['encounterId'] as String):null);
+  return WorldBattle(id:j['id'] as int,encounterId:j['encounterId'] as String,stats:WorldStats.fromJson(j['stats'] as Map<String,dynamic>),enemyHp:j['enemyHp'] as int,turn:j['turn'] as int,slowTurns:j['slowTurns'] as int,acceleratedClaws:j['acceleratedClaws'] as int? ?? 0,stopCooldown:j['stopCooldown'] as int? ?? 0,energyRemainder:j['energyRemainder'] as int? ?? 0,hpRemainder:j['hpRemainder'] as int? ?? 0,log:List<String>.from(j['log'] as List),buffs:_decodeBuffs(j),statuses:_decodeStatuses(j),activeSkills:specs,skillCooldowns:_decodeSkillCooldowns(j),rngState:_decodeRng(j),rewindHistory:_decodeRewindHistory(j),lifeRewardBonuses:_decodeLifeRewardBonuses(j),awakeningTurns:_decodeAwakeningTurns(j),executionVersion:version,exAttacks:attacks,relicRecovery:version==11?RelicRecoveryBattleRuntime.fromJson(j['relicRecovery'],j['turn'] as int):null,equipmentEffects:(version??0)>=4?BattleEquipmentEffects.fromJson(j['equipmentEffects'],extended:version==5,hpCooldown:version==6,statusResistance:version==7,recoveryReward:(version??0)>=8):null,lifeRewardPercent:version!=null?j['lifeRewardPercent'] as int:null,encounterSnapshot:(version??0)>=2?WorldEncounter.fromBattleJson(j['encounterSnapshot'] as Map<String,dynamic>,j['encounterId'] as String):null);
  }
  static int? _decodeExecutionVersion(Map<String,dynamic> j){
   if(!j.containsKey('executionVersion')){
-   if(j.containsKey('lifeRewardPercent')||j.containsKey('encounterSnapshot')||j.containsKey('activeRuleSnapshots')||j.containsKey('equipmentEffects')||j.containsKey('exAttacks'))throw const FormatException('Missing execution version');
+   if(j.containsKey('lifeRewardPercent')||j.containsKey('encounterSnapshot')||j.containsKey('activeRuleSnapshots')||j.containsKey('equipmentEffects')||j.containsKey('exAttacks')||j.containsKey('relicRecovery'))throw const FormatException('Missing execution version');
    return null;
   }
   final version=j['executionVersion'];
-  if(version is! int||(version!=1&&version!=2&&version!=currentExecutionVersion&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8&&version!=9&&version!=10))throw const FormatException('Unsupported battle execution version');
+  if(version is! int||(version!=1&&version!=2&&version!=currentExecutionVersion&&version!=4&&version!=5&&version!=6&&version!=7&&version!=8&&version!=9&&version!=10&&version!=11))throw const FormatException('Unsupported battle execution version');
   if(version>=2?j['encounterSnapshot'] is! Map<String,dynamic>:j.containsKey('encounterSnapshot'))throw const FormatException('Invalid encounter snapshot version');
   if(version>=3?j['activeRuleSnapshots'] is! List:j.containsKey('activeRuleSnapshots'))throw const FormatException('Invalid active rule snapshot version');
   if(version>=4?!j.containsKey('equipmentEffects'):j.containsKey('equipmentEffects'))throw const FormatException('Invalid equipment snapshot version');
-  if(version>=9?(j['exAttacks'] is! List||(j['exAttacks'] as List).isEmpty):j.containsKey('exAttacks'))throw const FormatException('Invalid EX attack snapshot version');
+  if((version==9||version==10)?(j['exAttacks'] is! List||(j['exAttacks'] as List).isEmpty):j.containsKey('exAttacks'))throw const FormatException('Invalid EX attack snapshot version');
+  if(version==11?j['relicRecovery'] is! Map<String,dynamic>:j.containsKey('relicRecovery'))throw const FormatException('Invalid relic recovery snapshot version');
   // 版付き戦闘は全非条件付き出力項目が必須。
   for(final key in const ['id','enemyHp','turn','slowTurns','acceleratedClaws','stopCooldown','energyRemainder','hpRemainder','rngVersion','rngState','lifeRewardPercent']){
    if(j[key] is! int)throw FormatException('Invalid versioned battle integer: $key');
@@ -355,7 +360,7 @@ class WorldBattle {
   final specs={for(final spec in _decodeActiveSkills(j))spec.id:spec};
   final result=<String,int>{};
   final version=j['executionVersion'];
-  final reduction=version==6||version==7||version==8||version==9||version==10?BattleEquipmentEffects.fromJson(j['equipmentEffects'],hpCooldown:version==6,statusResistance:version==7,recoveryReward:(version??0)>=8).cooldown:0;
+  final reduction=version==6||version==7||version==8||version==9||version==10||version==11?BattleEquipmentEffects.fromJson(j['equipmentEffects'],hpCooldown:version==6,statusResistance:version==7,recoveryReward:(version??0)>=8).cooldown:0;
   for(final entry in raw.entries){
    final spec=specs[entry.key],value=entry.value;
    if(spec==null||value is! int||value<1||value>BattleEquipmentEffects.effectiveCooldown(spec,reduction))throw const FormatException('Invalid skill cooldown');
@@ -486,7 +491,9 @@ class WorldEngine {
   w.magic=levelUp?s.magicMax:_cappedGain(w.magic,s.magicMax,magic);
   if(levelUp)w.hp=s.hp;
  }
- void start(WorldState w,WorldStats s,String id,int now,{List<ActiveSkillSpec> activeSkills=const [],List<LifeRewardBonus> lifeRewardBonuses=const [],BattleEquipmentEffects? equipmentEffects,List<ExBattleAttack> exAttacks=const []}){
+ void start(WorldState w,WorldStats s,String id,int now,{List<ActiveSkillSpec> activeSkills=const [],List<LifeRewardBonus> lifeRewardBonuses=const [],BattleEquipmentEffects? equipmentEffects,List<ExBattleAttack> exAttacks=const [],RelicEffectSnapshot? trialRelicEffects}){
+  if(trialRelicEffects!=null&&exAttacks.isNotEmpty)throw StateError('EX and relic trial mixing unavailable');
+  final relicRecovery=trialRelicEffects==null?null:RelicRecoveryBattleRuntime(trialRelicEffects);
   ExBattleAttack.validate(exAttacks,1);
   if(exAttacks.isNotEmpty&&equipmentEffects==null)throw const FormatException('EX equipment snapshot required');
   LifeRewardBonus.validate(lifeRewardBonuses);
@@ -507,8 +514,31 @@ class WorldEngine {
   if(w.sequence==0x7fffffffffffffff)throw StateError('Battle sequence overflow');
   final seed=_seedRandom.nextInt(BattleRandom.modulus-1)+1;
   w.sequence++;
-  w.battle=WorldBattle(encounterSnapshot:e,executionVersion:exAttacks.any((a)=>a.attribute==ExAttackAttribute.hpRecovery)?10:exAttacks.isNotEmpty?9:equipmentEffects==null?WorldBattle.currentExecutionVersion:equipmentEffects.requiresV8?8:equipmentEffects.requiresV7?7:equipmentEffects.requiresV6?6:equipmentEffects.requiresV5?5:4,equipmentEffects:equipmentEffects,exAttacks:exAttacks,lifeRewardPercent:LifeRewardBonus.totalPercent(lifeRewardBonuses),activeSkills:activeSkills,lifeRewardBonuses:lifeRewardBonuses,rewindHistory:activeSkills.any((s)=>s.effect==ActiveSkillEffect.rewindHp)?(startHp:w.hp,previousHp:null):null,rngState:seed,id:w.sequence,encounterId:id,stats:battleStats,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
+  w.battle=WorldBattle(encounterSnapshot:e,executionVersion:relicRecovery!=null?11:exAttacks.any((a)=>a.attribute==ExAttackAttribute.hpRecovery)?10:exAttacks.isNotEmpty?9:equipmentEffects==null?WorldBattle.currentExecutionVersion:equipmentEffects.requiresV8?8:equipmentEffects.requiresV7?7:equipmentEffects.requiresV6?6:equipmentEffects.requiresV5?5:4,equipmentEffects:equipmentEffects??(relicRecovery==null?null:BattleEquipmentEffects()),exAttacks:exAttacks,relicRecovery:relicRecovery,lifeRewardPercent:LifeRewardBonus.totalPercent(lifeRewardBonuses),activeSkills:activeSkills,lifeRewardBonuses:lifeRewardBonuses,rewindHistory:activeSkills.any((s)=>s.effect==ActiveSkillEffect.rewindHp)?(startHp:w.hp,previousHp:null):null,rngState:seed,id:w.sequence,encounterId:id,stats:battleStats,enemyHp:e.hp,energyRemainder:now-w.energyAt,hpRemainder:now-w.hpAt,log:['${e.enemy} が現れた。']);
+  _applyRelicStart(w);
   w.lastResult='';
+ }
+ /// Trial recovery uses the existing persisted battle RNG, not global Random.
+ int _relicRoll(WorldBattle b,int bound)=>(BattleRandom.next(b)*bound).floor();
+ void _applyRelicStart(WorldState w){
+  final b=w.battle!,runtime=b._relicRecovery;
+  if(runtime==null)return;
+  for(final outcome in runtime.start(missingHp:w.hp<b.stats.hp,nextInt:(bound)=>_relicRoll(b,bound))){
+   final base=(BigInt.from(b.stats.hp)*BigInt.from(outcome.magnitude)~/BigInt.from(10000)).toInt();
+   final amount=min(b.stats.hp-w.hp,max(1,base));
+   w.hp+=amount;
+   b.log.add('生命の残響 — HP +$amount');
+  }
+  if(b._rewindHistory!=null)b._rewindHistory=(startHp:w.hp,previousHp:null);
+ }
+ void _applyRelicTurnEnd(WorldState w){
+  final b=w.battle!,runtime=b._relicRecovery;
+  if(runtime==null)return;
+  for(final outcome in runtime.endTurn(b.turn,missingMagic:w.magic<b.stats.magicMax,nextInt:(bound)=>_relicRoll(b,bound))){
+   final amount=min(b.stats.magicMax-w.magic,outcome.magnitude);
+   w.magic+=amount;
+   b.log.add('魔力循環 — 魔法 +$amount');
+  }
  }
  /// 単一の消費計算を可否・実行・画面で共有する。寿命には適用しない。
  int energyCost(WorldState w,WorldCommand command){
@@ -937,6 +967,7 @@ class WorldEngine {
    final remaining=b._skillCooldowns[id]!-1;
    if(remaining==0){b._skillCooldowns.remove(id);}else{b._skillCooldowns[id]=remaining;}
   }
+  _applyRelicTurnEnd(w);
   // 全ての成立行動が通る経路で、直前の行動開始時HPだけを保持する。
   if(b._rewindHistory case final history?){
    b._rewindHistory=(startHp:w.hp,previousHp:history.startHp);

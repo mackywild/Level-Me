@@ -42,6 +42,8 @@ class AppController extends ChangeNotifier {
   if(state.inventory.equipmentSkillSeed!=null&&_equipmentSkillMaster==null)throw StateError('Equipment skill master unavailable');
   _validateEquipmentSkillInventory(state.inventory);
   final battle=state.world.battle;
+  // Trial relic definitions have no inventory ownership proof yet.
+  if(battle?.executionVersion==11)throw const FormatException('Relic battle inventory integration unavailable');
   if(battle!=null){
    if(_exEquipmentPolicy==null&&battle.exAttacks.isNotEmpty)throw const FormatException('EX battle policy missing');
    _exEquipmentPolicy?.validateBattle(state.inventory,battle);

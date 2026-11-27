@@ -120,3 +120,66 @@ class RelicTriggerRuntime {
   }
  }
 }
+
+
+/// Trial battle adapter for the two connected recovery effects only.
+/// Event 1 is start; completed turn t has event t+1. An active save at
+/// turn t therefore must have lastEvent=t. Victory/defeat/retreat discard
+/// the entire adapter. Definitions are resolved values, not ownership proof.
+class RelicRecoveryBattleRuntime {
+ RelicRecoveryBattleRuntime(RelicEffectSnapshot snapshot):_runtime=RelicTriggerRuntime(snapshot){
+  if(snapshot.effects.isEmpty||snapshot.effects.keys.any((e)=>e!=RelicEffect.battleStartHeal&&e!=RelicEffect.turnEndMagicRecovery)){
+   throw StateError('Unsupported relic battle effect');
+  }
+ }
+ final RelicTriggerRuntime _runtime;
+ Map<RelicEffect,int> get uses=>_runtime.uses;
+
+ List<RelicTriggerOutcome> start({required bool missingHp,required int Function(int) nextInt})=>
+  _runtime.resolveEvent(eventId:1,trigger:RelicTrigger.battleStart,eligible:{if(missingHp)RelicEffect.battleStartHeal},nextInt:nextInt);
+ List<RelicTriggerOutcome> endTurn(int turn,{required bool missingMagic,required int Function(int) nextInt}){
+  if(turn<1||turn==0x7fffffffffffffff||_runtime.lastEvent!=turn)throw StateError('Invalid relic turn sequence');
+  return _runtime.resolveEvent(eventId:turn+1,trigger:RelicTrigger.turnEnd,eligible:{if(missingMagic)RelicEffect.turnEndMagicRecovery},nextInt:nextInt);
+ }
+
+ Map<String,dynamic> toJson()=>{'version':1,'lastEvent':_runtime.lastEvent,'effects':{
+  for(final e in RelicEffect.values)
+   if(_runtime.snapshot.effects[e] case final r?)
+    e.name:{'chanceBps':r.chanceBps,'magnitude':r.magnitude,'maxUses':r.rule.maxUses,'uses':uses[e]??0},
+ }};
+ factory RelicRecoveryBattleRuntime.fromJson(Object? raw,int turn){
+  if(raw is! Map<String,dynamic>||raw.length!=3||raw['version'] is! int||raw['version']!=1||raw['lastEvent'] is! int||raw['lastEvent']!=turn||turn<1||raw['effects'] is! Map<String,dynamic>){
+   throw const FormatException('Invalid relic battle state');
+  }
+  final entries=raw['effects'] as Map<String,dynamic>;
+  if(entries.isEmpty||entries.length>2)throw const FormatException('Invalid relic recovery effects');
+  final effects=<RelicEffect,RelicResolvedEffect>{},uses=<RelicEffect,int>{};
+  for(final entry in entries.entries){
+   final effect=switch(entry.key){
+    'battleStartHeal'=>RelicEffect.battleStartHeal,
+    'turnEndMagicRecovery'=>RelicEffect.turnEndMagicRecovery,
+    _=>throw const FormatException('Unsupported relic battle effect'),
+   };
+   final v=entry.value;
+   if(v is! Map<String,dynamic>||v.length!=4||v['chanceBps'] is! int||v['magnitude'] is! int||v['uses'] is! int||!v.containsKey('maxUses')||(v['maxUses']!=null&&v['maxUses'] is! int)){
+    throw const FormatException('Invalid relic effect fields');
+   }
+   final chance=v['chanceBps'] as int,amount=v['magnitude'] as int,count=v['uses'] as int,limit=v['maxUses'] as int?;
+   if(count<0||count>(effect==RelicEffect.battleStartHeal?1:turn-1)||(limit!=null&&count>limit)){
+    throw const FormatException('Invalid relic use history');
+   }
+   try{
+    final rule=RelicEffectRule(effect:effect,stacking:RelicStacking.highestOnly,chanceCapBps:chance,magnitudeCap:amount,maxUses:limit);
+    effects[effect]=RelicResolvedEffect._(rule,chance,amount);
+   }on ArgumentError{
+    throw const FormatException('Invalid relic recovery definition');
+   }
+   if(count>0)uses[effect]=count;
+  }
+  final result=RelicRecoveryBattleRuntime(RelicEffectSnapshot._(effects));
+  result._runtime._uses.addAll(uses);
+  result._runtime._lastEvent=turn;
+  result._runtime._started=true;
+  return result;
+ }
+}

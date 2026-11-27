@@ -9,11 +9,11 @@ import 'package:level_me/world/abyss_relic_skill_master.dart';
 import 'package:level_me/world/abyss_relic_trigger_runtime.dart';
 
 RelicEffectSnapshot recovery({int chance=10000,int heal=2500,int magic=4,int? limit=2,bool unsupported=false}){
- final effects=[RelicEffect.battleStartHeal,RelicEffect.turnEndMagicRecovery,if(unsupported)RelicEffect.statusCleanse];
+ final effects=[RelicEffect.battleStartHeal,RelicEffect.turnEndMagicRecovery,if(unsupported)RelicEffect.victoryLifeReward];
  final master=RelicSkillMaster(rules:[
-  for(final e in effects)RelicEffectRule(effect:e,stacking:RelicStacking.additive,chanceCapBps:10000,magnitudeCap:e.maximumMagnitude,maxUses:e==RelicEffect.battleStartHeal?1:limit),
+  for(final e in effects)RelicEffectRule(effect:e,stacking:RelicStacking.additive,chanceCapBps:10000,magnitudeCap:e.maximumMagnitude,maxUses:e==RelicEffect.battleStartHeal||e==RelicEffect.victoryLifeReward?1:limit),
  ],skills:[
-  for(final e in effects)RelicSkillDefinition(id:'equipment_relic_skill:${e.name}',name:e.name,rarity:EquipmentSkillRarity.common,effect:e,chanceBpsByLevel:List.filled(10,chance),magnitudeByLevel:List.filled(10,e==RelicEffect.battleStartHeal?heal:e==RelicEffect.turnEndMagicRecovery?magic:0)),
+  for(final e in effects)RelicSkillDefinition(id:'equipment_relic_skill:${e.name}',name:e.name,rarity:EquipmentSkillRarity.common,effect:e,chanceBpsByLevel:List.filled(10,chance),magnitudeByLevel:List.filled(10,e==RelicEffect.battleStartHeal?heal:e==RelicEffect.turnEndMagicRecovery?magic:1)),
  ]);
  return RelicEffectSnapshot.resolve(master,[for(final e in effects)RelicSkillContribution(skillId:'equipment_relic_skill:${e.name}',level:1)]);
 }

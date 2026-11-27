@@ -122,63 +122,85 @@ class RelicTriggerRuntime {
 }
 
 
-/// Trial battle adapter for the two connected recovery effects only.
-/// Event 1 is start; completed turn t has event t+1. An active save at
-/// turn t therefore must have lastEvent=t. Victory/defeat/retreat discard
-/// the entire adapter. Definitions are resolved values, not ownership proof.
+/// v1: recovery only. v2: conditional effects. Start=1; optional
+/// lethal event=2*t; end=2*t+1. Only completed turns are persisted.
 class RelicRecoveryBattleRuntime {
- RelicRecoveryBattleRuntime(RelicEffectSnapshot snapshot):_runtime=RelicTriggerRuntime(snapshot){
-  if(snapshot.effects.isEmpty||snapshot.effects.keys.any((e)=>e!=RelicEffect.battleStartHeal&&e!=RelicEffect.turnEndMagicRecovery)){
-   throw StateError('Unsupported relic battle effect');
+ RelicRecoveryBattleRuntime(RelicEffectSnapshot snapshot,{this.baseAttack}):_runtime=RelicTriggerRuntime(snapshot){
+  if(snapshot.effects.isEmpty||snapshot.effects.containsKey(RelicEffect.victoryLifeReward)||expanded!=(baseAttack!=null)||
+     (baseAttack!=null&&(baseAttack!.physical<1||baseAttack!.magic<1))){
+   throw StateError('Unsupported relic battle effect or base attack');
   }
  }
+ static const maxExpandedTurn=0x3fffffffffffffff;
+ static bool requiresExpanded(RelicEffectSnapshot snapshot)=>snapshot.effects.keys.any((e)=>e==RelicEffect.lowHpAttack||e==RelicEffect.statusCleanse||e==RelicEffect.lethalSurvival);
  final RelicTriggerRuntime _runtime;
+ final ({int physical,int magic})? baseAttack;
+ bool get expanded=>requiresExpanded(_runtime.snapshot);
+ int get lowHpMagnitude=>_runtime.snapshot.effects[RelicEffect.lowHpAttack]?.magnitude??0;
+ int attackBonus(EquipmentEffect effect,int existingBps,int hp,int maxHp)=>_runtime.snapshot.attackBonus(effect,existingBps,hp,maxHp);
  Map<RelicEffect,int> get uses=>_runtime.uses;
-
+ int _boundary(int turn)=>expanded?2*turn-1:turn;
  List<RelicTriggerOutcome> start({required bool missingHp,required int Function(int) nextInt})=>
   _runtime.resolveEvent(eventId:1,trigger:RelicTrigger.battleStart,eligible:{if(missingHp)RelicEffect.battleStartHeal},nextInt:nextInt);
- List<RelicTriggerOutcome> endTurn(int turn,{required bool missingMagic,required int Function(int) nextInt}){
-  if(turn<1||turn==0x7fffffffffffffff||_runtime.lastEvent!=turn)throw StateError('Invalid relic turn sequence');
-  return _runtime.resolveEvent(eventId:turn+1,trigger:RelicTrigger.turnEnd,eligible:{if(missingMagic)RelicEffect.turnEndMagicRecovery},nextInt:nextInt);
+ bool surviveLethal(int turn,int Function(int) nextInt){
+  if(!expanded)return false;
+  if(turn<1||turn>=maxExpandedTurn||_runtime.lastEvent!=_boundary(turn))throw StateError('Invalid relic lethal event');
+  return _runtime.resolveEvent(eventId:2*turn,trigger:RelicTrigger.incomingLethal,eligible:{RelicEffect.lethalSurvival},nextInt:nextInt).isNotEmpty;
  }
-
- Map<String,dynamic> toJson()=>{'version':1,'lastEvent':_runtime.lastEvent,'effects':{
+ List<RelicTriggerOutcome> endTurn(int turn,{required bool missingMagic,bool poisoned=false,required int Function(int) nextInt}){
+  if(turn<1||turn>=(expanded?maxExpandedTurn:0x7fffffffffffffff))throw StateError('Invalid relic turn sequence');
+  final previous=_boundary(turn);
+  if(_runtime.lastEvent!=previous&&(!expanded||_runtime.lastEvent!=previous+1))throw StateError('Invalid relic turn sequence');
+  return _runtime.resolveEvent(eventId:_boundary(turn+1),trigger:RelicTrigger.turnEnd,eligible:{if(missingMagic)RelicEffect.turnEndMagicRecovery,if(poisoned&&expanded)RelicEffect.statusCleanse},nextInt:nextInt);
+ }
+ Map<String,dynamic> toJson()=>{'version':expanded?2:1,'lastEvent':_runtime.lastEvent,if(expanded)'baseAttack':{'physical':baseAttack!.physical,'magic':baseAttack!.magic},'effects':{
   for(final e in RelicEffect.values)
    if(_runtime.snapshot.effects[e] case final r?)
-    e.name:{'chanceBps':r.chanceBps,'magnitude':r.magnitude,'maxUses':r.rule.maxUses,'uses':uses[e]??0},
+    e.name:{'chanceBps':r.chanceBps,'magnitude':r.magnitude,'maxUses':r.rule.maxUses,'uses':uses[e]??0,if(expanded&&e==RelicEffect.lowHpAttack)'hpThresholdBps':r.rule.hpThresholdBps},
  }};
- factory RelicRecoveryBattleRuntime.fromJson(Object? raw,int turn){
-  if(raw is! Map<String,dynamic>||raw.length!=3||raw['version'] is! int||raw['version']!=1||raw['lastEvent'] is! int||raw['lastEvent']!=turn||turn<1||raw['effects'] is! Map<String,dynamic>){
+ factory RelicRecoveryBattleRuntime.fromJson(Object? raw,int turn,{bool expanded=false}){
+  if(raw is! Map<String,dynamic>||raw.length!=(expanded?4:3)||raw['version'] is! int||raw['version']!=(expanded?2:1)||turn<1||(expanded&&turn>maxExpandedTurn)||raw['lastEvent'] is! int||raw['lastEvent']!=(expanded?2*turn-1:turn)||raw['effects'] is! Map<String,dynamic>){
    throw const FormatException('Invalid relic battle state');
   }
+  ({int physical,int magic})? base;
+  if(expanded){
+   final v=raw['baseAttack'];
+   if(v is! Map<String,dynamic>||v.length!=2||v['physical'] is! int||v['magic'] is! int||(v['physical'] as int)<1||(v['magic'] as int)<1)throw const FormatException('Invalid relic base attack');
+   base=(physical:v['physical'] as int,magic:v['magic'] as int);
+  }
   final entries=raw['effects'] as Map<String,dynamic>;
-  if(entries.isEmpty||entries.length>2)throw const FormatException('Invalid relic recovery effects');
+  if(entries.isEmpty||entries.length>(expanded?5:2))throw const FormatException('Invalid relic battle effects');
   final effects=<RelicEffect,RelicResolvedEffect>{},uses=<RelicEffect,int>{};
   for(final entry in entries.entries){
    final effect=switch(entry.key){
     'battleStartHeal'=>RelicEffect.battleStartHeal,
     'turnEndMagicRecovery'=>RelicEffect.turnEndMagicRecovery,
+    'lowHpAttack' when expanded=>RelicEffect.lowHpAttack,
+    'statusCleanse' when expanded=>RelicEffect.statusCleanse,
+    'lethalSurvival' when expanded=>RelicEffect.lethalSurvival,
     _=>throw const FormatException('Unsupported relic battle effect'),
    };
-   final v=entry.value;
-   if(v is! Map<String,dynamic>||v.length!=4||v['chanceBps'] is! int||v['magnitude'] is! int||v['uses'] is! int||!v.containsKey('maxUses')||(v['maxUses']!=null&&v['maxUses'] is! int)){
+   final low=effect==RelicEffect.lowHpAttack,v=entry.value;
+   if(v is! Map<String,dynamic>||v.length!=(low?5:4)||v['chanceBps'] is! int||v['magnitude'] is! int||v['uses'] is! int||!v.containsKey('maxUses')||(v['maxUses']!=null&&v['maxUses'] is! int)||(low&&v['hpThresholdBps'] is! int)){
     throw const FormatException('Invalid relic effect fields');
    }
    final chance=v['chanceBps'] as int,amount=v['magnitude'] as int,count=v['uses'] as int,limit=v['maxUses'] as int?;
-   if(count<0||count>(effect==RelicEffect.battleStartHeal?1:turn-1)||(limit!=null&&count>limit)){
+   if(count<0||count>(low?0:effect==RelicEffect.battleStartHeal?1:turn-1)||(limit!=null&&count>limit)){
     throw const FormatException('Invalid relic use history');
    }
    try{
-    final rule=RelicEffectRule(effect:effect,stacking:RelicStacking.highestOnly,chanceCapBps:chance,magnitudeCap:amount,maxUses:limit);
+    final rule=RelicEffectRule(effect:effect,stacking:RelicStacking.highestOnly,chanceCapBps:chance,magnitudeCap:amount,maxUses:limit,hpThresholdBps:low?v['hpThresholdBps'] as int:null);
     effects[effect]=RelicResolvedEffect._(rule,chance,amount);
    }on ArgumentError{
-    throw const FormatException('Invalid relic recovery definition');
+    throw const FormatException('Invalid relic battle definition');
    }
    if(count>0)uses[effect]=count;
   }
-  final result=RelicRecoveryBattleRuntime(RelicEffectSnapshot._(effects));
+  final snapshot=RelicEffectSnapshot._(effects);
+  if(requiresExpanded(snapshot)!=expanded)throw const FormatException('Relic effect version mismatch');
+  final result=RelicRecoveryBattleRuntime(snapshot,baseAttack:base);
   result._runtime._uses.addAll(uses);
-  result._runtime._lastEvent=turn;
+  result._runtime._lastEvent=expanded?2*turn-1:turn;
   result._runtime._started=true;
   return result;
  }

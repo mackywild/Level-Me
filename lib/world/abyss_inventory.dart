@@ -25,10 +25,11 @@ class StoredEquipmentSkill {
 
 /// 導入時の強化値より前は旧枠として永久に抽選しない。
 class EquipmentSkillHistory {
- EquipmentSkillHistory({required this.startEnhancement,required Iterable<StoredEquipmentSkill> grants}):grants=List.unmodifiable(grants);
+ EquipmentSkillHistory({required this.startEnhancement,required Iterable<StoredEquipmentSkill> grants,this.relicFingerprint}):grants=List.unmodifiable(grants);
  final int startEnhancement;
+ final String? relicFingerprint;
  final List<StoredEquipmentSkill> grants;
- Map<String,dynamic> toJson()=>{'startEnhancement':startEnhancement,'grants':grants.map((g)=>g.toJson()).toList()};
+ Map<String,dynamic> toJson()=>{'startEnhancement':startEnhancement,if(relicFingerprint!=null)'relicFingerprint':relicFingerprint,'grants':grants.map((g)=>g.toJson()).toList()};
 }
 
 /// EX個体の登録済み構成を照合するための不変の参照情報。
@@ -107,25 +108,29 @@ class AbyssInventory {
 
  static void _validateSkillHistory(EquipmentInstance item,EquipmentSkillHistory history,{ExSkillHistoryLayout? exLayout}){
   if((item.rarity==EquipmentRarity.ex)!=(exLayout!=null)||history.startEnhancement<0||history.startEnhancement>item.enhancement||(exLayout!=null&&history.startEnhancement!=0))throw const FormatException('Invalid equipment skill history start');
+  final relic=history.relicFingerprint!=null;
+  if(relic&&(item.slot!=EquipmentSlot.relic||item.rarity==EquipmentRarity.ex||history.grants.isEmpty||!RegExp(r'^[a-f0-9]{64}$').hasMatch(history.relicFingerprint!)))throw const FormatException('Invalid relic history reference');
+  final prefix=relic?'equipment_relic_skill:':'equipment_skill:';
   final expected=(exLayout?.milestones??EquipmentSkillPolicy.reachedMilestones(item.rarity,item.enhancement)).where((m)=>m>history.startEnhancement&&m<=item.enhancement).toList();
   if(expected.length!=history.grants.length)throw const FormatException('Missing or extra equipment skill grants');
   for(var i=0;i<expected.length;i++){
    final grant=history.grants[i];
    if(grant.milestone!=expected[i]||grant.ruleVersion!=1||!EquipmentSkillPolicy.validSkillLevel(grant.level)||
-      !grant.skillId.startsWith('equipment_skill:')||grant.skillId.length<=16||grant.skillId.trim()!=grant.skillId){
+      !grant.skillId.startsWith(prefix)||grant.skillId.length<=prefix.length||grant.skillId.trim()!=grant.skillId){
     throw const FormatException('Invalid equipment skill grant');
    }
   }
  }
 
  /// 強化後の確定履歴を先に検証し、素材消費前に失敗させる。
- EquipmentSkillHistory? _nextSkillHistory(EquipmentInstance item,StoredEquipmentSkill? grant){
+ EquipmentSkillHistory? _nextSkillHistory(EquipmentInstance item,StoredEquipmentSkill? grant,String? relicFingerprint){
   final history=_skillHistories[item.id];
   if(history==null){
-   if(grant!=null)throw StateError('Skill history not initialized');
+   if(grant!=null||relicFingerprint!=null)throw StateError('Skill history not initialized');
    return null;
   }
-  final next=EquipmentSkillHistory(startEnhancement:history.startEnhancement,grants:[...history.grants,?grant]);
+  if(relicFingerprint!=null&&(grant==null||(history.relicFingerprint!=null&&history.relicFingerprint!=relicFingerprint)))throw StateError('Relic history master mismatch');
+  final next=EquipmentSkillHistory(startEnhancement:history.startEnhancement,grants:[...history.grants,?grant],relicFingerprint:history.relicFingerprint??relicFingerprint);
   final future=EquipmentInstance(id:item.id,masterId:item.masterId,slot:item.slot,rarity:item.rarity,enhancement:item.enhancement+1,favorite:item.favorite);
   _validateSkillHistory(future,next,exLayout:_exLayouts[item.id]);
   return next;
@@ -195,10 +200,10 @@ class AbyssInventory {
  }
 
  /// 実消費と強化を同時に記録。旧履歴欠落個体は引き続き還元保護。
- EquipmentInstance enhanceWithMaterial(String id,int expectedLevel,String materialId,int quantity,{StoredEquipmentSkill? skillGrant})=>enhanceWithMaterials(id,expectedLevel,{materialId:quantity},skillGrant:skillGrant);
+ EquipmentInstance enhanceWithMaterial(String id,int expectedLevel,String materialId,int quantity,{StoredEquipmentSkill? skillGrant,String? relicFingerprint})=>enhanceWithMaterials(id,expectedLevel,{materialId:quantity},skillGrant:skillGrant,relicFingerprint:relicFingerprint);
 
  /// 複数素材は全件を検証してから一段階分として消費する。
- EquipmentInstance enhanceWithMaterials(String id,int expectedLevel,Map<String,int> materials,{StoredEquipmentSkill? skillGrant}){
+ EquipmentInstance enhanceWithMaterials(String id,int expectedLevel,Map<String,int> materials,{StoredEquipmentSkill? skillGrant,String? relicFingerprint}){
   final item=_equipment[id];
   if(item==null||item.enhancement!=expectedLevel||expectedLevel<0||expectedLevel>=20)throw StateError('Invalid enhancement request');
   final costs=Map<String,int>.unmodifiable(materials);
@@ -206,7 +211,7 @@ class AbyssInventory {
   if(costs.isEmpty||costs.length>2||costs.entries.any((e)=>!e.key.startsWith('item:')||e.key.length<=5||e.key.trim()!=e.key||e.value<=0||e.value>1000000))throw ArgumentError('Invalid enhancement cost');
   for(final cost in costs.entries){if((_stacks[cost.key]??0)<cost.value)throw StateError('Insufficient items');}
   if(!hasCompleteEnhancementHistory(item))throw StateError('Enhancement history missing');
-  final nextSkills=_nextSkillHistory(item,skillGrant);
+  final nextSkills=_nextSkillHistory(item,skillGrant,relicFingerprint);
   final history=[...?_enhancementCosts[id],costs];
   for(final cost in costs.entries){removeStack(cost.key,cost.value);}
   final next=_advanceEnhancement(item);
@@ -259,7 +264,7 @@ class AbyssInventory {
   _discovered.add(masterId);
   return item;
  }
- Map<String,dynamic> toJson()=>{'version':_exManualSlots.isNotEmpty?5:_equipped.values.any(_exLayouts.containsKey)?4:_exLayouts.isNotEmpty?3:_skillSeed==null?1:2,if(_exManualSlots.isNotEmpty)'exManualSlots':{for(final e in _exManualSlots.entries)e.key.toString():e.value.toJson()},if(_exLayouts.isNotEmpty)'exSkillLayouts':{for(final e in _exLayouts.entries)e.key:e.value.toJson()},if(_skillSeed!=null)'equipmentSkillSeed':_skillSeed,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort(),if(_skillSeed!=null||_skillHistories.isNotEmpty)'equipmentSkills':{'version':1,'items':{for(final e in _skillHistories.entries)e.key:e.value.toJson()}},if(_enhancementCosts.isNotEmpty)'enhancementCosts':_encodeEnhancementCosts()};
+ Map<String,dynamic> toJson()=>{'version':_skillHistories.values.any((h)=>h.relicFingerprint!=null)?6:_exManualSlots.isNotEmpty?5:_equipped.values.any(_exLayouts.containsKey)?4:_exLayouts.isNotEmpty?3:_skillSeed==null?1:2,if(_exManualSlots.isNotEmpty)'exManualSlots':{for(final e in _exManualSlots.entries)e.key.toString():e.value.toJson()},if(_exLayouts.isNotEmpty)'exSkillLayouts':{for(final e in _exLayouts.entries)e.key:e.value.toJson()},if(_skillSeed!=null)'equipmentSkillSeed':_skillSeed,'sequence':_sequence,'equipped':{for(final e in _equipped.entries)e.key.name:e.value},'stacks':Map<String,int>.of(_stacks),'equipment':_equipment.values.map((e)=>e.toJson()).toList(),'discovered':_discovered.toList()..sort(),if(_skillSeed!=null||_skillHistories.isNotEmpty)'equipmentSkills':{'version':1,'items':{for(final e in _skillHistories.entries)e.key:e.value.toJson()}},if(_enhancementCosts.isNotEmpty)'enhancementCosts':_encodeEnhancementCosts()};
  Map<String,dynamic> _encodeEnhancementCosts(){
   final multi=_enhancementCosts.values.any((steps)=>steps.any((step)=>step.length>1));
   return {'version':multi?2:1,'items':{for(final e in _enhancementCosts.entries)e.key:[
@@ -268,7 +273,7 @@ class AbyssInventory {
  }
  factory AbyssInventory.fromJson(Map<String,dynamic> j){
   final version=j['version'];
-  if(version is! int||(version!=1&&version!=2&&version!=3&&version!=4&&version!=5))throw const FormatException('Unsupported inventory version');
+  if(version is! int||(version!=1&&version!=2&&version!=3&&version!=4&&version!=5&&version!=6))throw const FormatException('Unsupported inventory version');
   final inventory=AbyssInventory();
   if(version>=2){
    final seed=j['equipmentSkillSeed'];
@@ -325,7 +330,7 @@ class AbyssInventory {
     inventory._enhancementCosts[entry.key]=validated;
    }
   }
-  if(version>=3){
+  if((version>=3&&version<=5)||(version==6&&j.containsKey('exSkillLayouts'))){
    final layouts=j['exSkillLayouts'];
    if(layouts is! Map<String,dynamic>||layouts.isEmpty)throw const FormatException('Missing EX layout references');
    for(final entry in layouts.entries){
@@ -347,7 +352,8 @@ class AbyssInventory {
      if(row is! Map<String,dynamic>||row['milestone'] is! int||row['skillId'] is! String||row['level'] is! int||row['ruleVersion'] is! int)throw const FormatException('Invalid equipment skill grant fields');
      grants.add(StoredEquipmentSkill(milestone:row['milestone'] as int,skillId:row['skillId'] as String,level:row['level'] as int,ruleVersion:row['ruleVersion'] as int));
     }
-    final value=EquipmentSkillHistory(startEnhancement:history['startEnhancement'] as int,grants:grants);
+    if(history.containsKey('relicFingerprint')&&(version!=6||history['relicFingerprint'] is! String))throw const FormatException('Invalid relic history version');
+    final value=EquipmentSkillHistory(startEnhancement:history['startEnhancement'] as int,grants:grants,relicFingerprint:history['relicFingerprint'] as String?);
     _validateSkillHistory(item,value,exLayout:inventory._exLayouts[item.id]);
     inventory._skillHistories[item.id]=value;
    }
@@ -362,8 +368,8 @@ class AbyssInventory {
    if(inventory._equipment[id]?.slot!=slot||(inventory._exLayouts.containsKey(id)&&version<4))throw const FormatException('Invalid equipped reference');
    inventory._equipped[slot]=id;
   }
-  if(version>=4&&!inventory._equipped.values.any(inventory._exLayouts.containsKey))throw const FormatException('Missing equipped EX reference');
-  if(version==5){
+  if(version>=4&&version<=5&&!inventory._equipped.values.any(inventory._exLayouts.containsKey))throw const FormatException('Missing equipped EX reference');
+  if(version==5||(version==6&&j.containsKey('exManualSlots'))){
    final slots=j['exManualSlots'];
    if(slots is! Map<String,dynamic>||slots.isEmpty||slots.length>exManualSlotCount)throw const FormatException('Invalid EX manual slots');
    for(final e in slots.entries){
@@ -374,6 +380,7 @@ class AbyssInventory {
     }on StateError{throw const FormatException('Invalid EX manual slot reference');}
    }
   }else if(j.containsKey('exManualSlots')){throw const FormatException('Unexpected EX manual slots');}
+  if(version==6&&!inventory._skillHistories.values.any((h)=>h.relicFingerprint!=null))throw const FormatException('Missing relic history');
   return inventory;
  }
 }

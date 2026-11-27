@@ -667,6 +667,16 @@ class WorldEngine {
  /// The HP sacrifice cannot be evaded or reduced; ceil and leave at least 1 HP.
  int _exHpCost(WorldBattle b,ExBattleAttack a)=>((BigInt.from(b.stats.hp)*BigInt.from(a.hpCostBps)+BigInt.from(9999))~/BigInt.from(10000)).toInt();
  int _exEnergyCost(WorldState w,ExBattleAttack a,int base)=>a.energyDiscount?_discountedCost(w,base):base;
+ /// Read-only preview uses the same arithmetic as execution. Recovery is before counterattack.
+ ({int physical,int magic,int hp,int life,int? recovery}) exAttackCosts(WorldState w,ExBattleAttack a){
+  final b=w.battle!;
+  final hp=_exHpCost(b,a);
+  return (physical:_exEnergyCost(w,a,a.physicalCost),magic:_exEnergyCost(w,a,a.magicCost),hp:hp,life:a.lifeDays,recovery:a.attribute==ExAttackAttribute.hpRecovery?_exRecoveryAmount(b,w.hp-hp,a):null);
+ }
+ int _exRecoveryAmount(WorldBattle b,int afterCostHp,ExBattleAttack a){
+  final base=(BigInt.from(b.stats.hp)*BigInt.from(a.powerBps)~/BigInt.from(10000)).toInt();
+  return min(b.stats.hp-max(0,afterCostHp),max(1,base));
+ }
  String? exAttackUnavailable(WorldState w,int slot){
   final b=w.battle;
   if(b==null)return '戦闘中ではありません';
@@ -698,8 +708,7 @@ class WorldEngine {
   b._exAttacks[index]=a.cast(b.turn);
   b.log.add('EX代償 — 物理 $physicalCost / 魔法 $magicCost / HP $hpCost / 寿命 ${a.lifeDays}日');
   if(a.attribute==ExAttackAttribute.hpRecovery){
-   final base=(BigInt.from(b.stats.hp)*BigInt.from(a.powerBps)~/BigInt.from(10000)).toInt();
-   final amount=min(b.stats.hp-w.hp,max(1,base));
+   final amount=_exRecoveryAmount(b,w.hp,a);
    w.hp+=amount;
    b.log.add('EX ${a.skillId} — HP +$amount');
    _finishTurn(w,now,skipEnemy:false,guarding:false,castingStop:false);

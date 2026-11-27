@@ -17,6 +17,11 @@ RelicEffectSnapshot reward({int chance=10000,int days=7,bool all=false}){
  ]);
  return RelicEffectSnapshot.resolve(master,[for(final e in kinds)RelicSkillContribution(skillId:'equipment_relic_skill:${e.name}',level:1)]);
 }
+class _ZeroRandom implements Random{
+ @override double nextDouble()=>0;
+ @override bool nextBool()=>false;
+ @override int nextInt(int max)=>0;
+}
 class _HalfRandom implements Random{
  @override double nextDouble()=>0.5;
  @override bool nextBool()=>false;
@@ -79,6 +84,24 @@ void main(){
   final lose=world(hp:1);e.start(lose,stats,'p01_main',now,trialRelicEffects:reward(chance:5000));
   final lost=lose.battle!,old=lost.rngState;act(e,lose,WorldCommand.guard);
   expect(lose.battle,isNull);expect(lose.hp,0);expect(lose.lifespan,BigInt.from(10));expect(lost.rngState,old);
+ });
+ test('能動多段攻撃・追加攻撃の撃破でも一度だけ寿命加算',(){
+  final e=engine(),w=world();
+  const spec=ActiveSkillSpec(id:'skill:relic_trial_combo',name:'試験連撃',powerPercent:10,physicalCost:1,cooldown:1,hits:3);
+  e.start(w,stats,'p01_main',now,trialRelicEffects:reward(),activeSkills:[spec]);
+  final b=w.battle!;
+  e.actActiveSkill(w,spec.id,b.id,b.turn,now);
+  expect(w.battle,isNull);expect(w.lifespan,BigInt.from(17));
+  expect(b.relicUses,{RelicEffect.victoryLifeReward:1});
+  // A scripted RNG makes the extra strike succeed; base damage 8 plus 4 kills HP10.
+  final extra=WorldEngine(seedRandom:Random(7),random:_ZeroRandom()),other=world();
+  const weak=WorldStats(hp:100,physical:9,magic:9,defense:0,physicalMax:100,magicMax:100,crit:0);
+  extra.start(other,weak,'p01_main',now,trialRelicEffects:reward(),equipmentEffects:BattleEquipmentEffects(extraAttack:5000));
+  final next=other.battle!;
+  act(extra,other,WorldCommand.claw);
+  expect(other.battle,isNull);expect(other.lifespan,BigInt.from(17));
+  expect(next.log.any((l)=>l.startsWith('追加攻撃')),true);
+  expect(next.relicUses,{RelicEffect.victoryLifeReward:1});
  });
  test('v13不正保存: 旧版混入、効果欠落、既勝利回数、上限、契機ずれ',(){
   final e=engine(),w=world();e.start(w,stats,'p01_main',now,trialRelicEffects:reward(all:true));

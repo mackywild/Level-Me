@@ -589,12 +589,14 @@ class AppController extends ChangeNotifier {
   notifyListeners();
  },keepPublishedState:true);
  /// Planning only. The ordinary active/passive skill loadout remains independent.
- Future<void> setExManualSkillSlot(int slot,{String? instanceId,String? skillId,required int expectedGeneration})=>_transaction(() async {
+ Future<void> setExManualSkillSlot(int slot,{String? instanceId,String? skillId,required int expectedGeneration,bool checkExpectedSelection=false,ExManualSkillSlot? expectedSelection})=>_transaction(() async {
   if(!_ready||_state.world.battle!=null)throw StateError('EX manual slot change unavailable');
   if(expectedGeneration!=_restoreGeneration)throw StateError('Stale save generation');
   final ex=_exEquipmentPolicy;
   if(ex==null||!ex.enableManualPlanning)throw StateError('EX manual planning unavailable');
   if((instanceId==null)!=(skillId==null))throw ArgumentError('Incomplete EX manual selection');
+  final current=_state.inventory.exManualSlots[slot];
+  if(checkExpectedSelection&&(current?.instanceId!=expectedSelection?.instanceId||current?.skillId!=expectedSelection?.skillId))throw StateError('Stale EX manual selection');
   final working=AppStateData.fromJson(jsonDecode(jsonEncode(_state.toJson())) as Map<String,dynamic>);
   final selection=instanceId==null?null:ExManualSkillSlot(instanceId:instanceId,skillId:skillId!);
   if(selection!=null)ex.requireManualSelection(working.inventory,selection);

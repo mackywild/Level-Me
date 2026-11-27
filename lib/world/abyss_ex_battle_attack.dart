@@ -1,13 +1,14 @@
 import 'dart:math';
 
-/// Only these ordinary attacks are executable; no protagonist time powers.
-enum ExAttackAttribute { physical, magic }
+/// Legacy attribute field: ordinary attacks and a typed non-attack recovery action.
+/// No protagonist time powers. hpRecovery is only valid in battle v10.
+enum ExAttackAttribute { physical, magic, hpRecovery }
 
 /// Immutable battle definition and usage history. Costs are fixed at battle start,
 /// except the existing dynamic energy discount buff.
 class ExBattleAttack {
  ExBattleAttack({required this.slot,required this.instanceId,required this.skillId,required this.level,required this.attribute,required this.powerBps,required this.physicalCost,required this.magicCost,required this.hpCostBps,required this.lifeDays,required this.cooldown,required this.initialCooldown,required this.maxUses,required this.energyDiscount,required this.maxHpBps,this.uses=0,this.lastCast=0}){
-  if(slot<0||slot>=3||!instanceId.startsWith('eq_')||!skillId.startsWith('equipment_ex_skill:')||skillId.length<=19||level<1||level>10||powerBps<=0||powerBps>1000000||
+  if(slot<0||slot>=3||!instanceId.startsWith('eq_')||!skillId.startsWith('equipment_ex_skill:')||skillId.length<=19||level<1||level>10||powerBps<=0||powerBps>1000000||(attribute==ExAttackAttribute.hpRecovery&&powerBps>10000)||
      [physicalCost,magicCost,lifeDays].any((n)=>n<0||n>1000000)||hpCostBps<0||hpCostBps>=10000||cooldown<0||cooldown>1000||initialCooldown<0||initialCooldown>1000||
      (maxUses!=null&&(maxUses!<=0||maxUses!>1000))||(maxHpBps!=null&&(maxHpBps!<=0||maxHpBps!>10000))||uses<0||lastCast<0||(uses==0)!=(lastCast==0)||(maxUses!=null&&uses>maxUses!)){
    throw const FormatException('Invalid EX battle attack');

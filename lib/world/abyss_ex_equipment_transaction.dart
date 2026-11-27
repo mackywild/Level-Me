@@ -3,6 +3,7 @@ import 'abyss_equipment.dart';
 import 'abyss_ex_battle_attack.dart';
 import 'abyss_equipment_effects.dart';
 import 'abyss_equipment_skill_master.dart';
+import 'abyss_equipment_skill_pool.dart';
 import 'abyss_equipment_enhancement_draw.dart';
 import 'abyss_enhancement.dart';
 import 'abyss_ex_equipment_master.dart';
@@ -23,7 +24,8 @@ class ExEnhancementRecipe {
 
 /// Explicit injection only. No production offers or recipes.
 class ExEquipmentTransactionPolicy {
- ExEquipmentTransactionPolicy({required this.master,this.enableAutomaticEffects=false,this.enableManualPlanning=false,this.enableManualExecution=false,required Iterable<String> normalMaterials,required Iterable<String> exMaterials,required Iterable<ExEnhancementRecipe> recipes,required Iterable<ExAcquisitionOffer> offers}){
+ ExEquipmentTransactionPolicy({required this.master,this.enableAutomaticEffects=false,this.enableManualPlanning=false,this.enableManualExecution=false,this.enableManualRecovery=false,required Iterable<String> normalMaterials,required Iterable<String> exMaterials,required Iterable<ExEnhancementRecipe> recipes,required Iterable<ExAcquisitionOffer> offers}){
+  if(enableManualRecovery&&!enableManualExecution)throw ArgumentError('EX recovery requires manual execution');
   if(enableManualExecution&&(!enableManualPlanning||!enableAutomaticEffects))throw ArgumentError('EX execution requires planning and automatic policy');
   final normal=normalMaterials.toSet(),special=exMaterials.toSet();
   bool valid(String id)=>id.startsWith('item:')&&id.length>5&&id.trim()==id;
@@ -38,7 +40,7 @@ class ExEquipmentTransactionPolicy {
   }
  }
  final ExEquipmentMaster master;
- final bool enableAutomaticEffects,enableManualPlanning,enableManualExecution;
+ final bool enableAutomaticEffects,enableManualPlanning,enableManualExecution,enableManualRecovery;
  final _recipes=<String,ExEnhancementRecipe>{};
  final _offers=<String,ExAcquisitionOffer>{};
  ExEnhancementRecipe? recipe(String masterId)=>_recipes[masterId];
@@ -86,18 +88,25 @@ class ExEquipmentTransactionPolicy {
   requireEquippable(inventory,item);
   if(!master.resolveFixedSkills(item).any((f)=>f.skill.id==selection.skillId&&f.skill.activation==ExSkillActivation.manual&&f.skill.manualSpec!=null))throw StateError('EX manual skill unavailable');
  }
- /// Only explicitly typed, single-effect ordinary attacks are supported.
- void _requireAttack(ExFixedSkillDefinition skill){
-  if(!enableManualExecution||skill.manualSpec?.attackAttribute==null||skill.effects.length!=1||skill.effects.single.drawback||skill.effects.single.ruleId!='equipment_ex_effect:manual_attack'){
+ /// Resolve only explicit, single-effect ordinary actions; no time powers.
+ ExAttackAttribute _requireAction(ExFixedSkillDefinition skill,EquipmentSlot slot,int level){
+  if(!enableManualExecution||skill.manualSpec==null||skill.effects.length!=1||skill.effects.single.drawback){
    throw StateError('EX manual execution not connected');
   }
+  final effect=skill.effects.single,spec=skill.manualSpec!;
+  if(effect.ruleId=='equipment_ex_effect:manual_attack'&&(spec.attackAttribute==ExAttackAttribute.physical||spec.attackAttribute==ExAttackAttribute.magic))return spec.attackAttribute!;
+  if(enableManualRecovery&&effect.ruleId=='equipment_ex_effect:manual_heal_hp'&&spec.attackAttribute==null&&
+     EquipmentSkillPoolOdds.poolForSlot(slot)==EquipmentSkillPool.defense&&(effect.valuesByLevel[level]??0)<=10000){
+   return ExAttackAttribute.hpRecovery;
+  }
+  throw StateError('EX manual execution not connected');
  }
  void requireBattleReady(AbyssInventory inventory){
   for(final id in inventory.equipped.values){
    final item=inventory.equipment[id]!;
    if(item.rarity!=EquipmentRarity.ex)continue;
    for(final fixed in master.resolveFixedSkills(item)){
-    if(fixed.skill.activation==ExSkillActivation.manual)_requireAttack(fixed.skill);
+    if(fixed.skill.activation==ExSkillActivation.manual)_requireAction(fixed.skill,item.slot,fixed.level);
    }
   }
  }
@@ -113,10 +122,10 @@ class ExEquipmentTransactionPolicy {
   requireManualSelection(inventory,selection);
   final item=inventory.equipment[selection.instanceId]!;
   final fixed=master.resolveFixedSkills(item).singleWhere((f)=>f.skill.id==selection.skillId);
-  _requireAttack(fixed.skill);
+  final attribute=_requireAction(fixed.skill,item.slot,fixed.level);
   final spec=fixed.skill.manualSpec!;
   final cooldown=spec.cooldownReduction?(spec.cooldown*(10000-reduction)+9999)~/10000:spec.cooldown;
-  return ExBattleAttack(slot:slot,instanceId:item.id,skillId:fixed.skill.id,level:fixed.level,attribute:spec.attackAttribute!,powerBps:fixed.skill.effects.single.valuesByLevel[fixed.level]!,physicalCost:spec.physicalCost,magicCost:spec.magicCost,hpCostBps:spec.hpCostBps,lifeDays:spec.lifeDays,cooldown:cooldown,initialCooldown:spec.initialCooldown,maxUses:spec.maxUses,energyDiscount:spec.energyDiscount,maxHpBps:spec.maxHpBps);
+  return ExBattleAttack(slot:slot,instanceId:item.id,skillId:fixed.skill.id,level:fixed.level,attribute:attribute,powerBps:fixed.skill.effects.single.valuesByLevel[fixed.level]!,physicalCost:spec.physicalCost,magicCost:spec.magicCost,hpCostBps:spec.hpCostBps,lifeDays:spec.lifeDays,cooldown:cooldown,initialCooldown:spec.initialCooldown,maxUses:spec.maxUses,energyDiscount:spec.energyDiscount,maxHpBps:spec.maxHpBps);
  }
  void validateBattle(AbyssInventory inventory,WorldBattle battle){
   final expected=battleAttacks(inventory,battle.equipmentEffects?.cooldown??0);

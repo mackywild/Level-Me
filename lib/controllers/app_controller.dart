@@ -43,7 +43,7 @@ class AppController extends ChangeNotifier {
   _validateEquipmentSkillInventory(state.inventory);
   final battle=state.world.battle;
   // Trial relic definitions have no inventory ownership proof yet.
-  if(battle?.executionVersion==11||battle?.executionVersion==12)throw const FormatException('Relic battle inventory integration unavailable');
+  if(battle?.executionVersion==11||battle?.executionVersion==12||battle?.executionVersion==13)throw const FormatException('Relic battle inventory integration unavailable');
   if(battle!=null){
    if(_exEquipmentPolicy==null&&battle.exAttacks.isNotEmpty)throw const FormatException('EX battle policy missing');
    _exEquipmentPolicy?.validateBattle(state.inventory,battle);

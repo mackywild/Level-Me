@@ -8,8 +8,8 @@ import 'package:level_me/world/abyss_equipment_skill_pool.dart';
 import 'package:level_me/world/abyss_relic_skill_master.dart';
 import 'package:level_me/world/abyss_relic_trigger_runtime.dart';
 
-RelicEffectSnapshot recovery({int chance=10000,int heal=2500,int magic=4,int? limit=2,bool unsupported=false}){
- final effects=[RelicEffect.battleStartHeal,RelicEffect.turnEndMagicRecovery,if(unsupported)RelicEffect.victoryLifeReward];
+RelicEffectSnapshot recovery({int chance=10000,int heal=2500,int magic=4,int? limit=2,bool withVictory=false}){
+ final effects=[RelicEffect.battleStartHeal,RelicEffect.turnEndMagicRecovery,if(withVictory)RelicEffect.victoryLifeReward];
  final master=RelicSkillMaster(rules:[
   for(final e in effects)RelicEffectRule(effect:e,stacking:RelicStacking.additive,chanceCapBps:10000,magnitudeCap:e.maximumMagnitude,maxUses:e==RelicEffect.battleStartHeal||e==RelicEffect.victoryLifeReward?1:limit),
  ],skills:[
@@ -70,7 +70,7 @@ void main(){
   e.act(retreat,WorldCommand.retreat,retreat.battle!.id,1,now);
   expect(retreat.battle,isNull);expect(retreat.magic,80);
  });
- test('版11の欠落・旧版混入・不成立回数/イベント・未接続効果を拒否',(){
+ test('版11の欠落・旧版混入・不成立回数/イベントを拒否',(){
   final e=engine(),w=world();start(e,w);
   Map<String,dynamic> raw()=>jsonDecode(jsonEncode(w.battle!.toJson())) as Map<String,dynamic>;
   for(final mutate in <void Function(Map<String,dynamic>)>[
@@ -86,8 +86,8 @@ void main(){
   final old=world();e.start(old,stats,'p01_main',now);
   expect(old.battle!.executionVersion,3);expect(old.battle!.toJson().containsKey('relicRecovery'),false);
   expect(clone(old).toJson(),old.toJson());
-  final rejected=world(),before=jsonEncode(rejected.toJson());
-  expect(()=>start(e,rejected,effects:recovery(unsupported:true)),throwsStateError);
-  expect(jsonEncode(rejected.toJson()),before);
+  final rejected=world();
+  start(e,rejected,effects:recovery(withVictory:true));
+  expect(rejected.battle!.executionVersion,13);
  });
 }

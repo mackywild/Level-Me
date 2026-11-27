@@ -57,14 +57,18 @@ class EquipmentSkillMaster {
  late final List<EquipmentSkillMasterEntry> entries;
  static Iterable<EquipmentSkillMasterEntry> entriesFrom(List<EquipmentSkillCandidate> candidates,Map<String,EquipmentEffectRule> rules)=>candidates.map((c)=>EquipmentSkillMasterEntry(id:c.id,rarity:c.rarity,pool:c.pool,effect:rules[c.id]!.effect,perLevel:rules[c.id]!.levelValues.first));
 
- void validateInventory(AbyssInventory inventory){
+ void validateInventory(AbyssInventory inventory,{bool allowRelicHistory=false}){
   if(inventory.exSkillLayouts.isNotEmpty)throw StateError('EX inventory requires EX-aware controller');
-  validateNormalInventory(inventory);
+  validateNormalInventory(inventory,allowRelicHistory:allowRelicHistory);
  }
- void validateNormalInventory(AbyssInventory inventory){
+ void validateNormalInventory(AbyssInventory inventory,{bool allowRelicHistory=false}){
   for(final entry in inventory.equipmentSkillHistories.entries){
    final item=inventory.equipment[entry.key]!;
    if(item.rarity==EquipmentRarity.ex)continue;
+   if(entry.value.relicFingerprint!=null){
+    if(!allowRelicHistory)throw const FormatException('Relic skill master unavailable');
+    continue;
+   }
    for(final grant in entry.value.grants){
     if(!entries.any((e)=>e.id==grant.skillId&&e.pool==EquipmentSkillPoolOdds.poolForSlot(item.slot))||grant.ruleVersion!=version){
      throw const FormatException('Equipment skill master mismatch');

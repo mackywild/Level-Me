@@ -72,9 +72,9 @@ class EnhancementPolicy {
   return cost;
  }
 
- EquipmentInstance enhance({required WorldState world,required AbyssInventory inventory,required EquipmentCatalog catalog,required String id,required int expectedLevel,StoredEquipmentSkill? skillGrant}){
+ EquipmentInstance enhance({required WorldState world,required AbyssInventory inventory,required EquipmentCatalog catalog,required String id,required int expectedLevel,StoredEquipmentSkill? skillGrant,String? relicFingerprint}){
   final cost=validate(world:world,inventory:inventory,catalog:catalog,id:id,expectedLevel:expectedLevel);
-  final result=inventory.enhanceWithMaterial(id,expectedLevel,cost.materialId,cost.quantity,skillGrant:skillGrant);
+  final result=inventory.enhanceWithMaterial(id,expectedLevel,cost.materialId,cost.quantity,skillGrant:skillGrant,relicFingerprint:relicFingerprint);
   world.gold-=cost.gold;
   return result;
  }

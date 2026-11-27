@@ -138,6 +138,14 @@ class RelicRecoveryBattleRuntime {
  bool get expanded=>requiresExpanded(_runtime.snapshot);
  bool get hasVictoryReward=>_runtime.snapshot.effects.containsKey(RelicEffect.victoryLifeReward);
  int get version=>hasVictoryReward?3:expanded?2:1;
+ bool sameDefinition(RelicRecoveryBattleRuntime other){
+  final a=_runtime.snapshot.effects,b=other._runtime.snapshot.effects;
+  if(version!=other.version||a.length!=b.length)return false;
+  return a.entries.every((entry){
+   final x=entry.value,y=b[entry.key];
+   return y!=null&&x.chanceBps==y.chanceBps&&x.magnitude==y.magnitude&&x.rule.maxUses==y.rule.maxUses&&x.rule.hpThresholdBps==y.rule.hpThresholdBps;
+  });
+ }
  int get lowHpMagnitude=>_runtime.snapshot.effects[RelicEffect.lowHpAttack]?.magnitude??0;
  int attackBonus(EquipmentEffect effect,int existingBps,int hp,int maxHp)=>_runtime.snapshot.attackBonus(effect,existingBps,hp,maxHp);
  Map<RelicEffect,int> get uses=>_runtime.uses;

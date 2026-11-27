@@ -38,15 +38,18 @@ class ExManualSlotPanel extends StatelessWidget {
      final index=slot;
      final current=inv.exManualSlots[index];
      final available=candidates.where((candidate)=>!inv.exManualSlots.entries.any((e)=>e.key!=index&&e.value.skillId==candidate.selection.skillId)).toList();
+     String keyOf(ExManualSkillSlot selection)=>'${selection.instanceId}:${selection.skillId}';
      final selected=available.indexWhere((candidate)=>candidate.selection.instanceId==current?.instanceId&&candidate.selection.skillId==current?.skillId);
      return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Text('専用枠 ${index+1}'),
-      DropdownButton<int>(
-       key:ValueKey('ex-slot-$index'),isExpanded:true,value:selected<0?-1:selected,
-       items:[const DropdownMenuItem(value:-1,child:Text('未登録')),for(var i=0;i<available.length;i++)DropdownMenuItem(value:i,child:Text(available[i].name,overflow:TextOverflow.ellipsis))],
+      DropdownButton<String>(
+       key:ValueKey('ex-slot-$generation-$index'),isExpanded:true,value:selected<0?'':keyOf(available[selected].selection),
+       items:[const DropdownMenuItem(value:'',child:Text('未登録')),for(final candidate in available)DropdownMenuItem(value:keyOf(candidate.selection),child:Text(candidate.name,overflow:TextOverflow.ellipsis))],
        onChanged:locked?null:(value){
-        if(value==null)return;
-        final selection=value<0?null:available[value].selection;
+        if(value==null||generation!=controller.restoreGeneration)return;
+        final matches=available.where((candidate)=>keyOf(candidate.selection)==value);
+        if(value.isNotEmpty&&matches.isEmpty)return;
+        final selection=value.isEmpty?null:matches.single.selection;
         run(()=>controller.setExManualSkillSlot(index,instanceId:selection?.instanceId,skillId:selection?.skillId,expectedGeneration:generation));
        },
       ),

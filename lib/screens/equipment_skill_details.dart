@@ -83,12 +83,12 @@ class EquipmentSkillDetails extends StatelessWidget {
    const Divider(),
    if(current.rarity==EquipmentRarity.ex)...[
     const Text('EX固定スキル',style:TextStyle(fontWeight:FontWeight.bold)),
-    if(!exVerified)const Text('EX固有・ランダム枠は未対応')
+    if(!exVerified||exMaster==null)const Text('EX固有・ランダム枠は未対応')
     else...[
-     for(final fixed in exMaster!.resolveFixedSkills(current))...[
+     for(final fixed in exMaster.resolveFixedSkills(current))...[
       Text('${fixed.skill.name} Lv${fixed.level} / ${fixed.skill.activation==ExSkillActivation.automatic?'自動':'任意発動'}'),
       for(final effect in fixed.skill.effects)
-       Text('${effect.drawback?'代償：':''}${exMaster.effectRules[effect.ruleId]?.normalEffect==null?effect.ruleId:effectName(exMaster.effectRules[effect.ruleId]!.normalEffect!)} ${percent(effect.valuesByLevel[fixed.level]!)}'),
+       Text('${effect.drawback?'代償：':''}${exMaster.effectRules[effect.ruleId]?.normalEffect==null?effect.ruleId:effectName(exMaster.effectRules[effect.ruleId]!.normalEffect!)} ${exMaster.effectRules[effect.ruleId]?.normalEffect!=null||const ['equipment_ex_effect:manual_attack','equipment_ex_effect:manual_heal_hp'].contains(effect.ruleId)?percent(effect.valuesByLevel[fixed.level]!):'${effect.valuesByLevel[fixed.level]!}（定義値・未接続）'}'),
       if(fixed.skill.manualSpec case final spec?)Text(exManualSpecText(spec)),
      ],
      if(controller.exEquipUnavailable(current) case final reason?)Text(reason),

@@ -227,7 +227,7 @@ class _WorldScreenState extends State<WorldScreen>{
      FilledButton(onPressed:busy?null:()=>Navigator.of(context).push<void>(MaterialPageRoute(builder:(_)=>AbyssShopScreen(controller:c))),child:const Text('深淵商店へ')),
      for(final slot in EquipmentSlot.values)
       Row(children:[Expanded(child:Text('${slot.name}: ${c.equipmentCatalog.find(c.state.inventory.equipment[c.state.inventory.equipped[slot]]?.masterId??'')?.name??'未装着'}')),
-       if(c.state.inventory.equipped.containsKey(slot))TextButton(onPressed:busy?null:()=>run(()=>c.unequipWorldItem(slot,expectedGeneration:generation)),child:const Text('解除'))]),
+       if(c.state.inventory.equipped.containsKey(slot))TextButton(onPressed:busy||c.inventoryBusy||!c.ready?null:()=>run(()=>c.unequipWorldItem(slot,expectedGeneration:generation)),child:const Text('解除'))]),
      if(c.state.inventory.equipment.isEmpty)const Text('所持装備なし'),
      for(final item in c.state.inventory.equipment.values)
       if(c.equipmentCatalog.find(item.masterId)!=null&&!c.state.inventory.equipped.containsValue(item.id))
